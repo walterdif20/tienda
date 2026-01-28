@@ -17,7 +17,7 @@ export function ProductCard({ product }: ProductCardProps) {
     <Card className="group overflow-hidden">
       <div className="relative">
         <img
-          src={product.images[0]?.url ?? "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=800&q=80"}
+          src={product.images[0]?.url}
           alt={product.images[0]?.alt ?? product.name}
           className="h-56 w-full object-cover transition-transform duration-300 group-hover:scale-105"
         />

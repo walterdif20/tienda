@@ -52,11 +52,6 @@
    npm run dev
    ```
 
-### Auth y roles
-
-- Habilitá Firebase Auth (Email/Password y Google opcional).
-- Para usuarios admin, seteá el custom claim `role=admin` con Admin SDK o la consola.
-
 ### Functions
 
 ```bash
@@ -73,10 +68,6 @@ npm run build
 ## Firestore rules
 
 Ver `firestore.rules`.
-
-## Admin de productos
-
-El panel `/admin` permite crear/editar productos, stock e imagen principal desde Firestore.
 
 ## Seed de productos
 

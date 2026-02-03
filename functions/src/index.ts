@@ -18,13 +18,7 @@ export const createOrder = onCall(async (request) => {
   const { buyer, delivery, items } = request.data as {
     buyer: { name: string; email: string; phone: string };
     delivery: { method: "shipping" | "pickup"; address?: string };
-    items: Array<{
-      productId: string;
-      name: string;
-      price: number;
-      qty: number;
-      imageUrl?: string;
-    }>;
+    items: Array<{ productId: string; name: string; price: number; qty: number }>;
   };
 
   if (!buyer?.name || !buyer?.email || !buyer?.phone) {
@@ -32,9 +26,6 @@ export const createOrder = onCall(async (request) => {
   }
   if (!items || items.length === 0) {
     throw new HttpsError("invalid-argument", "Carrito vacío");
-  }
-  if (delivery.method === "shipping" && !delivery.address) {
-    throw new HttpsError("invalid-argument", "Dirección requerida para envío");
   }
 
   const orderRef = db.collection("orders").doc();
@@ -103,7 +94,6 @@ export const createOrder = onCall(async (request) => {
       nameSnapshot: item.name,
       priceSnapshot: item.price,
       qty: item.qty,
-      imageUrlSnapshot: item.imageUrl ?? null,
     });
   });
 

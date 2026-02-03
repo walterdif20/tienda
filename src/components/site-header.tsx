@@ -17,7 +17,7 @@ export function SiteHeader() {
     <header className="sticky top-0 z-40 border-b border-slate-100 bg-white/80 backdrop-blur">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
         <Link to="/" className="text-xl font-semibold tracking-tight">
-          Madd Accesorios
+          Aura Accesorios
         </Link>
         <nav className="hidden items-center gap-6 text-sm font-medium text-slate-600 md:flex">
           {links.map((link) => (

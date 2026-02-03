@@ -5,7 +5,7 @@ export function SiteFooter() {
     <footer className="border-t border-slate-100 bg-white">
       <div className="mx-auto grid max-w-6xl gap-8 px-4 py-10 md:grid-cols-3">
         <div>
-          <h3 className="text-lg font-semibold">Madd Accesorios</h3>
+          <h3 className="text-lg font-semibold">Aura Accesorios</h3>
           <p className="mt-2 text-sm text-slate-500">
             Diseñamos accesorios delicados para elevar tu estilo cotidiano.
           </p>
@@ -32,8 +32,8 @@ export function SiteFooter() {
         </div>
         <div className="text-sm text-slate-500">
           <h4 className="text-sm font-semibold text-slate-700">Contacto</h4>
-          <p className="mt-2">hola@maddaccesorios.com</p>
-          <p>Instagram: @madd.accesorios</p>
+          <p className="mt-2">hola@auraaccesorios.com</p>
+          <p>Instagram: @aura.accesorios</p>
         </div>
       </div>
     </footer>

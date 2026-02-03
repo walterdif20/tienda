@@ -1,14 +1,18 @@
+import { useMemo } from "react";
 import { Link, useParams } from "react-router-dom";
+import { seedProducts } from "@/data/products";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { formatPrice } from "@/lib/format";
 import { useCartStore } from "@/store/cartStore";
-import { useProduct } from "@/hooks/use-product";
 
 export function ProductDetailPage() {
   const { slug } = useParams();
   const addItem = useCartStore((state) => state.addItem);
-  const { product } = useProduct(slug);
+  const product = useMemo(
+    () => seedProducts.find((item) => item.slug === slug),
+    [slug]
+  );
 
   if (!product) {
     return (
@@ -25,22 +29,14 @@ export function ProductDetailPage() {
     <section className="mx-auto max-w-6xl px-4 py-12">
       <div className="grid gap-10 lg:grid-cols-2">
         <div className="space-y-4">
-          {product.images.length > 0 ? (
-            product.images.map((image) => (
-              <img
-                key={image.id}
-                src={image.url}
-                alt={image.alt}
-                className="h-80 w-full rounded-2xl object-cover"
-              />
-            ))
-          ) : (
+          {product.images.map((image) => (
             <img
-              src="https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=800&q=80"
-              alt={product.name}
+              key={image.id}
+              src={image.url}
+              alt={image.alt}
               className="h-80 w-full rounded-2xl object-cover"
             />
-          )}
+          ))}
         </div>
         <div className="space-y-6">
           <div className="space-y-2">

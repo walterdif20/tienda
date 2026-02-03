@@ -1,17 +1,15 @@
 import { useMemo, useState } from "react";
 import { ProductCard } from "@/components/product-card";
-import { categories } from "@/data/products";
+import { categories, seedProducts } from "@/data/products";
 import { Button } from "@/components/ui/button";
-import { useProducts } from "@/hooks/use-products";
 
 export function ProductsPage() {
   const [activeCategory, setActiveCategory] = useState("all");
-  const { products: allProducts } = useProducts();
 
   const products = useMemo(() => {
-    if (activeCategory === "all") return allProducts;
-    return allProducts.filter((product) => product.categoryId === activeCategory);
-  }, [activeCategory, allProducts]);
+    if (activeCategory === "all") return seedProducts;
+    return seedProducts.filter((product) => product.categoryId === activeCategory);
+  }, [activeCategory]);
 
   return (
     <section className="mx-auto max-w-6xl px-4 py-12">

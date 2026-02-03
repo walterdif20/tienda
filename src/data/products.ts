@@ -11,8 +11,8 @@ export const categories = [
 export const seedProducts: Product[] = [
   {
     id: "p1",
-    name: "Cadenita Madd",
-    slug: "cadenita-madd",
+    name: "Cadenita Aura",
+    slug: "cadenita-aura",
     description: "Cadena minimalista en acero quirúrgico con baño dorado.",
     price: 12900,
     currency: "ARS",
@@ -119,8 +119,8 @@ export const seedProducts: Product[] = [
   },
   {
     id: "p6",
-    name: "Anillo Madd",
-    slug: "anillo-madd",
+    name: "Anillo Aura",
+    slug: "anillo-aura",
     description: "Anillo regulable con brillo sutil.",
     price: 7200,
     currency: "ARS",
@@ -159,8 +159,8 @@ export const seedProducts: Product[] = [
   },
   {
     id: "p8",
-    name: "Pulsera Madd",
-    slug: "pulsera-madd",
+    name: "Pulsera Aura",
+    slug: "pulsera-aura",
     description: "Pulsera de eslabones finos, ideal para layering.",
     price: 8400,
     currency: "ARS",

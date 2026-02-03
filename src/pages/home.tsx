@@ -2,15 +2,14 @@ import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ProductCard } from "@/components/product-card";
-import { useProducts } from "@/hooks/use-products";
+import { seedProducts } from "@/data/products";
+
+const featured = seedProducts.filter((product) => product.featured).slice(0, 4);
+const newItems = seedProducts.slice(0, 4);
+const bracelets = seedProducts.filter((product) => product.categoryId === "bracelets").slice(0, 4);
+const necklaces = seedProducts.filter((product) => product.categoryId === "necklaces").slice(0, 4);
 
 export function HomePage() {
-  const { products } = useProducts();
-  const featured = products.filter((product) => product.featured).slice(0, 4);
-  const newItems = products.slice(0, 4);
-  const bracelets = products.filter((product) => product.categoryId === "bracelets").slice(0, 4);
-  const necklaces = products.filter((product) => product.categoryId === "necklaces").slice(0, 4);
-
   return (
     <div>
       <section className="bg-grid">

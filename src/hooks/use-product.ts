@@ -5,7 +5,7 @@ import type { Product } from "@/types";
 
 export function useProduct(slug?: string) {
   const [product, setProduct] = useState<Product | undefined>(() =>
-    seedProducts.find((item) => item.slug === slug)
+    seedProducts.find((item) => item.slug === slug),
   );
   const [loading, setLoading] = useState(true);
 

@@ -18,7 +18,12 @@ export const createOrder = onCall(async (request) => {
   const { buyer, delivery, items } = request.data as {
     buyer: { name: string; email: string; phone: string };
     delivery: { method: "shipping" | "pickup"; address?: string };
-    items: Array<{ productId: string; name: string; price: number; qty: number }>;
+    items: Array<{
+      productId: string;
+      name: string;
+      price: number;
+      qty: number;
+    }>;
   };
 
   if (!buyer?.name || !buyer?.email || !buyer?.phone) {
@@ -33,7 +38,7 @@ export const createOrder = onCall(async (request) => {
   const publicTrackingToken = randomToken();
 
   const inventoryRefs = items.map((item) =>
-    db.collection("inventory").doc(item.productId)
+    db.collection("inventory").doc(item.productId),
   );
 
   const inventorySnapshots = await db.getAll(...inventoryRefs);

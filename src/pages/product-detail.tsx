@@ -11,7 +11,7 @@ export function ProductDetailPage() {
   const addItem = useCartStore((state) => state.addItem);
   const product = useMemo(
     () => seedProducts.find((item) => item.slug === slug),
-    [slug]
+    [slug],
   );
 
   if (!product) {
@@ -46,7 +46,9 @@ export function ProductDetailPage() {
             </div>
             <p className="text-sm text-slate-500">{product.description}</p>
           </div>
-          <div className="text-3xl font-semibold">{formatPrice(product.price)}</div>
+          <div className="text-3xl font-semibold">
+            {formatPrice(product.price)}
+          </div>
           <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
             <p>
               <strong>Stock:</strong> {product.stock} unidades disponibles

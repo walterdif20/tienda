@@ -39,17 +39,24 @@ export function CartPage() {
               />
               <div className="flex-1">
                 <h2 className="text-lg font-semibold">{item.name}</h2>
-                <p className="text-sm text-slate-500">{formatPrice(item.price)}</p>
+                <p className="text-sm text-slate-500">
+                  {formatPrice(item.price)}
+                </p>
                 <div className="mt-3 flex items-center gap-3">
                   <Input
                     type="number"
                     min={1}
                     max={item.stock}
                     value={item.qty}
-                    onChange={(event) => updateQty(item.productId, Number(event.target.value))}
+                    onChange={(event) =>
+                      updateQty(item.productId, Number(event.target.value))
+                    }
                     className="w-20"
                   />
-                  <Button variant="ghost" onClick={() => removeItem(item.productId)}>
+                  <Button
+                    variant="ghost"
+                    onClick={() => removeItem(item.productId)}
+                  >
                     Quitar
                   </Button>
                 </div>

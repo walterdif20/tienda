@@ -8,7 +8,9 @@ export function ProductsPage() {
 
   const products = useMemo(() => {
     if (activeCategory === "all") return seedProducts;
-    return seedProducts.filter((product) => product.categoryId === activeCategory);
+    return seedProducts.filter(
+      (product) => product.categoryId === activeCategory,
+    );
   }, [activeCategory]);
 
   return (
@@ -29,11 +31,15 @@ export function ProductsPage() {
             Todo
           </Button>
           {categories
-            .filter((category) => category.id !== "new" && category.id !== "featured")
+            .filter(
+              (category) => category.id !== "new" && category.id !== "featured",
+            )
             .map((category) => (
               <Button
                 key={category.id}
-                variant={activeCategory === category.id ? "secondary" : "outline"}
+                variant={
+                  activeCategory === category.id ? "secondary" : "outline"
+                }
                 size="sm"
                 onClick={() => setActiveCategory(category.id)}
               >

@@ -17,7 +17,7 @@ export type CreateOrderResponse = {
 export const createOrder = async (input: CreateOrderInput) => {
   const callable = httpsCallable<CreateOrderInput, CreateOrderResponse>(
     functions,
-    "createOrder"
+    "createOrder",
   );
   const response = await callable(input);
   return response.data;

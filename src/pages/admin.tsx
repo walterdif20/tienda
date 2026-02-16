@@ -388,6 +388,20 @@ export function AdminPage() {
           ))}
         </div>
       </div>
+
+      <ProductManagementSection
+        products={products}
+        loading={loading && products.length === 0}
+        onSaveProduct={onSaveProduct}
+      />
+
+      <OrderManagementSection
+        orders={orders}
+        products={products}
+        onUpdateOrderStatus={onUpdateOrderStatus}
+        onUpdateOrderNote={onUpdateOrderNote}
+        onCreateManualSale={onCreateManualSale}
+      />
     </section>
   );
 }

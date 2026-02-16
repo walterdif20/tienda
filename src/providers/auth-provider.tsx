@@ -60,7 +60,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         await signOut(auth);
       },
     }),
-    [user, isAdmin]
+    [user, isAdmin],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

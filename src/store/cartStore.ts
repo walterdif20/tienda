@@ -24,9 +24,7 @@ export const useCartStore = create<CartState>()(
           const nextQty = clampQty(existing.qty + qty, product.stock);
           set({
             items: items.map((item) =>
-              item.productId === product.id
-                ? { ...item, qty: nextQty }
-                : item
+              item.productId === product.id ? { ...item, qty: nextQty } : item,
             ),
           });
           return;
@@ -47,19 +45,21 @@ export const useCartStore = create<CartState>()(
         });
       },
       removeItem: (productId) =>
-        set({ items: get().items.filter((item) => item.productId !== productId) }),
+        set({
+          items: get().items.filter((item) => item.productId !== productId),
+        }),
       updateQty: (productId, qty) => {
         const items = get().items;
         set({
           items: items.map((item) =>
             item.productId === productId
               ? { ...item, qty: clampQty(qty, item.stock) }
-              : item
+              : item,
           ),
         });
       },
       clear: () => set({ items: [] }),
     }),
-    { name: "tienda-cart" }
-  )
+    { name: "tienda-cart" },
+  ),
 );

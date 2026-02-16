@@ -15,7 +15,8 @@ export function AccountOrdersPage() {
           </CardHeader>
           <CardContent className="space-y-3 text-sm text-slate-600">
             <p>
-              Para ver tus pedidos anteriores iniciá sesión o registrate con tu email.
+              Para ver tus pedidos anteriores iniciá sesión o registrate con tu
+              email.
             </p>
             <div className="flex flex-wrap gap-3">
               <Button>Ingresar</Button>

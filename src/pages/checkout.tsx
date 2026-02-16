@@ -6,7 +6,13 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { formatPrice } from "@/lib/format";
 import { useCartStore } from "@/store/cartStore";
 import { createOrder } from "@/lib/checkout";
@@ -29,7 +35,7 @@ export function CheckoutPage() {
 
   const subtotal = useMemo(
     () => items.reduce((sum, item) => sum + item.price * item.qty, 0),
-    [items]
+    [items],
   );
 
   const form = useForm<FormValues>({
@@ -53,7 +59,8 @@ export function CheckoutPage() {
         },
         delivery: {
           method: values.deliveryMethod,
-          address: values.deliveryMethod === "shipping" ? values.address : undefined,
+          address:
+            values.deliveryMethod === "shipping" ? values.address : undefined,
         },
         items,
       });
@@ -125,7 +132,12 @@ export function CheckoutPage() {
                 <Label>Método de entrega</Label>
                 <Select
                   value={deliveryMethod}
-                  onValueChange={(value) => form.setValue("deliveryMethod", value as "shipping" | "pickup")}
+                  onValueChange={(value) =>
+                    form.setValue(
+                      "deliveryMethod",
+                      value as "shipping" | "pickup",
+                    )
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Selecciona" />
@@ -139,7 +151,10 @@ export function CheckoutPage() {
               {deliveryMethod === "shipping" && (
                 <div className="space-y-2">
                   <Label>Dirección</Label>
-                  <Input {...form.register("address")} placeholder="Calle 123, CABA" />
+                  <Input
+                    {...form.register("address")}
+                    placeholder="Calle 123, CABA"
+                  />
                 </div>
               )}
               <Button type="button" onClick={() => setStep("payment")}>
@@ -152,11 +167,15 @@ export function CheckoutPage() {
             <div className="space-y-4">
               <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
                 <p>
-                  Al continuar, generamos tu orden con estado <strong>pending</strong> y
-                  te redirigimos a Mercado Pago.
+                  Al continuar, generamos tu orden con estado{" "}
+                  <strong>pending</strong> y te redirigimos a Mercado Pago.
                 </p>
               </div>
-              <Button type="submit" size="lg" disabled={loading || items.length === 0}>
+              <Button
+                type="submit"
+                size="lg"
+                disabled={loading || items.length === 0}
+              >
                 {loading ? "Redirigiendo..." : "Pagar con Mercado Pago"}
               </Button>
             </div>
@@ -165,7 +184,10 @@ export function CheckoutPage() {
         <div className="space-y-4 rounded-2xl border border-slate-200 bg-slate-50 p-6">
           <h2 className="text-xl font-semibold">Resumen</h2>
           {items.map((item) => (
-            <div key={item.productId} className="flex items-center justify-between text-sm">
+            <div
+              key={item.productId}
+              className="flex items-center justify-between text-sm"
+            >
               <span>
                 {item.name} x {item.qty}
               </span>

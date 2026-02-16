@@ -28,5 +28,9 @@ export function useProducts() {
     };
   }, [reloadToken]);
 
-  return { products, loading, reload: () => setReloadToken((value) => value + 1) };
+  return {
+    products,
+    loading,
+    reload: () => setReloadToken((value) => value + 1),
+  };
 }

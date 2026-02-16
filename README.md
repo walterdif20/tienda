@@ -3,15 +3,18 @@
 ## Plan por etapas
 
 **Etapa 1: manual-first**
+
 - Catálogo, carrito y checkout invitado.
 - Crear órdenes con estado `pending`.
 - Panel admin para marcar pagos manuales.
 
 **Etapa 2: webhook automático**
+
 - Webhook Mercado Pago para confirmar pagos y actualizar stock.
 - Idempotencia y tracking para guest.
 
 **Etapa 3: mejoras**
+
 - Emails transaccionales, reportes y automatizaciones.
 - Analítica de conversión y cohortes.
 
@@ -41,6 +44,35 @@
 ```
 
 ## Setup local
+
+### Inicio desde cero (paso a paso)
+
+Si querés levantar el proyecto desde una máquina nueva, seguí este orden:
+
+1. Verificá versiones de herramientas:
+   ```bash
+   node -v
+   npm -v
+   firebase --version
+   ```
+2. Instalá dependencias del frontend en la raíz:
+   ```bash
+   npm install
+   ```
+3. Instalá dependencias de Cloud Functions:
+   ```bash
+   cd functions && npm install && cd ..
+   ```
+4. Creá `.env` a partir de `.env.example` y completá variables `VITE_*`.
+5. Iniciá frontend y backend en terminales separadas:
+   ```bash
+   npm run dev
+   ```
+   ```bash
+   cd functions && npm run build -- --watch
+   ```
+
+Con eso ya podés iterar localmente en UI + funciones.
 
 1. Instalar dependencias del frontend:
    ```bash

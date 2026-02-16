@@ -7,6 +7,7 @@ const links = [
   { to: "/products", label: "Productos" },
   { to: "/cart", label: "Carrito" },
   { to: "/track", label: "Seguimiento" },
+  { to: "/admin", label: "Admin" },
 ];
 
 export function SiteHeader() {

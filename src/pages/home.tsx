@@ -6,8 +6,12 @@ import { seedProducts } from "@/data/products";
 
 const featured = seedProducts.filter((product) => product.featured).slice(0, 4);
 const newItems = seedProducts.slice(0, 4);
-const bracelets = seedProducts.filter((product) => product.categoryId === "bracelets").slice(0, 4);
-const necklaces = seedProducts.filter((product) => product.categoryId === "necklaces").slice(0, 4);
+const bracelets = seedProducts
+  .filter((product) => product.categoryId === "bracelets")
+  .slice(0, 4);
+const necklaces = seedProducts
+  .filter((product) => product.categoryId === "necklaces")
+  .slice(0, 4);
 
 export function HomePage() {
   return (
@@ -22,8 +26,8 @@ export function HomePage() {
               Una tienda minimalista para tus combinaciones favoritas.
             </h1>
             <p className="text-base text-slate-600">
-              Cadenitas, pulseras y anillos pensados para acompañarte todos los días.
-              Compra en minutos, con o sin cuenta.
+              Cadenitas, pulseras y anillos pensados para acompañarte todos los
+              días. Compra en minutos, con o sin cuenta.
             </p>
             <div className="flex flex-wrap gap-4">
               <Button asChild size="lg">
@@ -51,7 +55,10 @@ export function HomePage() {
         </div>
       </section>
 
-      <Section title="Nuevos" description="Lo último que sumamos a la colección.">
+      <Section
+        title="Nuevos"
+        description="Lo último que sumamos a la colección."
+      >
         {newItems.map((product) => (
           <ProductCard key={product.id} product={product} />
         ))}
@@ -63,13 +70,19 @@ export function HomePage() {
         ))}
       </Section>
 
-      <Section title="Pulseras" description="Detalles livianos para todos los días.">
+      <Section
+        title="Pulseras"
+        description="Detalles livianos para todos los días."
+      >
         {bracelets.map((product) => (
           <ProductCard key={product.id} product={product} />
         ))}
       </Section>
 
-      <Section title="Cadenitas" description="Capas delicadas para tus looks favoritos.">
+      <Section
+        title="Cadenitas"
+        description="Capas delicadas para tus looks favoritos."
+      >
         {necklaces.map((product) => (
           <ProductCard key={product.id} product={product} />
         ))}

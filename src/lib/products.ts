@@ -15,7 +15,9 @@ import type { Product, ProductInput } from "@/types";
 const productsCollection = collection(db, "products");
 
 export const fetchProducts = async (): Promise<Product[]> => {
-  const snapshot = await getDocs(query(productsCollection, orderBy("createdAt", "desc")));
+  const snapshot = await getDocs(
+    query(productsCollection, orderBy("createdAt", "desc")),
+  );
   const products = await Promise.all(
     snapshot.docs.map(async (docSnap) => {
       const data = docSnap.data() as Omit<Product, "id" | "images" | "stock">;
@@ -35,16 +37,23 @@ export const fetchProducts = async (): Promise<Product[]> => {
         images,
         stock,
       };
-    })
+    }),
   );
   return products;
 };
 
-export const fetchProductBySlug = async (slug: string): Promise<Product | null> => {
+export const fetchProductBySlug = async (
+  slug: string,
+): Promise<Product | null> => {
   const snapshot = await getDocs(query(productsCollection));
-  const productDoc = snapshot.docs.find((docSnap) => docSnap.data().slug === slug);
+  const productDoc = snapshot.docs.find(
+    (docSnap) => docSnap.data().slug === slug,
+  );
   if (!productDoc) return null;
-  const productData = productDoc.data() as Omit<Product, "id" | "images" | "stock">;
+  const productData = productDoc.data() as Omit<
+    Product,
+    "id" | "images" | "stock"
+  >;
   const imagesSnapshot = await getDocs(collection(productDoc.ref, "images"));
   const images = imagesSnapshot.docs
     .map((imageDoc) => ({
@@ -94,7 +103,10 @@ export const createProduct = async (input: ProductInput) => {
   return productRef.id;
 };
 
-export const updateProduct = async (id: string, input: Partial<ProductInput>) => {
+export const updateProduct = async (
+  id: string,
+  input: Partial<ProductInput>,
+) => {
   const productRef = doc(db, "products", id);
   await updateDoc(productRef, {
     name: input.name,

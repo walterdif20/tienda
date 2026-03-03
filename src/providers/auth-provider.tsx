@@ -7,6 +7,7 @@ import {
   signInWithEmailAndPassword,
   signInWithPopup,
   signOut,
+  updateProfile,
 } from "firebase/auth";
 import { doc, serverTimestamp, setDoc } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
@@ -16,20 +17,31 @@ interface AuthContextValue {
   isAdmin: boolean;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string) => Promise<void>;
+  signUp: (input: {
+    email: string;
+    password: string;
+    displayName?: string;
+    whatsappNumber?: string;
+  }) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
   signOutUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
-const upsertUserProfile = async (user: User, isAdmin: boolean) => {
+const upsertUserProfile = async (
+  user: User,
+  isAdmin: boolean,
+  extras?: { displayName?: string; whatsappNumber?: string },
+) => {
   await setDoc(
     doc(db, "users", user.uid),
     {
       email: user.email ?? "",
-      displayName: user.displayName ?? user.email ?? "Cliente",
-      whatsappNumber: user.phoneNumber ?? "",
+      displayName:
+        extras?.displayName ?? user.displayName ?? user.email ?? "Cliente",
+      whatsappNumber: extras?.whatsappNumber ?? user.phoneNumber ?? "",
+      isAdmin,
       role: isAdmin ? "admin" : "customer",
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
@@ -49,7 +61,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (nextUser) {
         const token = await nextUser.getIdTokenResult(true);
-        const admin = Boolean(token.claims.role === "admin");
+        const admin = Boolean(
+          token.claims.role === "admin" || token.claims.isAdmin === true,
+        );
         setIsAdmin(admin);
         await upsertUserProfile(nextUser, admin);
       } else {
@@ -70,8 +84,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       signIn: async (email: string, password: string) => {
         await signInWithEmailAndPassword(auth, email, password);
       },
-      signUp: async (email: string, password: string) => {
-        await createUserWithEmailAndPassword(auth, email, password);
+      signUp: async ({
+        email,
+        password,
+        displayName,
+        whatsappNumber,
+      }: {
+        email: string;
+        password: string;
+        displayName?: string;
+        whatsappNumber?: string;
+      }) => {
+        const credential = await createUserWithEmailAndPassword(
+          auth,
+          email,
+          password,
+        );
+
+        if (displayName) {
+          await updateProfile(credential.user, { displayName });
+        }
+
+        await upsertUserProfile(credential.user, false, {
+          displayName,
+          whatsappNumber,
+        });
       },
       signInWithGoogle: async () => {
         const provider = new GoogleAuthProvider();

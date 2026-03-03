@@ -189,7 +189,7 @@ export const mpWebhook = onRequest(async (request, response) => {
 });
 
 export const setUserAdminRole = onCall(async (request) => {
-  if (!request.auth || request.auth.token.role !== "admin") {
+  if (!request.auth || (request.auth.token.role !== "admin" && request.auth.token.isAdmin !== true)) {
     throw new HttpsError(
       "permission-denied",
       "Solo un admin puede realizar esta acción",
@@ -207,11 +207,13 @@ export const setUserAdminRole = onCall(async (request) => {
   await adminAuth.setCustomUserClaims(uid, {
     ...existingClaims,
     role: "admin",
+    isAdmin: true,
   });
 
   await db.collection("users").doc(uid).set(
     {
       role: "admin",
+      isAdmin: true,
       updatedAt: FieldValue.serverTimestamp(),
     },
     { merge: true },

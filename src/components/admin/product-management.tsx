@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { type ChangeEvent, useMemo, useRef, useState } from "react";
 import { categories } from "@/data/products";
 import { formatPrice } from "@/lib/format";
 import { Button } from "@/components/ui/button";
@@ -9,12 +9,14 @@ import type {
   ProductFormValues,
   SaveProductInput,
   SaveProductResult,
+  UploadProductImageResult,
 } from "@/components/admin/types";
 
 type ProductManagementProps = {
   products: AdminProduct[];
   loading: boolean;
   onSaveProduct: (input: SaveProductInput) => SaveProductResult;
+  onUploadProductImage: (file: File) => UploadProductImageResult;
 };
 
 const emptyProductForm = (): ProductFormValues => ({
@@ -43,12 +45,15 @@ export function ProductManagementSection({
   products,
   loading,
   onSaveProduct,
+  onUploadProductImage,
 }: ProductManagementProps) {
   const [editingProductId, setEditingProductId] = useState<string | null>(null);
   const [productForm, setProductForm] =
     useState<ProductFormValues>(emptyProductForm());
   const [searchTerm, setSearchTerm] = useState("");
   const [feedback, setFeedback] = useState<string | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const visibleProducts = useMemo(() => {
     const needle = searchTerm.toLowerCase().trim();
@@ -88,6 +93,35 @@ export function ProductManagementSection({
   const resetProductForm = () => {
     setEditingProductId(null);
     setProductForm(emptyProductForm());
+  };
+
+  const onSelectImage = async (event: ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = event.target.files?.[0];
+    if (!selectedFile) {
+      return;
+    }
+
+    setUploadingImage(true);
+    setFeedback("Subiendo imagen...");
+
+    const uploadResult = await onUploadProductImage(selectedFile);
+
+    if (!uploadResult.ok || !uploadResult.url) {
+      setFeedback(uploadResult.message ?? "No se pudo subir la imagen.");
+      setUploadingImage(false);
+      event.target.value = "";
+      return;
+    }
+
+    setProductForm((current) => ({
+      ...current,
+      primaryImageUrl: uploadResult.url ?? "",
+      primaryImageAlt:
+        current.primaryImageAlt || uploadResult.suggestedAlt || current.name,
+    }));
+    setFeedback("Imagen cargada correctamente.");
+    setUploadingImage(false);
+    event.target.value = "";
   };
 
   const saveProduct = async () => {
@@ -189,14 +223,49 @@ export function ProductManagementSection({
             placeholder="Badge (opcional)"
           />
 
-          <Input
-            value={productForm.primaryImageUrl}
-            onChange={(event) =>
-              handleProductField("primaryImageUrl", event.target.value)
-            }
-            placeholder="URL imagen principal (opcional)"
-            type="url"
-          />
+          <div className="rounded-md border border-slate-200 p-3 md:col-span-2">
+            <p className="text-sm font-medium text-slate-700">Imagen principal</p>
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={onSelectImage}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploadingImage}
+              >
+                {uploadingImage ? "Subiendo..." : "Cargar imagen"}
+              </Button>
+
+              {productForm.primaryImageUrl && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => {
+                    handleProductField("primaryImageUrl", "");
+                    handleProductField("primaryImageAlt", "");
+                  }}
+                >
+                  Quitar imagen
+                </Button>
+              )}
+            </div>
+
+            <Input
+              value={productForm.primaryImageUrl}
+              onChange={(event) =>
+                handleProductField("primaryImageUrl", event.target.value)
+              }
+              placeholder="URL de imagen generada automáticamente"
+              readOnly
+              className="mt-3"
+            />
+          </div>
 
           <Input
             value={productForm.primaryImageAlt}
@@ -204,6 +273,7 @@ export function ProductManagementSection({
               handleProductField("primaryImageAlt", event.target.value)
             }
             placeholder="Texto alternativo imagen (opcional)"
+            className="md:col-span-2"
           />
 
           <div className="md:col-span-2">
@@ -231,7 +301,7 @@ export function ProductManagementSection({
           </label>
 
           <div className="md:col-span-2 flex flex-wrap gap-2">
-            <Button onClick={saveProduct}>
+            <Button onClick={saveProduct} disabled={uploadingImage}>
               {editingProductId ? "Guardar cambios" : "Agregar producto"}
             </Button>
             {editingProductId && (
@@ -267,7 +337,7 @@ export function ProductManagementSection({
                 <p className="font-medium text-slate-900">{product.name}</p>
                 <p className="text-sm text-slate-500">
                   {formatPrice(product.price)} · Stock: {product.stock} · Cat:{" "}
-                  {product.categoryId} ·{" "}
+                  {product.categoryId} · {" "}
                   {product.isActive ? "Activo" : "Inactivo"}
                 </p>
               </div>

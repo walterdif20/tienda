@@ -44,6 +44,13 @@ export type SaveProductResult = Promise<{
   message?: string;
 }>;
 
+export type UploadProductImageResult = Promise<{
+  ok: boolean;
+  url?: string;
+  suggestedAlt?: string;
+  message?: string;
+}>;
+
 export type StatusChangeResult = Promise<{
   ok: boolean;
   message?: string;

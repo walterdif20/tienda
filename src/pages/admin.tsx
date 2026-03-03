@@ -7,6 +7,7 @@ import type {
   ManualSaleInput,
   ManualSaleResult,
   SaveProductInput,
+  DeleteProductResult,
   SaveProductResult,
   StatusChangeResult,
   UploadProductImageResult,
@@ -18,7 +19,7 @@ import {
   updateAdminOrderNote,
   updateAdminOrderStatus,
 } from "@/lib/admin-orders";
-import { createProduct, updateProduct, uploadProductImageFile } from "@/lib/products";
+import { createProduct, deleteProduct, updateProduct, uploadProductImageFile } from "@/lib/products";
 
 const slugify = (value: string) =>
   value
@@ -123,6 +124,17 @@ export function AdminPage() {
     }
   };
 
+  const onDeleteProduct = async (productId: string): DeleteProductResult => {
+    try {
+      await deleteProduct(productId);
+      reload();
+      return { ok: true, message: "Producto eliminado con éxito." };
+    } catch (error) {
+      console.error(error);
+      return { ok: false, message: "No se pudo eliminar el producto." };
+    }
+  };
+
   const onUpdateOrderStatus = async (
     orderId: string,
     status: AdminOrderStatus,
@@ -210,6 +222,7 @@ export function AdminPage() {
         products={adminProducts}
         loading={loading && adminProducts.length === 0}
         onSaveProduct={onSaveProduct}
+        onDeleteProduct={onDeleteProduct}
         onUploadProductImage={onUploadProductImage}
       />
 

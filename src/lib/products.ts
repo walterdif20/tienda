@@ -148,6 +148,16 @@ export const updateProduct = async (
 };
 
 
+export const deleteProduct = async (id: string) => {
+  const productRef = doc(db, "products", id);
+  const imagesSnapshot = await getDocs(collection(productRef, "images"));
+
+  await Promise.all(imagesSnapshot.docs.map((imageDoc) => deleteDoc(imageDoc.ref)));
+  await deleteDoc(doc(db, "inventory", id));
+  await deleteDoc(productRef);
+};
+
+
 const sanitizeFilename = (name: string) =>
   name
     .toLowerCase()

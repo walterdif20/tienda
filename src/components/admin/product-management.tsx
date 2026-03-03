@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import type {
   AdminProduct,
   ProductFormValues,
+  DeleteProductResult,
   SaveProductInput,
   SaveProductResult,
   UploadProductImageResult,
@@ -16,6 +17,7 @@ type ProductManagementProps = {
   products: AdminProduct[];
   loading: boolean;
   onSaveProduct: (input: SaveProductInput) => SaveProductResult;
+  onDeleteProduct: (productId: string) => DeleteProductResult;
   onUploadProductImage: (file: File) => UploadProductImageResult;
 };
 
@@ -45,6 +47,7 @@ export function ProductManagementSection({
   products,
   loading,
   onSaveProduct,
+  onDeleteProduct,
   onUploadProductImage,
 }: ProductManagementProps) {
   const [editingProductId, setEditingProductId] = useState<string | null>(null);
@@ -53,6 +56,8 @@ export function ProductManagementSection({
   const [searchTerm, setSearchTerm] = useState("");
   const [feedback, setFeedback] = useState<string | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [savingProduct, setSavingProduct] = useState(false);
+  const [deletingProductId, setDeletingProductId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const visibleProducts = useMemo(() => {
@@ -125,25 +130,63 @@ export function ProductManagementSection({
   };
 
   const saveProduct = async () => {
+    if (savingProduct) {
+      return;
+    }
+
+    setSavingProduct(true);
     const normalized: ProductFormValues = {
       ...productForm,
       slug: productForm.slug || slugify(productForm.name),
     };
 
-    const result = await onSaveProduct({
-      id: editingProductId ?? undefined,
-      values: normalized,
-    });
+    try {
+      const result = await onSaveProduct({
+        id: editingProductId ?? undefined,
+        values: normalized,
+      });
 
-    if (!result.ok) {
-      setFeedback(result.message ?? "No se pudo guardar el producto.");
+      if (!result.ok) {
+        setFeedback(result.message ?? "No se pudo guardar el producto.");
+        return;
+      }
+
+      setFeedback(
+        editingProductId ? "Producto actualizado." : "Producto creado.",
+      );
+      resetProductForm();
+    } finally {
+      setSavingProduct(false);
+    }
+  };
+
+  const handleDeleteProduct = async (product: AdminProduct) => {
+    if (deletingProductId) {
       return;
     }
 
-    setFeedback(
-      editingProductId ? "Producto actualizado." : "Producto creado.",
+    const shouldDelete = window.confirm(
+      `¿Seguro que querés eliminar "${product.name}"? Esta acción no se puede deshacer.`,
     );
-    resetProductForm();
+
+    if (!shouldDelete) {
+      return;
+    }
+
+    setDeletingProductId(product.id);
+    const result = await onDeleteProduct(product.id);
+    if (!result.ok) {
+      setFeedback(result.message ?? "No se pudo eliminar el producto.");
+      setDeletingProductId(null);
+      return;
+    }
+
+    if (editingProductId === product.id) {
+      resetProductForm();
+    }
+
+    setFeedback(result.message ?? "Producto eliminado.");
+    setDeletingProductId(null);
   };
 
   const lowStockCount = products.filter((product) => product.stock <= 3).length;
@@ -301,8 +344,12 @@ export function ProductManagementSection({
           </label>
 
           <div className="md:col-span-2 flex flex-wrap gap-2">
-            <Button onClick={saveProduct} disabled={uploadingImage}>
-              {editingProductId ? "Guardar cambios" : "Agregar producto"}
+            <Button onClick={saveProduct} disabled={uploadingImage || savingProduct}>
+              {savingProduct
+                ? "Guardando..."
+                : editingProductId
+                  ? "Guardar cambios"
+                  : "Agregar producto"}
             </Button>
             {editingProductId && (
               <Button variant="outline" onClick={resetProductForm}>
@@ -341,13 +388,30 @@ export function ProductManagementSection({
                   {product.isActive ? "Activo" : "Inactivo"}
                 </p>
               </div>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => startEditingProduct(product)}
-              >
-                Editar
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => startEditingProduct(product)}
+                  disabled={deletingProductId === product.id}
+                >
+                  Editar
+                </Button>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => {
+                    handleDeleteProduct(product).catch((error) => {
+                      console.error(error);
+                      setFeedback("No se pudo eliminar el producto.");
+                      setDeletingProductId(null);
+                    });
+                  }}
+                  disabled={deletingProductId !== null}
+                >
+                  {deletingProductId === product.id ? "Eliminando..." : "Eliminar"}
+                </Button>
+              </div>
             </CardContent>
           </Card>
         ))}

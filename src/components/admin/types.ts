@@ -51,6 +51,11 @@ export type UploadProductImageResult = Promise<{
   message?: string;
 }>;
 
+export type DeleteProductResult = Promise<{
+  ok: boolean;
+  message?: string;
+}>;
+
 export type StatusChangeResult = Promise<{
   ok: boolean;
   message?: string;

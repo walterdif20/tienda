@@ -37,15 +37,15 @@ export type SaveProductInput = {
   values: ProductFormValues;
 };
 
-export type SaveProductResult = {
+export type SaveProductResult = Promise<{
   ok: boolean;
   message?: string;
-};
+}>;
 
-export type StatusChangeResult = {
+export type StatusChangeResult = Promise<{
   ok: boolean;
   message?: string;
-};
+}>;
 
 export type ManualSaleInput = {
   buyer: string;
@@ -54,9 +54,9 @@ export type ManualSaleInput = {
   qty: number;
 };
 
-export type ManualSaleResult = {
+export type ManualSaleResult = Promise<{
   ok: boolean;
   message?: string;
-};
+}>;
 
 export type AdminProduct = Product;

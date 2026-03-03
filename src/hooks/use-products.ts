@@ -1,10 +1,9 @@
 import { useEffect, useState } from "react";
 import { fetchProducts } from "@/lib/products";
-import { seedProducts } from "@/data/products";
 import type { Product } from "@/types";
 
 export function useProducts() {
-  const [products, setProducts] = useState<Product[]>(seedProducts);
+  const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [reloadToken, setReloadToken] = useState(0);
 
@@ -13,7 +12,7 @@ export function useProducts() {
     const load = async () => {
       try {
         const remote = await fetchProducts();
-        if (mounted && remote.length > 0) {
+        if (mounted) {
           setProducts(remote);
         }
       } catch (error) {

@@ -85,15 +85,15 @@ export function OrderManagementSection({
     };
   }, [orders]);
 
-  const handleStatusChange = (orderId: string, status: AdminOrderStatus) => {
-    const result = onUpdateOrderStatus(orderId, status);
+  const handleStatusChange = async (orderId: string, status: AdminOrderStatus) => {
+    const result = await onUpdateOrderStatus(orderId, status);
     setFeedback(result.message ?? null);
   };
 
-  const handleManualSale = () => {
+  const handleManualSale = async () => {
     const qty = Number(saleForm.qty);
 
-    const result = onCreateManualSale({
+    const result = await onCreateManualSale({
       buyer: saleForm.buyer,
       email: saleForm.email,
       productId: saleForm.productId,

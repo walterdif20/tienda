@@ -29,6 +29,8 @@ export type ProductFormValues = {
   stock: string;
   categoryId: string;
   badge: string;
+  primaryImageUrl: string;
+  primaryImageAlt: string;
   isActive: boolean;
 };
 
@@ -39,6 +41,13 @@ export type SaveProductInput = {
 
 export type SaveProductResult = Promise<{
   ok: boolean;
+  message?: string;
+}>;
+
+export type UploadProductImageResult = Promise<{
+  ok: boolean;
+  url?: string;
+  suggestedAlt?: string;
   message?: string;
 }>;
 

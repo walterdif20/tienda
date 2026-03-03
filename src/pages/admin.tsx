@@ -9,6 +9,7 @@ import type {
   SaveProductInput,
   SaveProductResult,
   StatusChangeResult,
+  UploadProductImageResult,
 } from "@/components/admin/types";
 import { useProducts } from "@/hooks/use-products";
 import {
@@ -17,7 +18,7 @@ import {
   updateAdminOrderNote,
   updateAdminOrderStatus,
 } from "@/lib/admin-orders";
-import { createProduct, updateProduct } from "@/lib/products";
+import { createProduct, updateProduct, uploadProductImageFile } from "@/lib/products";
 
 const slugify = (value: string) =>
   value
@@ -71,6 +72,8 @@ export function AdminPage() {
           badge: values.badge || undefined,
           isActive: values.isActive,
           stock,
+          primaryImageUrl: values.primaryImageUrl.trim() || undefined,
+          primaryImageAlt: values.primaryImageAlt.trim() || undefined,
         });
         reload();
         return { ok: true, message: "Producto actualizado con éxito." };
@@ -87,12 +90,28 @@ export function AdminPage() {
         isActive: values.isActive,
         badge: values.badge || undefined,
         stock,
+        primaryImageUrl: values.primaryImageUrl.trim() || undefined,
+        primaryImageAlt: values.primaryImageAlt.trim() || undefined,
       });
       reload();
       return { ok: true, message: "Producto creado con éxito." };
     } catch (error) {
       console.error(error);
       return { ok: false, message: "No se pudo guardar en Firestore." };
+    }
+  };
+
+  const onUploadProductImage = async (file: File): UploadProductImageResult => {
+    if (!file.type.startsWith("image/")) {
+      return { ok: false, message: "El archivo seleccionado no es una imagen." };
+    }
+
+    try {
+      const uploaded = await uploadProductImageFile(file);
+      return { ok: true, url: uploaded.url, suggestedAlt: uploaded.suggestedAlt };
+    } catch (error) {
+      console.error(error);
+      return { ok: false, message: "No se pudo subir la imagen a Firebase Storage." };
     }
   };
 
@@ -183,6 +202,7 @@ export function AdminPage() {
         products={adminProducts}
         loading={loading && adminProducts.length === 0}
         onSaveProduct={onSaveProduct}
+        onUploadProductImage={onUploadProductImage}
       />
 
       <OrderManagementSection

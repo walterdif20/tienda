@@ -1,5 +1,6 @@
 import {
   collection,
+  deleteDoc,
   doc,
   getDoc,
   getDocs,
@@ -9,7 +10,8 @@ import {
   Timestamp,
   updateDoc,
 } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { db, storage } from "@/lib/firebase";
+import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import type { Product, ProductImage, ProductInput } from "@/types";
 
 const productsCollection = collection(db, "products");
@@ -120,10 +122,57 @@ export const updateProduct = async (
     badge: input.badge ?? null,
   });
 
+  if (input.primaryImageUrl !== undefined) {
+    const imagesRef = collection(productRef, "images");
+    const imagesSnapshot = await getDocs(imagesRef);
+
+    await Promise.all(imagesSnapshot.docs.map((imageDoc) => deleteDoc(imageDoc.ref)));
+
+    const url = input.primaryImageUrl.trim();
+    if (url) {
+      const imageRef = doc(imagesRef);
+      await setDoc(imageRef, {
+        url,
+        alt: input.primaryImageAlt?.trim() || input.name || "Imagen de producto",
+        sortOrder: 1,
+      });
+    }
+  }
+
   if (input.stock !== undefined) {
     await updateDoc(doc(db, "inventory", id), {
       stock: input.stock,
       updatedAt: Timestamp.now(),
     });
   }
+};
+
+
+const sanitizeFilename = (name: string) =>
+  name
+    .toLowerCase()
+    .trim()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .replace(/[^a-z0-9.\-_]/g, "-")
+    .replace(/-+/g, "-");
+
+export const uploadProductImageFile = async (file: File): Promise<{
+  url: string;
+  suggestedAlt: string;
+}> => {
+  const extension = file.name.split(".").pop()?.toLowerCase() || "jpg";
+  const safeName = sanitizeFilename(file.name.replace(/\.[^.]+$/, ""));
+  const filename = `${Date.now()}-${crypto.randomUUID()}.${extension}`;
+  const imageRef = ref(storage, `products/${safeName || "producto"}/${filename}`);
+
+  await uploadBytes(imageRef, file, {
+    contentType: file.type || `image/${extension}`,
+  });
+
+  const url = await getDownloadURL(imageRef);
+  return {
+    url,
+    suggestedAlt: file.name.replace(/\.[^.]+$/, ""),
+  };
 };

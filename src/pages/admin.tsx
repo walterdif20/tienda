@@ -11,46 +11,13 @@ import type {
   StatusChangeResult,
 } from "@/components/admin/types";
 import { useProducts } from "@/hooks/use-products";
-import type { Product } from "@/types";
-
-const initialOrders: AdminOrder[] = [
-  {
-    id: "ORD-1024",
-    buyer: "Valentina R.",
-    email: "valentina@example.com",
-    items: [
-      {
-        productId: "p-a1",
-        name: "Buzo Frizado",
-        qty: 1,
-        unitPrice: 28700,
-      },
-    ],
-    total: 28700,
-    status: "pending",
-    note: "",
-    createdAt: new Date().toISOString(),
-    paymentMethod: "manual",
-  },
-  {
-    id: "ORD-1025",
-    buyer: "Lucía P.",
-    email: "lucia@example.com",
-    items: [
-      {
-        productId: "p-a2",
-        name: "Remera Básica",
-        qty: 2,
-        unitPrice: 9600,
-      },
-    ],
-    total: 19200,
-    status: "paid",
-    note: "Pago validado por transferencia.",
-    createdAt: new Date().toISOString(),
-    paymentMethod: "manual",
-  },
-];
+import {
+  createManualSale,
+  fetchAdminOrders,
+  updateAdminOrderNote,
+  updateAdminOrderStatus,
+} from "@/lib/admin-orders";
+import { createProduct, updateProduct } from "@/lib/products";
 
 const slugify = (value: string) =>
   value
@@ -62,17 +29,21 @@ const slugify = (value: string) =>
     .replace(/\s+/g, "-");
 
 export function AdminPage() {
-  const { products, loading } = useProducts();
-  const [adminProducts, setAdminProducts] = useState<Product[]>([]);
-  const [orders, setOrders] = useState<AdminOrder[]>(initialOrders);
+  const { products: adminProducts, loading, reload } = useProducts();
+  const [orders, setOrders] = useState<AdminOrder[]>([]);
+
+  const reloadOrders = async () => {
+    const remoteOrders = await fetchAdminOrders();
+    setOrders(remoteOrders);
+  };
 
   useEffect(() => {
-    if (products.length > 0) {
-      setAdminProducts(products);
-    }
-  }, [products]);
+    reloadOrders().catch((error) => {
+      console.error(error);
+    });
+  }, []);
 
-  const onSaveProduct = ({ id, values }: SaveProductInput): SaveProductResult => {
+  const onSaveProduct = async ({ id, values }: SaveProductInput): SaveProductResult => {
     if (!values.name.trim()) {
       return { ok: false, message: "El nombre es obligatorio." };
     }
@@ -88,48 +59,44 @@ export function AdminPage() {
       return { ok: false, message: "El stock es inválido." };
     }
 
-    if (id) {
-      setAdminProducts((current) =>
-        current.map((product) =>
-          product.id === id
-            ? {
-                ...product,
-                name: values.name.trim(),
-                slug: values.slug || slugify(values.name),
-                description: values.description,
-                price,
-                stock,
-                categoryId: values.categoryId,
-                badge: values.badge || undefined,
-                isActive: values.isActive,
-              }
-            : product,
-        ),
-      );
+    try {
+      if (id) {
+        await updateProduct(id, {
+          name: values.name.trim(),
+          slug: values.slug || slugify(values.name),
+          description: values.description,
+          price,
+          currency: "ARS",
+          categoryId: values.categoryId,
+          badge: values.badge || undefined,
+          isActive: values.isActive,
+          stock,
+        });
+        reload();
+        return { ok: true, message: "Producto actualizado con éxito." };
+      }
 
-      return { ok: true, message: "Producto actualizado con éxito." };
+      await createProduct({
+        name: values.name.trim(),
+        slug: values.slug || slugify(values.name),
+        description: values.description,
+        price,
+        currency: "ARS",
+        categoryId: values.categoryId,
+        featured: false,
+        isActive: values.isActive,
+        badge: values.badge || undefined,
+        stock,
+      });
+      reload();
+      return { ok: true, message: "Producto creado con éxito." };
+    } catch (error) {
+      console.error(error);
+      return { ok: false, message: "No se pudo guardar en Firestore." };
     }
-
-    const newProduct: Product = {
-      id: `p-${Date.now()}`,
-      name: values.name.trim(),
-      slug: values.slug || slugify(values.name),
-      description: values.description,
-      price,
-      currency: "ARS",
-      categoryId: values.categoryId,
-      featured: false,
-      isActive: values.isActive,
-      badge: values.badge || undefined,
-      stock,
-      images: [],
-    };
-
-    setAdminProducts((current) => [newProduct, ...current]);
-    return { ok: true, message: "Producto creado con éxito." };
   };
 
-  const onUpdateOrderStatus = (
+  const onUpdateOrderStatus = async (
     orderId: string,
     status: AdminOrderStatus,
   ): StatusChangeResult => {
@@ -138,22 +105,33 @@ export function AdminPage() {
       return { ok: false, message: "No se encontró la orden." };
     }
 
-    setOrders((current) =>
-      current.map((order) =>
-        order.id === orderId ? { ...order, status } : order,
-      ),
-    );
-
-    return { ok: true, message: `Estado actualizado a ${status}.` };
+    try {
+      await updateAdminOrderStatus(orderId, status);
+      setOrders((current) =>
+        current.map((order) =>
+          order.id === orderId ? { ...order, status } : order,
+        ),
+      );
+      return { ok: true, message: `Estado actualizado a ${status}.` };
+    } catch (error) {
+      console.error(error);
+      return { ok: false, message: "No se pudo actualizar el estado." };
+    }
   };
 
-  const onUpdateOrderNote = (orderId: string, note: string) => {
+  const onUpdateOrderNote = async (orderId: string, note: string) => {
     setOrders((current) =>
       current.map((order) => (order.id === orderId ? { ...order, note } : order)),
     );
+
+    try {
+      await updateAdminOrderNote(orderId, note);
+    } catch (error) {
+      console.error(error);
+    }
   };
 
-  const onCreateManualSale = ({
+  const onCreateManualSale = async ({
     buyer,
     email,
     productId,
@@ -177,34 +155,19 @@ export function AdminPage() {
       return { ok: false, message: "No hay stock suficiente." };
     }
 
-    setAdminProducts((current) =>
-      current.map((item) =>
-        item.id === productId ? { ...item, stock: item.stock - qty } : item,
-      ),
-    );
-
-    const newOrder: AdminOrder = {
-      id: `ORD-${Math.floor(Date.now() / 1000)}`,
-      buyer: buyer.trim(),
-      email: email.trim(),
-      items: [
-        {
-          productId: product.id,
-          name: product.name,
-          qty,
-          unitPrice: product.price,
-        },
-      ],
-      total: product.price * qty,
-      status: "paid",
-      note: "Venta manual creada desde admin.",
-      createdAt: new Date().toISOString(),
-      paymentMethod: "manual",
-    };
-
-    setOrders((current) => [newOrder, ...current]);
-
-    return { ok: true, message: "Venta manual registrada." };
+    try {
+      await createManualSale({
+        buyer: buyer.trim(),
+        email: email.trim(),
+        product,
+        qty,
+      });
+      await Promise.all([reloadOrders(), Promise.resolve(reload())]);
+      return { ok: true, message: "Venta manual registrada." };
+    } catch (error) {
+      console.error(error);
+      return { ok: false, message: "No se pudo registrar la venta." };
+    }
   };
 
   return (

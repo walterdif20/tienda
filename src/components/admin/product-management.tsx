@@ -86,13 +86,13 @@ export function ProductManagementSection({
     setProductForm(emptyProductForm());
   };
 
-  const saveProduct = () => {
+  const saveProduct = async () => {
     const normalized: ProductFormValues = {
       ...productForm,
       slug: productForm.slug || slugify(productForm.name),
     };
 
-    const result = onSaveProduct({
+    const result = await onSaveProduct({
       id: editingProductId ?? undefined,
       values: normalized,
     });

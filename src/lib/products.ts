@@ -1,5 +1,6 @@
 import {
   collection,
+  deleteDoc,
   doc,
   getDoc,
   getDocs,
@@ -119,6 +120,23 @@ export const updateProduct = async (
     isActive: input.isActive,
     badge: input.badge ?? null,
   });
+
+  if (input.primaryImageUrl !== undefined) {
+    const imagesRef = collection(productRef, "images");
+    const imagesSnapshot = await getDocs(imagesRef);
+
+    await Promise.all(imagesSnapshot.docs.map((imageDoc) => deleteDoc(imageDoc.ref)));
+
+    const url = input.primaryImageUrl.trim();
+    if (url) {
+      const imageRef = doc(imagesRef);
+      await setDoc(imageRef, {
+        url,
+        alt: input.primaryImageAlt?.trim() || input.name || "Imagen de producto",
+        sortOrder: 1,
+      });
+    }
+  }
 
   if (input.stock !== undefined) {
     await updateDoc(doc(db, "inventory", id), {

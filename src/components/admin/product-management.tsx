@@ -25,6 +25,8 @@ const emptyProductForm = (): ProductFormValues => ({
   stock: "",
   categoryId: categories[0]?.id ?? "",
   badge: "",
+  primaryImageUrl: "",
+  primaryImageAlt: "",
   isActive: true,
 });
 
@@ -77,6 +79,8 @@ export function ProductManagementSection({
       stock: String(product.stock),
       categoryId: product.categoryId,
       badge: product.badge ?? "",
+      primaryImageUrl: product.images[0]?.url ?? "",
+      primaryImageAlt: product.images[0]?.alt ?? "",
       isActive: product.isActive,
     });
   };
@@ -183,6 +187,23 @@ export function ProductManagementSection({
               handleProductField("badge", event.target.value)
             }
             placeholder="Badge (opcional)"
+          />
+
+          <Input
+            value={productForm.primaryImageUrl}
+            onChange={(event) =>
+              handleProductField("primaryImageUrl", event.target.value)
+            }
+            placeholder="URL imagen principal (opcional)"
+            type="url"
+          />
+
+          <Input
+            value={productForm.primaryImageAlt}
+            onChange={(event) =>
+              handleProductField("primaryImageAlt", event.target.value)
+            }
+            placeholder="Texto alternativo imagen (opcional)"
           />
 
           <div className="md:col-span-2">

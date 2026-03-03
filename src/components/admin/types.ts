@@ -29,6 +29,8 @@ export type ProductFormValues = {
   stock: string;
   categoryId: string;
   badge: string;
+  primaryImageUrl: string;
+  primaryImageAlt: string;
   isActive: boolean;
 };
 

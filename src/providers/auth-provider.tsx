@@ -8,7 +8,8 @@ import {
   signInWithPopup,
   signOut,
 } from "firebase/auth";
-import { auth } from "@/lib/firebase";
+import { doc, serverTimestamp, setDoc } from "firebase/firestore";
+import { auth, db } from "@/lib/firebase";
 
 interface AuthContextValue {
   user: User | null;
@@ -22,6 +23,21 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
+const upsertUserProfile = async (user: User, isAdmin: boolean) => {
+  await setDoc(
+    doc(db, "users", user.uid),
+    {
+      email: user.email ?? "",
+      displayName: user.displayName ?? user.email ?? "Cliente",
+      whatsappNumber: user.phoneNumber ?? "",
+      role: isAdmin ? "admin" : "customer",
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    },
+    { merge: true },
+  );
+};
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -30,14 +46,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (nextUser) => {
       setUser(nextUser);
+
       if (nextUser) {
-        const token = await nextUser.getIdTokenResult();
-        setIsAdmin(Boolean(token.claims.role === "admin"));
+        const token = await nextUser.getIdTokenResult(true);
+        const admin = Boolean(token.claims.role === "admin");
+        setIsAdmin(admin);
+        await upsertUserProfile(nextUser, admin);
       } else {
         setIsAdmin(false);
       }
+
       setLoading(false);
     });
+
     return () => unsub();
   }, []);
 
@@ -60,7 +81,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         await signOut(auth);
       },
     }),
-    [user, isAdmin],
+    [user, isAdmin, loading],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
@@ -71,5 +92,6 @@ export const useAuth = () => {
   if (!context) {
     throw new Error("useAuth must be used within AuthProvider");
   }
+
   return context;
 };

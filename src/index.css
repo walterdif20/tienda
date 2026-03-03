@@ -1,9 +1,29 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:wght@400;500;600;700&family=Montserrat:wght@400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap");
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --store-font: "Inter", system-ui, sans-serif;
+  --store-primary: #0f172a;
+  --store-secondary: #e2e8f0;
+}
+
 body {
-  font-family: "Inter", system-ui, sans-serif;
+  font-family: var(--store-font);
+}
+
+.store-primary-text {
+  color: var(--store-primary);
+}
+
+.store-primary-bg {
+  background-color: var(--store-primary);
+}
+
+.store-secondary-bg {
+  background-color: var(--store-secondary);
 }
 
 .bg-grid {

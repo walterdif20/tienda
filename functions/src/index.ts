@@ -1,11 +1,13 @@
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { onRequest } from "firebase-functions/v2/https";
 import { initializeApp } from "firebase-admin/app";
+import { getAuth } from "firebase-admin/auth";
 import { getFirestore, FieldValue } from "firebase-admin/firestore";
 import { MercadoPagoConfig, Preference, Payment } from "mercadopago";
 
 initializeApp();
 const db = getFirestore();
+const adminAuth = getAuth();
 
 const mpClient = new MercadoPagoConfig({
   accessToken: process.env.MP_ACCESS_TOKEN ?? "",
@@ -184,4 +186,36 @@ export const mpWebhook = onRequest(async (request, response) => {
     console.error(error);
     response.status(500).send("Webhook error");
   }
+});
+
+export const setUserAdminRole = onCall(async (request) => {
+  if (!request.auth || request.auth.token.role !== "admin") {
+    throw new HttpsError(
+      "permission-denied",
+      "Solo un admin puede realizar esta acción",
+    );
+  }
+
+  const uid = String(request.data?.uid ?? "").trim();
+  if (!uid) {
+    throw new HttpsError("invalid-argument", "Falta el uid del usuario");
+  }
+
+  const userRecord = await adminAuth.getUser(uid);
+  const existingClaims = userRecord.customClaims ?? {};
+
+  await adminAuth.setCustomUserClaims(uid, {
+    ...existingClaims,
+    role: "admin",
+  });
+
+  await db.collection("users").doc(uid).set(
+    {
+      role: "admin",
+      updatedAt: FieldValue.serverTimestamp(),
+    },
+    { merge: true },
+  );
+
+  return { ok: true };
 });

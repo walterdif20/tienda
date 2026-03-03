@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
+import { Navigate } from "react-router-dom";
 import { OrderManagementSection } from "@/components/admin/order-management";
 import { ProductManagementSection } from "@/components/admin/product-management";
+import { StoreSettingsManagementSection } from "@/components/admin/store-settings-management";
+import { UserManagementSection } from "@/components/admin/user-management";
 import type {
   AdminOrder,
   AdminOrderStatus,
@@ -14,12 +17,23 @@ import type {
 } from "@/components/admin/types";
 import { useProducts } from "@/hooks/use-products";
 import {
+  fetchAdminUsers,
+  makeUserAdmin,
+  type AdminUser,
+} from "@/lib/admin-users";
+import {
   createManualSale,
   fetchAdminOrders,
   updateAdminOrderNote,
   updateAdminOrderStatus,
 } from "@/lib/admin-orders";
-import { createProduct, deleteProduct, updateProduct, uploadProductImageFile } from "@/lib/products";
+import {
+  createProduct,
+  deleteProduct,
+  updateProduct,
+  uploadProductImageFile,
+} from "@/lib/products";
+import { useAuth } from "@/providers/auth-provider";
 
 const slugify = (value: string) =>
   value
@@ -31,24 +45,60 @@ const slugify = (value: string) =>
     .replace(/\s+/g, "-");
 
 export function AdminPage() {
+  const { isAdmin, loading: authLoading } = useAuth();
   const { products: adminProducts, loading, reload } = useProducts();
   const [orders, setOrders] = useState<AdminOrder[]>([]);
-  const [activeSection, setActiveSection] = useState<"products" | "sales">(
-    "products",
-  );
+  const [users, setUsers] = useState<AdminUser[]>([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
+  const [activeSection, setActiveSection] = useState<
+    "products" | "sales" | "settings" | "users"
+  >("products");
 
   const reloadOrders = async () => {
     const remoteOrders = await fetchAdminOrders();
     setOrders(remoteOrders);
   };
 
+  const reloadUsers = async () => {
+    setLoadingUsers(true);
+    try {
+      const remoteUsers = await fetchAdminUsers();
+      setUsers(remoteUsers);
+    } finally {
+      setLoadingUsers(false);
+    }
+  };
+
   useEffect(() => {
+    if (!isAdmin) {
+      return;
+    }
+
     reloadOrders().catch((error) => {
       console.error(error);
     });
-  }, []);
 
-  const onSaveProduct = async ({ id, values }: SaveProductInput): SaveProductResult => {
+    reloadUsers().catch((error) => {
+      console.error(error);
+    });
+  }, [isAdmin]);
+
+  if (authLoading) {
+    return (
+      <section className="mx-auto max-w-5xl px-4 py-12">
+        <p className="text-sm text-slate-500">Validando permisos...</p>
+      </section>
+    );
+  }
+
+  if (!isAdmin) {
+    return <Navigate to="/" replace />;
+  }
+
+  const onSaveProduct = async ({
+    id,
+    values,
+  }: SaveProductInput): SaveProductResult => {
     if (!values.name.trim()) {
       return { ok: false, message: "El nombre es obligatorio." };
     }
@@ -115,15 +165,25 @@ export function AdminPage() {
 
   const onUploadProductImage = async (file: File): UploadProductImageResult => {
     if (!file.type.startsWith("image/")) {
-      return { ok: false, message: "El archivo seleccionado no es una imagen." };
+      return {
+        ok: false,
+        message: "El archivo seleccionado no es una imagen.",
+      };
     }
 
     try {
       const uploaded = await uploadProductImageFile(file);
-      return { ok: true, url: uploaded.url, suggestedAlt: uploaded.suggestedAlt };
+      return {
+        ok: true,
+        url: uploaded.url,
+        suggestedAlt: uploaded.suggestedAlt,
+      };
     } catch (error) {
       console.error(error);
-      return { ok: false, message: "No se pudo subir la imagen a Firebase Storage." };
+      return {
+        ok: false,
+        message: "No se pudo subir la imagen a Firebase Storage.",
+      };
     }
   };
 
@@ -163,7 +223,9 @@ export function AdminPage() {
 
   const onUpdateOrderNote = async (orderId: string, note: string) => {
     setOrders((current) =>
-      current.map((order) => (order.id === orderId ? { ...order, note } : order)),
+      current.map((order) =>
+        order.id === orderId ? { ...order, note } : order,
+      ),
     );
 
     try {
@@ -212,12 +274,18 @@ export function AdminPage() {
     }
   };
 
+  const onMakeUserAdmin = async (uid: string) => {
+    await makeUserAdmin(uid);
+    await reloadUsers();
+  };
+
   return (
     <section className="mx-auto max-w-5xl space-y-10 px-4 py-12">
       <div>
         <h1 className="text-3xl font-semibold">Panel admin</h1>
         <p className="mt-2 text-sm text-slate-500">
-          Elegí un área para trabajar por separado catálogo/stock o ventas/órdenes.
+          Elegí un área para trabajar productos, ventas, configuración o
+          cuentas.
         </p>
       </div>
 
@@ -244,6 +312,28 @@ export function AdminPage() {
         >
           Gestión de órdenes y ventas
         </button>
+        <button
+          type="button"
+          className={`rounded-full px-4 py-2 text-sm font-medium transition ${
+            activeSection === "settings"
+              ? "bg-slate-900 text-white"
+              : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+          }`}
+          onClick={() => setActiveSection("settings")}
+        >
+          Configuración de la tienda
+        </button>
+        <button
+          type="button"
+          className={`rounded-full px-4 py-2 text-sm font-medium transition ${
+            activeSection === "users"
+              ? "bg-slate-900 text-white"
+              : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+          }`}
+          onClick={() => setActiveSection("users")}
+        >
+          Cuentas
+        </button>
       </div>
 
       {activeSection === "products" ? (
@@ -254,13 +344,22 @@ export function AdminPage() {
           onDeleteProduct={onDeleteProduct}
           onUploadProductImage={onUploadProductImage}
         />
-      ) : (
+      ) : activeSection === "sales" ? (
         <OrderManagementSection
           orders={orders}
           products={adminProducts}
           onUpdateOrderStatus={onUpdateOrderStatus}
           onUpdateOrderNote={onUpdateOrderNote}
           onCreateManualSale={onCreateManualSale}
+        />
+      ) : activeSection === "settings" ? (
+        <StoreSettingsManagementSection />
+      ) : (
+        <UserManagementSection
+          users={users}
+          loading={loadingUsers}
+          onReload={reloadUsers}
+          onMakeAdmin={onMakeUserAdmin}
         />
       )}
     </section>

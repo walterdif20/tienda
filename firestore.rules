@@ -1,50 +1,77 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdminFromUserDoc() {
+      return isSignedIn()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && (
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'
+          || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true
+        );
+    }
+
     match /categories/{categoryId} {
       allow read: if resource.data.isActive == true;
-      allow write: if request.auth != null && request.auth.token.role == 'admin';
+      allow write: if isAdminFromUserDoc();
     }
 
     match /products/{productId} {
       allow read: if resource.data.isActive == true;
-      allow write: if request.auth != null && request.auth.token.role == 'admin';
+      allow write: if isAdminFromUserDoc();
 
       match /images/{imageId} {
         allow read: if true;
-        allow write: if request.auth != null && request.auth.token.role == 'admin';
+        allow write: if isAdminFromUserDoc();
       }
     }
 
     match /inventory/{productId} {
-      allow read: if request.auth != null && request.auth.token.role == 'admin';
-      allow write: if request.auth != null && request.auth.token.role == 'admin';
+      allow read: if isAdminFromUserDoc();
+      allow write: if isAdminFromUserDoc();
     }
 
     match /orders/{orderId} {
       allow create: if true;
       allow read: if (request.auth != null && request.auth.uid == resource.data.userId)
         || (request.query.token != null && request.query.token == resource.data.publicTrackingToken)
-        || (request.auth != null && request.auth.token.role == 'admin');
-      allow update: if request.auth != null && request.auth.token.role == 'admin';
+        || isAdminFromUserDoc();
+      allow update: if isAdminFromUserDoc();
 
       match /items/{itemId} {
         allow read: if (request.auth != null && request.auth.uid == get(/databases/$(database)/documents/orders/$(orderId)).data.userId)
           || (request.query.token != null && request.query.token == get(/databases/$(database)/documents/orders/$(orderId)).data.publicTrackingToken)
-          || (request.auth != null && request.auth.token.role == 'admin');
-        allow write: if request.auth != null && request.auth.token.role == 'admin';
+          || isAdminFromUserDoc();
+        allow write: if isAdminFromUserDoc();
       }
     }
 
     match /storeSettings/{docId} {
       allow read: if true;
-      allow write: if request.auth != null && request.auth.token.role == 'admin';
+      allow write: if isAdminFromUserDoc();
     }
 
     match /users/{userId} {
       allow read: if request.auth != null
-        && (request.auth.uid == userId || request.auth.token.role == 'admin');
-      allow write: if request.auth != null && request.auth.uid == userId;
+        && (request.auth.uid == userId || isAdminFromUserDoc());
+
+      allow create: if isSignedIn()
+        && request.auth.uid == userId
+        && !request.resource.data.keys().hasAny(['role', 'isAdmin']);
+
+      allow update: if isSignedIn() && (
+        isAdminFromUserDoc()
+        || (
+          request.auth.uid == userId
+          && request.resource.data.role == resource.data.role
+          && request.resource.data.isAdmin == resource.data.isAdmin
+        )
+      );
+
+      allow delete: if false;
     }
   }
 }

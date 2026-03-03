@@ -1,13 +1,11 @@
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { onRequest } from "firebase-functions/v2/https";
 import { initializeApp } from "firebase-admin/app";
-import { getAuth } from "firebase-admin/auth";
 import { getFirestore, FieldValue } from "firebase-admin/firestore";
 import { MercadoPagoConfig, Preference, Payment } from "mercadopago";
 
 initializeApp();
 const db = getFirestore();
-const adminAuth = getAuth();
 
 const mpClient = new MercadoPagoConfig({
   accessToken: process.env.MP_ACCESS_TOKEN ?? "",
@@ -189,7 +187,15 @@ export const mpWebhook = onRequest(async (request, response) => {
 });
 
 export const setUserAdminRole = onCall(async (request) => {
-  if (!request.auth || request.auth.token.role !== "admin") {
+  if (!request.auth?.uid) {
+    throw new HttpsError("unauthenticated", "Tenés que iniciar sesión");
+  }
+
+  const callerUserSnapshot = await db.collection("users").doc(request.auth.uid).get();
+  const callerData = callerUserSnapshot.data() ?? {};
+  const callerIsAdmin = callerData.role === "admin" || callerData.isAdmin === true;
+
+  if (!callerIsAdmin) {
     throw new HttpsError(
       "permission-denied",
       "Solo un admin puede realizar esta acción",
@@ -201,17 +207,10 @@ export const setUserAdminRole = onCall(async (request) => {
     throw new HttpsError("invalid-argument", "Falta el uid del usuario");
   }
 
-  const userRecord = await adminAuth.getUser(uid);
-  const existingClaims = userRecord.customClaims ?? {};
-
-  await adminAuth.setCustomUserClaims(uid, {
-    ...existingClaims,
-    role: "admin",
-  });
-
   await db.collection("users").doc(uid).set(
     {
       role: "admin",
+      isAdmin: true,
       updatedAt: FieldValue.serverTimestamp(),
     },
     { merge: true },

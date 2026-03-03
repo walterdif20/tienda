@@ -24,6 +24,7 @@ export default function App() {
         <Route path="/track" element={<TrackPage />} />
         <Route path="/account/orders" element={<AccountOrdersPage />} />
         <Route path="/registro" element={<RegisterPage />} />
+        <Route path="/login" element={<RegisterPage />} />
         <Route path="/admin" element={<AdminPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />

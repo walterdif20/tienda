@@ -3,6 +3,7 @@ import { Link, NavLink } from "react-router-dom";
 import { useStoreSettings } from "@/hooks/use-store-settings";
 import { useAuth } from "@/providers/auth-provider";
 import { useCartStore } from "@/store/cartStore";
+import { Button } from "@/components/ui/button";
 
 const baseLinks = [
   { to: "/", label: "Inicio" },
@@ -12,7 +13,7 @@ const baseLinks = [
 
 export function SiteHeader() {
   const { settings } = useStoreSettings();
-  const { isAdmin } = useAuth();
+  const { isAdmin, user, signOutUser } = useAuth();
   const count = useCartStore((state) =>
     state.items.reduce((total, item) => total + item.qty, 0),
   );
@@ -54,18 +55,33 @@ export function SiteHeader() {
           ))}
         </nav>
 
-        <Link
-          to="/cart"
-          className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:text-slate-900"
-        >
-          <ShoppingBag className="h-4 w-4" />
-          Carrito
-          {count > 0 && (
-            <span className="store-primary-bg rounded-full px-2 py-0.5 text-xs text-white">
-              {count}
-            </span>
+        <div className="flex items-center gap-2">
+          {!user ? (
+            <Link
+              to="/registro"
+              className="inline-flex items-center rounded-full border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:text-slate-900"
+            >
+              Login / Registro
+            </Link>
+          ) : (
+            <Button variant="ghost" className="px-3" onClick={() => void signOutUser()}>
+              Salir
+            </Button>
           )}
-        </Link>
+
+          <Link
+            to="/cart"
+            className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:text-slate-900"
+          >
+            <ShoppingBag className="h-4 w-4" />
+            Carrito
+            {count > 0 && (
+              <span className="store-primary-bg rounded-full px-2 py-0.5 text-xs text-white">
+                {count}
+              </span>
+            )}
+          </Link>
+        </div>
       </div>
     </header>
   );

@@ -7,8 +7,9 @@ import {
   signInWithEmailAndPassword,
   signInWithPopup,
   signOut,
+  updateProfile,
 } from "firebase/auth";
-import { doc, serverTimestamp, setDoc } from "firebase/firestore";
+import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 
 interface AuthContextValue {
@@ -16,21 +17,39 @@ interface AuthContextValue {
   isAdmin: boolean;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string) => Promise<void>;
+  signUp: (input: {
+    email: string;
+    password: string;
+    displayName?: string;
+    whatsappNumber?: string;
+  }) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
   signOutUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
-const upsertUserProfile = async (user: User, isAdmin: boolean) => {
+const getIsAdminFromUserDoc = async (uid: string) => {
+  const userSnapshot = await getDoc(doc(db, "users", uid));
+  if (!userSnapshot.exists()) {
+    return false;
+  }
+
+  const data = userSnapshot.data() as Record<string, unknown>;
+  return data.role === "admin" || data.isAdmin === true;
+};
+
+const upsertUserProfile = async (
+  user: User,
+  extras?: { displayName?: string; whatsappNumber?: string },
+) => {
   await setDoc(
     doc(db, "users", user.uid),
     {
       email: user.email ?? "",
-      displayName: user.displayName ?? user.email ?? "Cliente",
-      whatsappNumber: user.phoneNumber ?? "",
-      role: isAdmin ? "admin" : "customer",
+      displayName:
+        extras?.displayName ?? user.displayName ?? user.email ?? "Cliente",
+      whatsappNumber: extras?.whatsappNumber ?? user.phoneNumber ?? "",
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     },
@@ -48,10 +67,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(nextUser);
 
       if (nextUser) {
-        const token = await nextUser.getIdTokenResult(true);
-        const admin = Boolean(token.claims.role === "admin");
+        await upsertUserProfile(nextUser);
+        const admin = await getIsAdminFromUserDoc(nextUser.uid);
         setIsAdmin(admin);
-        await upsertUserProfile(nextUser, admin);
       } else {
         setIsAdmin(false);
       }
@@ -70,8 +88,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       signIn: async (email: string, password: string) => {
         await signInWithEmailAndPassword(auth, email, password);
       },
-      signUp: async (email: string, password: string) => {
-        await createUserWithEmailAndPassword(auth, email, password);
+      signUp: async ({
+        email,
+        password,
+        displayName,
+        whatsappNumber,
+      }: {
+        email: string;
+        password: string;
+        displayName?: string;
+        whatsappNumber?: string;
+      }) => {
+        const credential = await createUserWithEmailAndPassword(
+          auth,
+          email,
+          password,
+        );
+
+        if (displayName) {
+          await updateProfile(credential.user, { displayName });
+        }
+
+        await upsertUserProfile(credential.user, {
+          displayName,
+          whatsappNumber,
+        });
       },
       signInWithGoogle: async () => {
         const provider = new GoogleAuthProvider();

@@ -60,6 +60,14 @@ export function AdminPage() {
       return { ok: false, message: "El stock es inválido." };
     }
 
+    if (values.primaryImageUrl.trim()) {
+      try {
+        new URL(values.primaryImageUrl.trim());
+      } catch {
+        return { ok: false, message: "La URL de la imagen no es válida." };
+      }
+    }
+
     try {
       if (id) {
         await updateProduct(id, {

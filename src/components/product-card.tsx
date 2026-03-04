@@ -3,6 +3,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatPrice } from "@/lib/format";
+import { buildProductAvailabilityWhatsAppLink } from "@/lib/whatsapp";
+import { useStoreSettings } from "@/hooks/use-store-settings";
 import { useCartStore } from "@/store/cartStore";
 import type { Product } from "@/types";
 
@@ -12,6 +14,7 @@ interface ProductCardProps {
 
 export function ProductCard({ product }: ProductCardProps) {
   const addItem = useCartStore((state) => state.addItem);
+  const { settings } = useStoreSettings();
 
   return (
     <Card className="group overflow-hidden rounded-2xl border-slate-200 shadow-none transition hover:border-slate-300">
@@ -39,18 +42,28 @@ export function ProductCard({ product }: ProductCardProps) {
           <p className="line-clamp-2 text-sm text-slate-500">{product.description}</p>
         </div>
 
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-3">
           <span className="text-lg font-semibold text-slate-900">
             {formatPrice(product.price)}
           </span>
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => addItem(product, 1)}
-            disabled={product.stock === 0}
-          >
-            {product.stock === 0 ? "Sin stock" : "Agregar"}
-          </Button>
+          {product.stock === 0 ? (
+            <Button asChild variant="outline" size="sm">
+              <a
+                href={buildProductAvailabilityWhatsAppLink(
+                  settings.whatsappNumber,
+                  product.name,
+                )}
+                target="_blank"
+                rel="noreferrer"
+              >
+                Consultar WhatsApp
+              </a>
+            </Button>
+          ) : (
+            <Button variant="secondary" size="sm" onClick={() => addItem(product, 1)}>
+              Agregar
+            </Button>
+          )}
         </div>
       </CardContent>
     </Card>

@@ -2,13 +2,16 @@ import { Link, useParams } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatPrice } from "@/lib/format";
+import { buildProductAvailabilityWhatsAppLink } from "@/lib/whatsapp";
 import { useCartStore } from "@/store/cartStore";
 import { useProduct } from "@/hooks/use-product";
+import { useStoreSettings } from "@/hooks/use-store-settings";
 
 export function ProductDetailPage() {
   const { slug } = useParams();
   const addItem = useCartStore((state) => state.addItem);
   const { product, loading } = useProduct(slug);
+  const { settings } = useStoreSettings();
 
   if (loading) {
     return (
@@ -64,13 +67,24 @@ export function ProductDetailPage() {
           </div>
 
           <div className="flex flex-wrap gap-3">
-            <Button
-              size="lg"
-              onClick={() => addItem(product, 1)}
-              disabled={product.stock === 0}
-            >
-              {product.stock === 0 ? "Sin stock" : "Agregar al carrito"}
-            </Button>
+            {product.stock === 0 ? (
+              <Button asChild size="lg">
+                <a
+                  href={buildProductAvailabilityWhatsAppLink(
+                    settings.whatsappNumber,
+                    product.name,
+                  )}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Consultar WhatsApp
+                </a>
+              </Button>
+            ) : (
+              <Button size="lg" onClick={() => addItem(product, 1)}>
+                Agregar al carrito
+              </Button>
+            )}
             <Button asChild variant="outline" size="lg">
               <Link to="/cart">Ir al carrito</Link>
             </Button>

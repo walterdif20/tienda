@@ -1,7 +1,6 @@
 import { Link } from "react-router-dom";
 import { useStoreSettings } from "@/hooks/use-store-settings";
-
-const normalizePhoneForLink = (value: string) => value.replace(/[^\d]/g, "");
+import { normalizePhoneForWhatsAppLink } from "@/lib/whatsapp";
 
 export function SiteFooter() {
   const { settings } = useStoreSettings();
@@ -45,7 +44,7 @@ export function SiteFooter() {
           <p className="mt-2 text-sm text-slate-500">hola@tiendaminimal.com</p>
           <p className="text-sm text-slate-500">{settings.whatsappNumber}</p>
           <a
-            href={`https://wa.me/${normalizePhoneForLink(settings.whatsappNumber)}`}
+            href={`https://wa.me/${normalizePhoneForWhatsAppLink(settings.whatsappNumber)}`}
             target="_blank"
             rel="noreferrer"
             className="store-primary-text mt-2 inline-flex text-sm font-medium hover:underline"

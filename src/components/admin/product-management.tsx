@@ -29,8 +29,7 @@ const emptyProductForm = (): ProductFormValues => ({
   stock: "",
   categoryId: categories[0]?.id ?? "",
   badge: "",
-  primaryImageUrl: "",
-  primaryImageAlt: "",
+  images: [],
   isActive: true,
 });
 
@@ -72,10 +71,26 @@ export function ProductManagementSection({
   }, [products, searchTerm]);
 
   const handleProductField = (
-    field: keyof ProductFormValues,
+    field: Exclude<keyof ProductFormValues, "images">,
     value: string,
   ) => {
     setProductForm((current) => ({ ...current, [field]: value }));
+  };
+
+  const handleImageAlt = (index: number, alt: string) => {
+    setProductForm((current) => ({
+      ...current,
+      images: current.images.map((image, imageIndex) =>
+        imageIndex === index ? { ...image, alt } : image,
+      ),
+    }));
+  };
+
+  const removeImage = (index: number) => {
+    setProductForm((current) => ({
+      ...current,
+      images: current.images.filter((_, imageIndex) => imageIndex !== index),
+    }));
   };
 
   const startEditingProduct = (product: AdminProduct) => {
@@ -89,8 +104,10 @@ export function ProductManagementSection({
       stock: String(product.stock),
       categoryId: product.categoryId,
       badge: product.badge ?? "",
-      primaryImageUrl: product.images[0]?.url ?? "",
-      primaryImageAlt: product.images[0]?.alt ?? "",
+      images: product.images.map((image) => ({
+        url: image.url,
+        alt: image.alt,
+      })),
       isActive: product.isActive,
     });
   };
@@ -120,9 +137,13 @@ export function ProductManagementSection({
 
     setProductForm((current) => ({
       ...current,
-      primaryImageUrl: uploadResult.url ?? "",
-      primaryImageAlt:
-        current.primaryImageAlt || uploadResult.suggestedAlt || current.name,
+      images: [
+        ...current.images,
+        {
+          url: uploadResult.url ?? "",
+          alt: uploadResult.suggestedAlt || current.name,
+        },
+      ],
     }));
     setFeedback("Imagen cargada correctamente.");
     setUploadingImage(false);
@@ -138,6 +159,12 @@ export function ProductManagementSection({
     const normalized: ProductFormValues = {
       ...productForm,
       slug: productForm.slug || slugify(productForm.name),
+      images: productForm.images
+        .map((image) => ({
+          url: image.url.trim(),
+          alt: image.alt.trim() || productForm.name,
+        }))
+        .filter((image) => Boolean(image.url)),
     };
 
     try {
@@ -267,7 +294,7 @@ export function ProductManagementSection({
           />
 
           <div className="rounded-md border border-slate-200 p-3 md:col-span-2">
-            <p className="text-sm font-medium text-slate-700">Imagen principal</p>
+            <p className="text-sm font-medium text-slate-700">Imágenes</p>
             <div className="mt-2 flex flex-wrap items-center gap-2">
               <input
                 ref={fileInputRef}
@@ -282,42 +309,43 @@ export function ProductManagementSection({
                 onClick={() => fileInputRef.current?.click()}
                 disabled={uploadingImage}
               >
-                {uploadingImage ? "Subiendo..." : "Cargar imagen"}
+                {uploadingImage ? "Subiendo..." : "Agregar imagen"}
               </Button>
-
-              {productForm.primaryImageUrl && (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  onClick={() => {
-                    handleProductField("primaryImageUrl", "");
-                    handleProductField("primaryImageAlt", "");
-                  }}
-                >
-                  Quitar imagen
-                </Button>
-              )}
             </div>
 
-            <Input
-              value={productForm.primaryImageUrl}
-              onChange={(event) =>
-                handleProductField("primaryImageUrl", event.target.value)
-              }
-              placeholder="URL de imagen generada automáticamente"
-              readOnly
-              className="mt-3"
-            />
+            {productForm.images.length > 0 ? (
+              <div className="mt-3 space-y-3">
+                {productForm.images.map((image, index) => (
+                  <div
+                    key={`${image.url}-${index}`}
+                    className="rounded-md border border-slate-200 p-2"
+                  >
+                    <p className="truncate text-xs text-slate-500">{image.url}</p>
+                    <div className="mt-2 flex flex-col gap-2 md:flex-row">
+                      <Input
+                        value={image.alt}
+                        onChange={(event) =>
+                          handleImageAlt(index, event.target.value)
+                        }
+                        placeholder="Texto alternativo"
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        onClick={() => removeImage(index)}
+                      >
+                        Quitar
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="mt-3 text-sm text-slate-500">
+                Este producto todavía no tiene imágenes cargadas.
+              </p>
+            )}
           </div>
-
-          <Input
-            value={productForm.primaryImageAlt}
-            onChange={(event) =>
-              handleProductField("primaryImageAlt", event.target.value)
-            }
-            placeholder="Texto alternativo imagen (opcional)"
-            className="md:col-span-2"
-          />
 
           <div className="md:col-span-2">
             <Input

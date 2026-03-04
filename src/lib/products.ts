@@ -11,10 +11,27 @@ import {
   updateDoc,
 } from "firebase/firestore";
 import { db, storage } from "@/lib/firebase";
-import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
+import {
+  deleteObject,
+  getDownloadURL,
+  ref,
+  uploadBytes,
+} from "firebase/storage";
 import type { Product, ProductImage, ProductInput } from "@/types";
 
 const productsCollection = collection(db, "products");
+
+const deleteImageFromStorageIfManaged = async (url: string) => {
+  const imageUrl = url.trim();
+  if (!imageUrl) return;
+
+  try {
+    const imageRef = ref(storage, imageUrl);
+    await deleteObject(imageRef);
+  } catch {
+    // Ignoramos URLs externas o archivos ya eliminados en Storage.
+  }
+};
 
 export const fetchProducts = async (): Promise<Product[]> => {
   const snapshot = await getDocs(
@@ -138,6 +155,13 @@ export const updateProduct = async (
     const imagesRef = collection(productRef, "images");
     const imagesSnapshot = await getDocs(imagesRef);
 
+    await Promise.all(
+      imagesSnapshot.docs.map((imageDoc) => {
+        const imageData = imageDoc.data() as Omit<ProductImage, "id">;
+        return deleteImageFromStorageIfManaged(imageData.url);
+      }),
+    );
+
     await Promise.all(imagesSnapshot.docs.map((imageDoc) => deleteDoc(imageDoc.ref)));
 
     const inputImages = input.images?.filter((image) => image.url.trim()) ?? [];
@@ -178,6 +202,13 @@ export const updateProduct = async (
 export const deleteProduct = async (id: string) => {
   const productRef = doc(db, "products", id);
   const imagesSnapshot = await getDocs(collection(productRef, "images"));
+
+  await Promise.all(
+    imagesSnapshot.docs.map((imageDoc) => {
+      const imageData = imageDoc.data() as Omit<ProductImage, "id">;
+      return deleteImageFromStorageIfManaged(imageData.url);
+    }),
+  );
 
   await Promise.all(imagesSnapshot.docs.map((imageDoc) => deleteDoc(imageDoc.ref)));
   await deleteDoc(doc(db, "inventory", id));

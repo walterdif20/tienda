@@ -88,12 +88,20 @@ export const createProduct = async (input: ProductInput) => {
     createdAt: Timestamp.now(),
   });
 
-  if (input.primaryImageUrl) {
+  const inputImages = input.images?.filter((image) => image.url.trim()) ?? [];
+  const imagesToSave =
+    inputImages.length > 0
+      ? inputImages
+      : input.primaryImageUrl
+        ? [{ url: input.primaryImageUrl, alt: input.primaryImageAlt ?? input.name }]
+        : [];
+
+  for (const [index, image] of imagesToSave.entries()) {
     const imageRef = doc(collection(productRef, "images"));
     await setDoc(imageRef, {
-      url: input.primaryImageUrl,
-      alt: input.primaryImageAlt ?? input.name,
-      sortOrder: 1,
+      url: image.url.trim(),
+      alt: image.alt?.trim() || input.name,
+      sortOrder: index + 1,
     });
   }
 
@@ -126,19 +134,34 @@ export const updateProduct = async (
     await updateDoc(productRef, productUpdate);
   }
 
-  if (input.primaryImageUrl !== undefined) {
+  if (input.images !== undefined || input.primaryImageUrl !== undefined) {
     const imagesRef = collection(productRef, "images");
     const imagesSnapshot = await getDocs(imagesRef);
 
     await Promise.all(imagesSnapshot.docs.map((imageDoc) => deleteDoc(imageDoc.ref)));
 
-    const url = input.primaryImageUrl.trim();
-    if (url) {
+    const inputImages = input.images?.filter((image) => image.url.trim()) ?? [];
+    const imagesToSave =
+      inputImages.length > 0
+        ? inputImages
+        : input.primaryImageUrl?.trim()
+          ? [
+              {
+                url: input.primaryImageUrl.trim(),
+                alt:
+                  input.primaryImageAlt?.trim() ||
+                  input.name ||
+                  "Imagen de producto",
+              },
+            ]
+          : [];
+
+    for (const [index, image] of imagesToSave.entries()) {
       const imageRef = doc(imagesRef);
       await setDoc(imageRef, {
-        url,
-        alt: input.primaryImageAlt?.trim() || input.name || "Imagen de producto",
-        sortOrder: 1,
+        url: image.url.trim(),
+        alt: image.alt?.trim() || input.name || "Imagen de producto",
+        sortOrder: index + 1,
       });
     }
   }

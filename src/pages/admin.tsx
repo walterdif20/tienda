@@ -114,11 +114,11 @@ export function AdminPage() {
       return { ok: false, message: "El stock es inválido." };
     }
 
-    if (values.primaryImageUrl.trim()) {
+    for (const image of values.images) {
       try {
-        new URL(values.primaryImageUrl.trim());
+        new URL(image.url.trim());
       } catch {
-        return { ok: false, message: "La URL de la imagen no es válida." };
+        return { ok: false, message: "Una URL de imagen no es válida." };
       }
     }
 
@@ -134,8 +134,10 @@ export function AdminPage() {
           badge: values.badge || undefined,
           isActive: values.isActive,
           stock,
-          primaryImageUrl: values.primaryImageUrl.trim() || undefined,
-          primaryImageAlt: values.primaryImageAlt.trim() || undefined,
+          images: values.images.map((image) => ({
+            url: image.url.trim(),
+            alt: image.alt.trim() || values.name.trim(),
+          })),
         });
         reload();
         return { ok: true, message: "Producto actualizado con éxito." };
@@ -152,8 +154,10 @@ export function AdminPage() {
         isActive: values.isActive,
         badge: values.badge || undefined,
         stock,
-        primaryImageUrl: values.primaryImageUrl.trim() || undefined,
-        primaryImageAlt: values.primaryImageAlt.trim() || undefined,
+        images: values.images.map((image) => ({
+          url: image.url.trim(),
+          alt: image.alt.trim() || values.name.trim(),
+        })),
       });
       reload();
       return { ok: true, message: "Producto creado con éxito." };

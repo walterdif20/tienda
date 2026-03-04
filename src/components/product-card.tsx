@@ -1,3 +1,4 @@
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -12,18 +13,52 @@ interface ProductCardProps {
   product: Product;
 }
 
+const IMAGE_ROTATION_MS = 2800;
+
 export function ProductCard({ product }: ProductCardProps) {
   const addItem = useCartStore((state) => state.addItem);
   const { settings } = useStoreSettings();
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
+
+  const images = useMemo(() => product.images ?? [], [product.images]);
+  const activeImage = images[activeImageIndex] ?? images[0];
+
+  useEffect(() => {
+    setActiveImageIndex(0);
+  }, [product.id]);
+
+  useEffect(() => {
+    if (images.length <= 1) {
+      return;
+    }
+
+    const intervalId = window.setInterval(() => {
+      setActiveImageIndex((current) => (current + 1) % images.length);
+    }, IMAGE_ROTATION_MS);
+
+    return () => window.clearInterval(intervalId);
+  }, [images.length]);
 
   return (
     <Card className="group overflow-hidden rounded-2xl border-slate-200 shadow-none transition hover:border-slate-300">
       <div className="relative overflow-hidden">
         <img
-          src={product.images[0]?.url}
-          alt={product.images[0]?.alt ?? product.name}
-          className="h-56 w-full object-cover transition duration-300 group-hover:scale-105"
+          src={activeImage?.url}
+          alt={activeImage?.alt ?? product.name}
+          className="h-56 w-full object-cover transition duration-500 group-hover:scale-105"
         />
+        {images.length > 1 && (
+          <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 gap-1 rounded-full bg-white/80 px-2 py-1">
+            {images.map((image, index) => (
+              <span
+                key={image.id}
+                className={`h-1.5 w-1.5 rounded-full transition ${
+                  index === activeImageIndex ? "bg-slate-900" : "bg-slate-300"
+                }`}
+              />
+            ))}
+          </div>
+        )}
         {product.badge && (
           <Badge className="absolute left-3 top-3 bg-white text-slate-800">
             {product.badge}

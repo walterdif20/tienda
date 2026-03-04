@@ -37,6 +37,10 @@ export type ProductInput = {
   isActive: boolean;
   badge?: string;
   stock: number;
+  images?: Array<{
+    url: string;
+    alt?: string;
+  }>;
   primaryImageUrl?: string;
   primaryImageAlt?: string;
 };

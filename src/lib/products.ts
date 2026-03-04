@@ -110,17 +110,21 @@ export const updateProduct = async (
   input: Partial<ProductInput>,
 ) => {
   const productRef = doc(db, "products", id);
-  await updateDoc(productRef, {
-    name: input.name,
-    slug: input.slug,
-    description: input.description,
-    price: input.price,
-    currency: input.currency,
-    categoryId: input.categoryId,
-    featured: input.featured,
-    isActive: input.isActive,
-    badge: input.badge ?? null,
-  });
+  const productUpdate: Record<string, unknown> = {};
+
+  if (input.name !== undefined) productUpdate.name = input.name;
+  if (input.slug !== undefined) productUpdate.slug = input.slug;
+  if (input.description !== undefined) productUpdate.description = input.description;
+  if (input.price !== undefined) productUpdate.price = input.price;
+  if (input.currency !== undefined) productUpdate.currency = input.currency;
+  if (input.categoryId !== undefined) productUpdate.categoryId = input.categoryId;
+  if (input.featured !== undefined) productUpdate.featured = input.featured;
+  if (input.isActive !== undefined) productUpdate.isActive = input.isActive;
+  if ("badge" in input) productUpdate.badge = input.badge ?? null;
+
+  if (Object.keys(productUpdate).length > 0) {
+    await updateDoc(productRef, productUpdate);
+  }
 
   if (input.primaryImageUrl !== undefined) {
     const imagesRef = collection(productRef, "images");

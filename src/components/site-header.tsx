@@ -1,4 +1,5 @@
-import { ShoppingBag } from "lucide-react";
+import { Menu, ShoppingBag, X } from "lucide-react";
+import { useState } from "react";
 import { Link, NavLink } from "react-router-dom";
 import { useStoreSettings } from "@/hooks/use-store-settings";
 import { useAuth } from "@/providers/auth-provider";
@@ -12,6 +13,7 @@ const baseLinks = [
 ];
 
 export function SiteHeader() {
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { settings } = useStoreSettings();
   const { isAdmin, user, signOutUser } = useAuth();
   const count = useCartStore((state) =>
@@ -28,6 +30,7 @@ export function SiteHeader() {
         <Link
           to="/"
           className="flex items-center gap-2 text-lg font-semibold tracking-tight text-slate-900"
+          onClick={() => setIsMobileMenuOpen(false)}
         >
           {settings.logoUrl ? (
             <img
@@ -55,6 +58,22 @@ export function SiteHeader() {
         </nav>
 
         <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-9 w-9 p-0 md:hidden"
+            onClick={() => setIsMobileMenuOpen((open) => !open)}
+            aria-label={isMobileMenuOpen ? "Cerrar menú" : "Abrir menú"}
+            aria-expanded={isMobileMenuOpen}
+            aria-controls="mobile-menu"
+          >
+            {isMobileMenuOpen ? (
+              <X className="h-5 w-5" />
+            ) : (
+              <Menu className="h-5 w-5" />
+            )}
+          </Button>
+
           {!user ? (
             <Link
               to="/registro"
@@ -63,7 +82,11 @@ export function SiteHeader() {
               Login / Registro
             </Link>
           ) : (
-            <Button variant="ghost" className="px-3" onClick={() => void signOutUser()}>
+            <Button
+              variant="ghost"
+              className="px-3"
+              onClick={() => void signOutUser()}
+            >
               Salir
             </Button>
           )}
@@ -82,6 +105,30 @@ export function SiteHeader() {
           </Link>
         </div>
       </div>
+
+      {isMobileMenuOpen ? (
+        <nav
+          id="mobile-menu"
+          className="border-t border-slate-200 px-4 py-3 md:hidden"
+        >
+          <div className="mx-auto flex max-w-6xl flex-col gap-3 text-sm font-medium text-slate-600">
+            {links.map((link) => (
+              <NavLink
+                key={link.to}
+                to={link.to}
+                onClick={() => setIsMobileMenuOpen(false)}
+                className={({ isActive }) =>
+                  isActive
+                    ? "store-primary-text"
+                    : "transition hover:text-slate-900"
+                }
+              >
+                {link.label}
+              </NavLink>
+            ))}
+          </div>
+        </nav>
+      ) : null}
     </header>
   );
 }

@@ -62,7 +62,10 @@ export function CheckoutPage() {
           address:
             values.deliveryMethod === "shipping" ? values.address : undefined,
         },
-        items,
+        items: items.map((item) => ({
+          productId: item.productId,
+          qty: item.qty,
+        })),
       });
       clear();
       window.location.href = order.initPoint;

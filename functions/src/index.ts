@@ -20,8 +20,6 @@ export const createOrder = onCall(async (request) => {
     delivery: { method: "shipping" | "pickup"; address?: string };
     items: Array<{
       productId: string;
-      name: string;
-      price: number;
       qty: number;
     }>;
   };
@@ -32,37 +30,107 @@ export const createOrder = onCall(async (request) => {
   if (!items || items.length === 0) {
     throw new HttpsError("invalid-argument", "Carrito vacío");
   }
+  if (!process.env.MP_ACCESS_TOKEN) {
+    throw new HttpsError("failed-precondition", "Falta configurar Mercado Pago");
+  }
 
   const orderRef = db.collection("orders").doc();
   const orderId = orderRef.id;
   const publicTrackingToken = randomToken();
 
-  const inventoryRefs = items.map((item) =>
-    db.collection("inventory").doc(item.productId),
+  const groupedQtyByProduct = new Map<string, number>();
+  items.forEach((item) => {
+    const productId = String(item.productId ?? "").trim();
+    const qty = Math.floor(Number(item.qty ?? 0));
+    if (!productId || qty <= 0) {
+      return;
+    }
+    groupedQtyByProduct.set(productId, (groupedQtyByProduct.get(productId) ?? 0) + qty);
+  });
+
+  if (groupedQtyByProduct.size === 0) {
+    throw new HttpsError("invalid-argument", "No hay ítems válidos en el carrito");
+  }
+
+  const productIds = Array.from(groupedQtyByProduct.keys());
+  const productRefs = productIds.map((productId) => db.collection("products").doc(productId));
+  const inventoryRefs = productIds.map((productId) =>
+    db.collection("inventory").doc(productId),
   );
 
-  const inventorySnapshots = await db.getAll(...inventoryRefs);
-  inventorySnapshots.forEach((snapshot, index) => {
-    const stock = snapshot.data()?.stock ?? 0;
-    if (stock < items[index].qty) {
+  const [productSnapshots, inventorySnapshots] = await Promise.all([
+    db.getAll(...productRefs),
+    db.getAll(...inventoryRefs),
+  ]);
+
+  const officialItems: Array<{ productId: string; name: string; price: number; qty: number }> =
+    [];
+
+  productSnapshots.forEach((productSnapshot, index) => {
+    const productId = productIds[index];
+    const requestedQty = groupedQtyByProduct.get(productId) ?? 0;
+    const product = productSnapshot.data() as
+      | { name?: unknown; price?: unknown; isActive?: unknown }
+      | undefined;
+
+    if (!productSnapshot.exists || product?.isActive !== true) {
+      throw new HttpsError(
+        "failed-precondition",
+        "Hay productos inactivos o inexistentes en tu carrito",
+      );
+    }
+
+    const name = String(product?.name ?? "").trim();
+    const price = Number(product?.price ?? 0);
+    if (!name || !Number.isFinite(price) || price <= 0) {
+      throw new HttpsError(
+        "failed-precondition",
+        "Hay productos sin datos válidos para cobrar",
+      );
+    }
+
+    const stock = Number(inventorySnapshots[index].data()?.stock ?? 0);
+    if (!Number.isFinite(stock) || stock < requestedQty) {
       throw new HttpsError("failed-precondition", "Stock insuficiente");
+    }
+
+    officialItems.push({ productId, name, price, qty: requestedQty });
+  });
+
+  if (officialItems.length === 0) {
+    throw new HttpsError("failed-precondition", "No hay ítems válidos para cobrar");
+  }
+
+  inventorySnapshots.forEach((snapshot, index) => {
+    const productId = productIds[index];
+    if (!snapshot.exists) {
+      throw new HttpsError(
+        "failed-precondition",
+        `No existe inventario para el producto ${productId}`,
+      );
     }
   });
 
-  const subtotal = items.reduce((sum, item) => sum + item.price * item.qty, 0);
+  const subtotal = officialItems.reduce((sum, item) => sum + item.price * item.qty, 0);
   const shippingCost = delivery.method === "shipping" ? 1500 : 0;
   const total = subtotal + shippingCost;
 
   const preference = new Preference(mpClient);
   const mpPreference = await preference.create({
     body: {
-      items: items.map((item) => ({
+      items: officialItems.map((item) => ({
+        id: item.productId,
         title: item.name,
         quantity: item.qty,
         unit_price: item.price,
         currency_id: "ARS",
       })),
       external_reference: orderId,
+      notification_url: process.env.MP_NOTIFICATION_URL,
+      metadata: {
+        orderId,
+        userId: request.auth?.uid ?? null,
+      },
       payer: {
         name: buyer.name,
         email: buyer.email,
@@ -92,7 +160,7 @@ export const createOrder = onCall(async (request) => {
     },
   });
 
-  items.forEach((item) => {
+  officialItems.forEach((item) => {
     const itemRef = orderRef.collection("items").doc();
     batch.set(itemRef, {
       productId: item.productId,

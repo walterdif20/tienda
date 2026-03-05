@@ -1,11 +1,16 @@
 import { httpsCallable } from "firebase/functions";
 import { functions } from "@/lib/firebase";
-import type { CartItem, OrderBuyer, OrderDelivery } from "@/types";
+import type { OrderBuyer, OrderDelivery } from "@/types";
+
+export type CheckoutCartItemInput = {
+  productId: string;
+  qty: number;
+};
 
 export type CreateOrderInput = {
   buyer: OrderBuyer;
   delivery: OrderDelivery;
-  items: CartItem[];
+  items: CheckoutCartItemInput[];
 };
 
 export type CreateOrderResponse = {

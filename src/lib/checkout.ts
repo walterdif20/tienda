@@ -166,3 +166,17 @@ export const confirmOrderTransfer = async (input: ConfirmTransferInput) => {
 
   return { ok: true, status: "paid" };
 };
+
+export type ConfirmTransferInput = {
+  orderId: string;
+  publicTrackingToken: string;
+};
+
+export const confirmOrderTransfer = async (input: ConfirmTransferInput) => {
+  const callable = httpsCallable<ConfirmTransferInput, { ok: boolean; status: string }>(
+    functions,
+    "confirmOrderTransfer",
+  );
+  const response = await callable(input);
+  return response.data;
+};

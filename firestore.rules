@@ -39,13 +39,29 @@ service cloud.firestore {
       allow read: if (request.auth != null && request.auth.uid == resource.data.userId)
         || (request.query.token != null && request.query.token == resource.data.publicTrackingToken)
         || isAdminFromUserDoc();
-      allow update: if isAdminFromUserDoc();
+      allow update: if isAdminFromUserDoc()
+        || (
+          request.resource.data.publicTrackingToken == resource.data.publicTrackingToken
+          && request.resource.data.userId == resource.data.userId
+          && request.resource.data.buyer == resource.data.buyer
+          && request.resource.data.delivery == resource.data.delivery
+          && request.resource.data.total == resource.data.total
+          && request.resource.data.subtotal == resource.data.subtotal
+          && request.resource.data.shippingCost == resource.data.shippingCost
+          && request.resource.data.createdAt == resource.data.createdAt
+          && request.resource.data.stockDiscounted == resource.data.stockDiscounted
+          && request.resource.data.status == 'paid'
+          && resource.data.status == 'pending'
+          && request.resource.data.payment.provider == resource.data.payment.provider
+          && request.resource.data.payment.transferAlias == resource.data.payment.transferAlias
+        );
 
       match /items/{itemId} {
         allow read: if (request.auth != null && request.auth.uid == get(/databases/$(database)/documents/orders/$(orderId)).data.userId)
           || (request.query.token != null && request.query.token == get(/databases/$(database)/documents/orders/$(orderId)).data.publicTrackingToken)
           || isAdminFromUserDoc();
-        allow write: if isAdminFromUserDoc();
+        allow create: if true;
+        allow update, delete: if isAdminFromUserDoc();
       }
     }
 

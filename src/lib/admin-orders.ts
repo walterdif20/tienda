@@ -51,7 +51,7 @@ export const fetchAdminOrders = async (): Promise<AdminOrder[]> => {
         status: (data.status as AdminOrderStatus) ?? "pending",
         note: data.payment?.adminNotes ?? "",
         createdAt,
-        paymentMethod: data.payment?.provider === "mercadopago" ? "mercadopago" : "manual",
+        paymentMethod: data.payment?.provider === "bank_transfer" ? "bank_transfer" : "manual",
       } satisfies AdminOrder;
     }),
   );
@@ -59,7 +59,49 @@ export const fetchAdminOrders = async (): Promise<AdminOrder[]> => {
   return orders;
 };
 
+const discountOrderInventory = async (orderId: string) => {
+  const orderRef = doc(db, "orders", orderId);
+  const itemsSnapshot = await getDocs(collection(orderRef, "items"));
+
+  await runTransaction(db, async (tx) => {
+    const orderSnapshot = await tx.get(orderRef);
+    if (!orderSnapshot.exists()) {
+      throw new Error("No se encontró la orden.");
+    }
+
+    const orderData = orderSnapshot.data();
+    if (orderData.stockDiscounted) {
+      return;
+    }
+
+    for (const itemDoc of itemsSnapshot.docs) {
+      const item = itemDoc.data() as { productId: string; qty: number };
+      const inventoryRef = doc(db, "inventory", item.productId);
+      const inventorySnapshot = await tx.get(inventoryRef);
+      const currentStock = Number(inventorySnapshot.data()?.stock ?? 0);
+
+      if (currentStock < item.qty) {
+        throw new Error("No hay stock suficiente para avanzar la orden.");
+      }
+
+      tx.update(inventoryRef, {
+        stock: currentStock - item.qty,
+        updatedAt: serverTimestamp(),
+      });
+    }
+
+    tx.update(orderRef, {
+      stockDiscounted: true,
+      stockDiscountedAt: serverTimestamp(),
+    });
+  });
+};
+
 export const updateAdminOrderStatus = async (orderId: string, status: AdminOrderStatus) => {
+  if (status === "in_progress") {
+    await discountOrderInventory(orderId);
+  }
+
   await updateDoc(doc(db, "orders", orderId), {
     status,
   });
@@ -99,16 +141,17 @@ export const createManualSale = async (input: {
       delivery: {
         method: "pickup",
       },
-      status: "paid",
+      status: "in_progress",
       subtotal: product.price * qty,
       shippingCost: 0,
       total: product.price * qty,
       createdAt: serverTimestamp(),
       publicTrackingToken: `manual-${orderRef.id}`,
+      stockDiscounted: true,
+      stockDiscountedAt: serverTimestamp(),
       payment: {
-        provider: "mercadopago",
-        manualPaid: true,
-        manualPaidAt: serverTimestamp(),
+        provider: "manual",
+        transferConfirmedAt: serverTimestamp(),
         adminNotes: "Venta manual creada desde admin.",
       },
     });

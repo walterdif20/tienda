@@ -71,20 +71,22 @@ export type Order = {
   userId?: string | null;
   buyer: OrderBuyer;
   delivery: OrderDelivery;
-  status: "pending" | "paid" | "shipped" | "cancelled";
+  status:
+    | "pending"
+    | "paid"
+    | "in_progress"
+    | "payment_in_review"
+    | "cancelled";
   subtotal: number;
   shippingCost: number;
   total: number;
   createdAt: string;
   publicTrackingToken: string;
   payment?: {
-    provider: "mercadopago";
-    mpPreferenceId?: string;
-    mpPaymentId?: string;
-    mpMerchantOrderId?: string;
-    paidAt?: string;
-    manualPaid?: boolean;
-    manualPaidAt?: string;
+    provider: "bank_transfer" | "manual";
+    transferAlias?: string;
+    transferConfirmedAt?: string;
+    transferReceiptUrl?: string;
     adminNotes?: string;
   };
 };

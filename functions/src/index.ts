@@ -1,15 +1,11 @@
 import { onCall, HttpsError } from "firebase-functions/v2/https";
-import { onRequest } from "firebase-functions/v2/https";
 import { initializeApp } from "firebase-admin/app";
 import { getFirestore, FieldValue } from "firebase-admin/firestore";
-import { MercadoPagoConfig, Preference, Payment } from "mercadopago";
 
 initializeApp();
 const db = getFirestore();
 
-const mpClient = new MercadoPagoConfig({
-  accessToken: process.env.MP_ACCESS_TOKEN ?? "",
-});
+const TRANSFER_ALIAS = process.env.TRANSFER_ALIAS ?? "tienda.demo.alias";
 
 const randomToken = () =>
   Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
@@ -29,9 +25,6 @@ export const createOrder = onCall(async (request) => {
   }
   if (!items || items.length === 0) {
     throw new HttpsError("invalid-argument", "Carrito vacío");
-  }
-  if (!process.env.MP_ACCESS_TOKEN) {
-    throw new HttpsError("failed-precondition", "Falta configurar Mercado Pago");
   }
 
   const orderRef = db.collection("orders").doc();
@@ -115,34 +108,6 @@ export const createOrder = onCall(async (request) => {
   const shippingCost = delivery.method === "shipping" ? 1500 : 0;
   const total = subtotal + shippingCost;
 
-  const preference = new Preference(mpClient);
-  const mpPreference = await preference.create({
-    body: {
-      items: officialItems.map((item) => ({
-        id: item.productId,
-        title: item.name,
-        quantity: item.qty,
-        unit_price: item.price,
-        currency_id: "ARS",
-      })),
-      external_reference: orderId,
-      notification_url: process.env.MP_NOTIFICATION_URL,
-      metadata: {
-        orderId,
-        userId: request.auth?.uid ?? null,
-      },
-      payer: {
-        name: buyer.name,
-        email: buyer.email,
-      },
-      back_urls: {
-        success: process.env.MP_SUCCESS_URL ?? "",
-        failure: process.env.MP_FAILURE_URL ?? "",
-      },
-      auto_return: "approved",
-    },
-  });
-
   const batch = db.batch();
   batch.set(orderRef, {
     userId: request.auth?.uid ?? null,
@@ -154,9 +119,10 @@ export const createOrder = onCall(async (request) => {
     total,
     createdAt: FieldValue.serverTimestamp(),
     publicTrackingToken,
+    stockDiscounted: false,
     payment: {
-      provider: "mercadopago",
-      mpPreferenceId: mpPreference.id,
+      provider: "bank_transfer",
+      transferAlias: TRANSFER_ALIAS,
     },
   });
 
@@ -174,84 +140,41 @@ export const createOrder = onCall(async (request) => {
 
   return {
     orderId,
-    initPoint: mpPreference.init_point,
     publicTrackingToken,
+    transferAlias: TRANSFER_ALIAS,
+    total,
   };
 });
 
-export const mpWebhook = onRequest(async (request, response) => {
-  try {
-    const paymentId = request.query["data.id"] || request.body?.data?.id;
-    if (!paymentId) {
-      response.status(400).send("Missing payment id");
-      return;
-    }
+export const confirmOrderTransfer = onCall(async (request) => {
+  const orderId = String(request.data?.orderId ?? "").trim();
+  const publicTrackingToken = String(request.data?.publicTrackingToken ?? "").trim();
 
-    const paymentClient = new Payment(mpClient);
-    const payment = await paymentClient.get({ id: Number(paymentId) });
-
-    if (payment.status !== "approved") {
-      response.status(200).send("Payment not approved");
-      return;
-    }
-
-    const orderId = payment.external_reference;
-    if (!orderId) {
-      response.status(200).send("Missing external reference");
-      return;
-    }
-
-    const orderRef = db.collection("orders").doc(orderId);
-    const orderSnapshot = await orderRef.get();
-    if (!orderSnapshot.exists) {
-      response.status(404).send("Order not found");
-      return;
-    }
-
-    const orderData = orderSnapshot.data();
-    if (orderData?.status === "paid") {
-      response.status(200).send("Already paid");
-      return;
-    }
-
-    const itemsSnapshot = await orderRef.collection("items").get();
-    const inventoryUpdates = itemsSnapshot.docs.map((doc) => {
-      const item = doc.data();
-      return db.collection("inventory").doc(item.productId);
-    });
-
-    const inventorySnapshots = await db.getAll(...inventoryUpdates);
-    inventorySnapshots.forEach((snapshot, index) => {
-      const item = itemsSnapshot.docs[index].data();
-      const stock = snapshot.data()?.stock ?? 0;
-      if (stock < item.qty) {
-        throw new Error("Stock insuficiente");
-      }
-    });
-
-    const batch = db.batch();
-    inventorySnapshots.forEach((snapshot, index) => {
-      const item = itemsSnapshot.docs[index].data();
-      batch.update(snapshot.ref, {
-        stock: FieldValue.increment(-item.qty),
-        updatedAt: FieldValue.serverTimestamp(),
-      });
-    });
-
-    batch.update(orderRef, {
-      status: "paid",
-      "payment.mpPaymentId": String(payment.id),
-      "payment.mpMerchantOrderId": payment.order?.id ?? null,
-      "payment.paidAt": FieldValue.serverTimestamp(),
-    });
-
-    await batch.commit();
-
-    response.status(200).send("OK");
-  } catch (error) {
-    console.error(error);
-    response.status(500).send("Webhook error");
+  if (!orderId || !publicTrackingToken) {
+    throw new HttpsError("invalid-argument", "Faltan datos para confirmar la transferencia");
   }
+
+  const orderRef = db.collection("orders").doc(orderId);
+  const snapshot = await orderRef.get();
+  if (!snapshot.exists) {
+    throw new HttpsError("not-found", "No encontramos el pedido");
+  }
+
+  const data = snapshot.data();
+  if (String(data?.publicTrackingToken ?? "") !== publicTrackingToken) {
+    throw new HttpsError("permission-denied", "Token inválido");
+  }
+
+  if (data?.status !== "pending") {
+    return { ok: true, status: data?.status ?? "pending" };
+  }
+
+  await orderRef.update({
+    status: "paid",
+    "payment.transferConfirmedAt": FieldValue.serverTimestamp(),
+  });
+
+  return { ok: true, status: "paid" };
 });
 
 export const setUserAdminRole = onCall(async (request) => {

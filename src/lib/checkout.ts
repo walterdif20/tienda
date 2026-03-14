@@ -15,14 +15,29 @@ export type CreateOrderInput = {
 
 export type CreateOrderResponse = {
   orderId: string;
-  initPoint: string;
   publicTrackingToken: string;
+  transferAlias: string;
+  total: number;
 };
 
 export const createOrder = async (input: CreateOrderInput) => {
   const callable = httpsCallable<CreateOrderInput, CreateOrderResponse>(
     functions,
     "createOrder",
+  );
+  const response = await callable(input);
+  return response.data;
+};
+
+export type ConfirmTransferInput = {
+  orderId: string;
+  publicTrackingToken: string;
+};
+
+export const confirmOrderTransfer = async (input: ConfirmTransferInput) => {
+  const callable = httpsCallable<ConfirmTransferInput, { ok: boolean; status: string }>(
+    functions,
+    "confirmOrderTransfer",
   );
   const response = await callable(input);
   return response.data;

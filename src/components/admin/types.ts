@@ -1,6 +1,11 @@
 import type { Product } from "@/types";
 
-export type AdminOrderStatus = "pending" | "paid" | "shipped" | "cancelled";
+export type AdminOrderStatus =
+  | "pending"
+  | "paid"
+  | "in_progress"
+  | "payment_in_review"
+  | "cancelled";
 
 export type AdminOrderItem = {
   productId: string;
@@ -18,7 +23,7 @@ export type AdminOrder = {
   status: AdminOrderStatus;
   note: string;
   createdAt: string;
-  paymentMethod: "manual" | "mercadopago";
+  paymentMethod: "manual" | "bank_transfer";
 };
 
 export type ProductFormValues = {

@@ -26,14 +26,16 @@ type OrderManagementProps = {
 const statusLabel: Record<AdminOrderStatus, string> = {
   pending: "Pendiente",
   paid: "Pagada",
-  shipped: "Enviada",
+  in_progress: "En curso",
+  payment_in_review: "Pago en revisión",
   cancelled: "Cancelada",
 };
 
 const statusClassName: Record<AdminOrderStatus, string> = {
   pending: "bg-amber-100 text-amber-700",
   paid: "bg-emerald-100 text-emerald-700",
-  shipped: "bg-sky-100 text-sky-700",
+  in_progress: "bg-sky-100 text-sky-700",
+  payment_in_review: "bg-violet-100 text-violet-700",
   cancelled: "bg-rose-100 text-rose-700",
 };
 
@@ -75,13 +77,13 @@ export function OrderManagementSection({
 
   const totals = useMemo(() => {
     const paid = orders
-      .filter((order) => order.status === "paid" || order.status === "shipped")
+      .filter((order) => order.status === "paid" || order.status === "in_progress")
       .reduce((sum, order) => sum + order.total, 0);
 
     return {
       pending: orders.filter((order) => order.status === "pending").length,
       paid,
-      shipped: orders.filter((order) => order.status === "shipped").length,
+      inProgress: orders.filter((order) => order.status === "in_progress").length,
     };
   }, [orders]);
 
@@ -138,8 +140,8 @@ export function OrderManagementSection({
         </Card>
         <Card>
           <CardContent className="p-4">
-            <p className="text-xs uppercase text-slate-500">Enviadas</p>
-            <p className="text-2xl font-semibold">{totals.shipped}</p>
+            <p className="text-xs uppercase text-slate-500">En curso</p>
+            <p className="text-2xl font-semibold">{totals.inProgress}</p>
           </CardContent>
         </Card>
       </div>
@@ -230,10 +232,17 @@ export function OrderManagementSection({
         </Button>
         <Button
           size="sm"
-          variant={activeFilter === "shipped" ? "secondary" : "outline"}
-          onClick={() => setActiveFilter("shipped")}
+          variant={activeFilter === "in_progress" ? "secondary" : "outline"}
+          onClick={() => setActiveFilter("in_progress")}
         >
-          Enviadas
+          En curso
+        </Button>
+        <Button
+          size="sm"
+          variant={activeFilter === "payment_in_review" ? "secondary" : "outline"}
+          onClick={() => setActiveFilter("payment_in_review")}
+        >
+          Pago en revisión
         </Button>
         <div className="min-w-[240px] flex-1">
           <Input
@@ -271,7 +280,8 @@ export function OrderManagementSection({
               </p>
               <p>
                 <strong>Total:</strong> {formatPrice(order.total)} ·
-                <strong> Método:</strong> {order.paymentMethod}
+                <strong> Método:</strong>{" "}
+                {order.paymentMethod === "bank_transfer" ? "Transferencia" : "Manual"}
               </p>
               <ul className="list-disc space-y-1 pl-5 text-xs text-slate-500">
                 {order.items.map((item) => (
@@ -284,16 +294,16 @@ export function OrderManagementSection({
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => handleStatusChange(order.id, "paid")}
+                  onClick={() => handleStatusChange(order.id, "in_progress")}
                 >
-                  Marcar pagada
+                  Aprobar pago (En curso)
                 </Button>
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => handleStatusChange(order.id, "shipped")}
+                  onClick={() => handleStatusChange(order.id, "payment_in_review")}
                 >
-                  Marcar enviada
+                  Marcar pago en revisión
                 </Button>
                 <Button
                   size="sm"

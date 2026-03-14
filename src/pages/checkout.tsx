@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/select";
 import { formatPrice } from "@/lib/format";
 import { useCartStore } from "@/store/cartStore";
-import { createOrder } from "@/lib/checkout";
+import { confirmOrderTransfer, createOrder } from "@/lib/checkout";
 
 const schema = z.object({
   name: z.string().min(2, "Ingresa tu nombre"),
@@ -27,11 +27,21 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>;
 
+type CreatedOrderData = {
+  orderId: string;
+  publicTrackingToken: string;
+  transferAlias: string;
+  total: number;
+};
+
 export function CheckoutPage() {
   const navigate = useNavigate();
   const { items, clear } = useCartStore();
   const [step, setStep] = useState<"buyer" | "payment">("buyer");
   const [loading, setLoading] = useState(false);
+  const [confirmingTransfer, setConfirmingTransfer] = useState(false);
+  const [createdOrder, setCreatedOrder] = useState<CreatedOrderData | null>(null);
+  const [copiedAlias, setCopiedAlias] = useState(false);
 
   const subtotal = useMemo(
     () => items.reduce((sum, item) => sum + item.price * item.qty, 0),
@@ -48,7 +58,7 @@ export function CheckoutPage() {
   const deliveryMethod = form.watch("deliveryMethod");
 
   const onSubmit = async (values: FormValues) => {
-    if (items.length === 0) return;
+    if (items.length === 0 || createdOrder) return;
     setLoading(true);
     try {
       const order = await createOrder({
@@ -67,13 +77,36 @@ export function CheckoutPage() {
           qty: item.qty,
         })),
       });
+      setCreatedOrder(order);
       clear();
-      window.location.href = order.initPoint;
     } catch (error) {
       console.error(error);
       navigate("/success?status=error");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleCopyAlias = async () => {
+    if (!createdOrder) return;
+    await navigator.clipboard.writeText(createdOrder.transferAlias);
+    setCopiedAlias(true);
+  };
+
+  const handleConfirmTransfer = async () => {
+    if (!createdOrder) return;
+    setConfirmingTransfer(true);
+    try {
+      await confirmOrderTransfer({
+        orderId: createdOrder.orderId,
+        publicTrackingToken: createdOrder.publicTrackingToken,
+      });
+      navigate("/success?status=transfer-confirmed");
+    } catch (error) {
+      console.error(error);
+      navigate("/success?status=error");
+    } finally {
+      setConfirmingTransfer(false);
     }
   };
 
@@ -90,6 +123,7 @@ export function CheckoutPage() {
               type="button"
               variant={step === "buyer" ? "secondary" : "outline"}
               onClick={() => setStep("buyer")}
+              disabled={Boolean(createdOrder)}
             >
               1. Datos
             </Button>
@@ -168,25 +202,59 @@ export function CheckoutPage() {
 
           {step === "payment" && (
             <div className="space-y-4">
-              <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
-                <p>
-                  Al continuar, generamos tu orden con estado{" "}
-                  <strong>pending</strong> y te redirigimos a Mercado Pago.
-                </p>
-              </div>
-              <Button
-                type="submit"
-                size="lg"
-                disabled={loading || items.length === 0}
-              >
-                {loading ? "Redirigiendo..." : "Pagar con Mercado Pago"}
-              </Button>
+              {!createdOrder ? (
+                <>
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
+                    <p>
+                      Al continuar, generamos tu orden con estado <strong>PENDIENTE</strong>.
+                      Luego te mostraremos el alias para transferir y confirmar tu pago.
+                    </p>
+                  </div>
+                  <Button
+                    type="submit"
+                    size="lg"
+                    disabled={loading || items.length === 0}
+                  >
+                    {loading ? "Generando orden..." : "Generar pago por transferencia"}
+                  </Button>
+                </>
+              ) : (
+                <div className="space-y-4 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm">
+                  <p>
+                    <strong>Orden:</strong> {createdOrder.orderId}
+                  </p>
+                  <p>
+                    <strong>Total a transferir:</strong> {formatPrice(createdOrder.total)}
+                  </p>
+                  <p>
+                    <strong>Alias:</strong> {createdOrder.transferAlias}
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    <Button type="button" variant="outline" onClick={handleCopyAlias}>
+                      {copiedAlias ? "Alias copiado" : "Copiar alias"}
+                    </Button>
+                    <Button
+                      type="button"
+                      onClick={handleConfirmTransfer}
+                      disabled={confirmingTransfer}
+                    >
+                      {confirmingTransfer
+                        ? "Confirmando..."
+                        : "Ya transferí, confirmar pago"}
+                    </Button>
+                  </div>
+                  <p className="text-xs text-slate-600">
+                    Cuando confirmes, la orden pasará a <strong>PAGADA</strong> y quedará
+                    pendiente de revisión del administrador.
+                  </p>
+                </div>
+              )}
             </div>
           )}
         </form>
         <div className="space-y-4 rounded-2xl border border-slate-200 bg-slate-50 p-6">
           <h2 className="text-xl font-semibold">Resumen</h2>
-          {items.map((item) => (
+          {(createdOrder ? [] : items).map((item) => (
             <div
               key={item.productId}
               className="flex items-center justify-between text-sm"
@@ -203,7 +271,7 @@ export function CheckoutPage() {
           </div>
           <div className="flex items-center justify-between text-base font-semibold">
             <span>Total</span>
-            <span>{formatPrice(subtotal)}</span>
+            <span>{formatPrice(createdOrder?.total ?? subtotal)}</span>
           </div>
         </div>
       </div>

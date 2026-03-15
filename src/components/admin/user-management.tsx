@@ -10,6 +10,7 @@ interface UserManagementSectionProps {
   loading: boolean;
   onReload: () => Promise<void>;
   onMakeAdmin: (uid: string) => Promise<void>;
+  onToggleBlocked: (uid: string, blocked: boolean) => Promise<void>;
 }
 
 export function UserManagementSection({
@@ -17,13 +18,15 @@ export function UserManagementSection({
   loading,
   onReload,
   onMakeAdmin,
+  onToggleBlocked,
 }: UserManagementSectionProps) {
   const [processingUid, setProcessingUid] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
 
   const stats = useMemo(() => {
     const admins = users.filter((user) => user.role === "admin").length;
-    return { total: users.length, admins };
+    const blocked = users.filter((user) => user.isBlocked).length;
+    return { total: users.length, admins, blocked };
   }, [users]);
 
   const promote = async (uid: string) => {
@@ -35,6 +38,20 @@ export function UserManagementSection({
     } catch (error) {
       console.error(error);
       setFeedback("No se pudo cambiar el rol.");
+    } finally {
+      setProcessingUid(null);
+    }
+  };
+
+  const toggleBlocked = async (uid: string, blocked: boolean) => {
+    setProcessingUid(uid);
+    setFeedback(null);
+    try {
+      await onToggleBlocked(uid, blocked);
+      setFeedback(blocked ? "Cuenta bloqueada." : "Cuenta desbloqueada.");
+    } catch (error) {
+      console.error(error);
+      setFeedback("No se pudo actualizar el bloqueo.");
     } finally {
       setProcessingUid(null);
     }
@@ -56,7 +73,7 @@ export function UserManagementSection({
           </Button>
         </CardTitle>
         <p className="text-sm text-slate-500">
-          Total: {stats.total} · Admins: {stats.admins}
+          Total: {stats.total} · Admins: {stats.admins} · Bloqueados: {stats.blocked}
         </p>
       </CardHeader>
 
@@ -73,6 +90,9 @@ export function UserManagementSection({
                 <p className="text-sm text-slate-500">
                   {user.whatsappNumber || "Sin WhatsApp cargado"}
                 </p>
+                {user.isBlocked ? (
+                  <p className="text-sm font-medium text-rose-600">Cuenta bloqueada</p>
+                ) : null}
               </div>
 
               <div className="flex flex-wrap gap-2">
@@ -87,6 +107,18 @@ export function UserManagementSection({
                     WhatsApp
                   </a>
                 ) : null}
+
+                <Button
+                  variant={user.isBlocked ? "outline" : "secondary"}
+                  onClick={() => toggleBlocked(user.id, !user.isBlocked)}
+                  disabled={processingUid === user.id}
+                >
+                  {processingUid === user.id
+                    ? "Actualizando..."
+                    : user.isBlocked
+                      ? "Desbloquear"
+                      : "Bloquear"}
+                </Button>
 
                 {user.role === "admin" ? (
                   <span className="inline-flex items-center gap-2 rounded-md bg-emerald-100 px-3 py-2 text-sm font-medium text-emerald-800">

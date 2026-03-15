@@ -20,6 +20,7 @@ import { useProducts } from "@/hooks/use-products";
 import {
   fetchAdminUsers,
   makeUserAdmin,
+  setUserBlockedStatus,
   type AdminUser,
 } from "@/lib/admin-users";
 import {
@@ -288,6 +289,11 @@ export function AdminPage() {
     await reloadUsers();
   };
 
+  const onToggleUserBlocked = async (uid: string, blocked: boolean) => {
+    await setUserBlockedStatus(uid, blocked);
+    await reloadUsers();
+  };
+
   return (
     <section className="mx-auto max-w-5xl space-y-10 px-4 py-12">
       <div>
@@ -382,6 +388,7 @@ export function AdminPage() {
           loading={loadingUsers}
           onReload={reloadUsers}
           onMakeAdmin={onMakeUserAdmin}
+          onToggleBlocked={onToggleUserBlocked}
         />
       )}
     </section>

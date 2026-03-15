@@ -8,6 +8,7 @@ export type AdminUser = {
   displayName: string;
   whatsappNumber: string;
   role: "admin" | "customer";
+  isBlocked: boolean;
   createdAtMs: number;
 };
 
@@ -24,6 +25,7 @@ export const fetchAdminUsers = async () => {
     const data = doc.data() as Record<string, unknown>;
     const createdAt = data.createdAt as { toMillis?: () => number } | undefined;
     const role = data.role === "admin" ? "admin" : "customer";
+    const isBlocked = data.isBlocked === true;
 
     return {
       id: doc.id,
@@ -31,6 +33,7 @@ export const fetchAdminUsers = async () => {
       displayName: String(data.displayName ?? "Sin nombre"),
       whatsappNumber: String(data.whatsappNumber ?? ""),
       role,
+      isBlocked,
       createdAtMs: createdAt?.toMillis?.() ?? 0,
     } satisfies AdminUser;
   });
@@ -43,3 +46,9 @@ export const makeUserAdmin = async (uid: string) => {
 
 export const toWhatsAppLink = (phone: string) =>
   `https://wa.me/${normalizePhoneForLink(phone)}`;
+
+
+export const setUserBlockedStatus = async (uid: string, blocked: boolean) => {
+  const setBlockedStatus = httpsCallable(functions, "setUserBlockedStatus");
+  await setBlockedStatus({ uid, blocked });
+};

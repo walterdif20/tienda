@@ -15,6 +15,7 @@ import { auth, db } from "@/lib/firebase";
 interface AuthContextValue {
   user: User | null;
   isAdmin: boolean;
+  isBlocked: boolean;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (input: {
@@ -29,14 +30,17 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
-const getIsAdminFromUserDoc = async (uid: string) => {
+const getUserStatusFromDoc = async (uid: string) => {
   const userSnapshot = await getDoc(doc(db, "users", uid));
   if (!userSnapshot.exists()) {
-    return false;
+    return { isAdmin: false, isBlocked: false };
   }
 
   const data = userSnapshot.data() as Record<string, unknown>;
-  return data.role === "admin" || data.isAdmin === true;
+  return {
+    isAdmin: data.role === "admin" || data.isAdmin === true,
+    isBlocked: data.isBlocked === true,
+  };
 };
 
 const upsertUserProfile = async (
@@ -60,6 +64,7 @@ const upsertUserProfile = async (
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isBlocked, setIsBlocked] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -68,10 +73,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (nextUser) {
         await upsertUserProfile(nextUser);
-        const admin = await getIsAdminFromUserDoc(nextUser.uid);
-        setIsAdmin(admin);
+        const status = await getUserStatusFromDoc(nextUser.uid);
+        setIsAdmin(status.isAdmin);
+        setIsBlocked(status.isBlocked);
+
+        if (status.isBlocked) {
+          await signOut(auth);
+          setUser(null);
+        }
       } else {
         setIsAdmin(false);
+        setIsBlocked(false);
       }
 
       setLoading(false);
@@ -84,6 +96,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     () => ({
       user,
       isAdmin,
+      isBlocked,
       loading,
       signIn: async (email: string, password: string) => {
         await signInWithEmailAndPassword(auth, email, password);
@@ -122,7 +135,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         await signOut(auth);
       },
     }),
-    [user, isAdmin, loading],
+    [user, isAdmin, isBlocked, loading],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

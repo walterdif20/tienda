@@ -37,3 +37,42 @@ export const setUserAdminRole = onCall(async (request) => {
 
   return { ok: true };
 });
+
+export const setUserBlockedStatus = onCall(async (request) => {
+  if (!request.auth?.uid) {
+    throw new HttpsError("unauthenticated", "Tenés que iniciar sesión");
+  }
+
+  const callerUserSnapshot = await db.collection("users").doc(request.auth.uid).get();
+  const callerData = callerUserSnapshot.data() ?? {};
+  const callerIsAdmin = callerData.role === "admin" || callerData.isAdmin === true;
+
+  if (!callerIsAdmin) {
+    throw new HttpsError(
+      "permission-denied",
+      "Solo un admin puede realizar esta acción",
+    );
+  }
+
+  const uid = String(request.data?.uid ?? "").trim();
+  const blocked = Boolean(request.data?.blocked);
+
+  if (!uid) {
+    throw new HttpsError("invalid-argument", "Falta el uid del usuario");
+  }
+
+  if (uid === request.auth.uid && blocked) {
+    throw new HttpsError("failed-precondition", "No podés bloquear tu propia cuenta");
+  }
+
+  await db.collection("users").doc(uid).set(
+    {
+      isBlocked: blocked,
+      blockedAt: blocked ? FieldValue.serverTimestamp() : null,
+      updatedAt: FieldValue.serverTimestamp(),
+    },
+    { merge: true },
+  );
+
+  return { ok: true };
+});

@@ -16,6 +16,8 @@ export function SiteHeader() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { settings } = useStoreSettings();
   const { isAdmin, user, signOutUser } = useAuth();
+  const displayName = user?.displayName?.trim() || user?.email?.split("@")[0] || "Cliente";
+  const userInitial = displayName.charAt(0).toUpperCase();
   const count = useCartStore((state) =>
     state.items.reduce((total, item) => total + item.qty, 0),
   );
@@ -82,13 +84,30 @@ export function SiteHeader() {
               Login / Registro
             </Link>
           ) : (
-            <Button
-              variant="ghost"
-              className="px-3"
-              onClick={() => void signOutUser()}
-            >
-              Salir
-            </Button>
+            <div className="flex items-center gap-2">
+              <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-2 py-1">
+                <span className="hidden max-w-[120px] truncate text-sm font-medium text-slate-700 sm:block">
+                  {displayName}
+                </span>
+                <span
+                  className="inline-flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold text-white"
+                  style={{
+                    background: `linear-gradient(135deg, ${settings.primaryColor} 0%, ${settings.secondaryColor} 100%)`,
+                  }}
+                  aria-hidden="true"
+                >
+                  {userInitial}
+                </span>
+              </div>
+
+              <Button
+                variant="ghost"
+                className="px-3"
+                onClick={() => void signOutUser()}
+              >
+                Salir
+              </Button>
+            </div>
           )}
 
           <Link

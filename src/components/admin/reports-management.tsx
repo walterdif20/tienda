@@ -14,6 +14,7 @@ type MonthlySale = {
 };
 
 const INCLUDED_STATUSES = new Set(["paid", "in_progress", "payment_in_review", "completed"]);
+const PIE_COLORS = ["#0f172a", "#334155", "#475569", "#64748b", "#94a3b8", "#cbd5e1"];
 
 export function ReportsManagementSection({ orders, products }: ReportsManagementProps) {
   const validOrders = useMemo(
@@ -48,7 +49,11 @@ export function ReportsManagementSection({ orders, products }: ReportsManagement
     }
 
     return Array.from(totals.entries())
-      .map(([category, total]) => ({ category, total }))
+      .map(([category, total], index) => ({
+        category,
+        total,
+        color: PIE_COLORS[index % PIE_COLORS.length],
+      }))
       .sort((a, b) => b.total - a.total);
   }, [products, validOrders]);
 
@@ -68,6 +73,25 @@ export function ReportsManagementSection({ orders, products }: ReportsManagement
 
   const globalTotal = validOrders.reduce((sum, order) => sum + order.total, 0);
   const maxMonthly = Math.max(...monthlySales.map((item) => item.total), 1);
+
+  const categoryTotalAmount = categoryTotals.reduce((sum, item) => sum + item.total, 0);
+  const pieStops = categoryTotals
+    .reduce(
+      (acc, item) => {
+        const pct = categoryTotalAmount > 0 ? (item.total / categoryTotalAmount) * 100 : 0;
+        const start = acc.current;
+        const end = acc.current + pct;
+        acc.current = end;
+        acc.stops.push(`${item.color} ${start}% ${end}%`);
+        return acc;
+      },
+      { current: 0, stops: [] as string[] },
+    )
+    .stops;
+
+  const pieBackground = pieStops.length
+    ? `conic-gradient(${pieStops.join(", ")})`
+    : "conic-gradient(#e2e8f0 0% 100%)";
 
   return (
     <div>
@@ -132,16 +156,39 @@ export function ReportsManagementSection({ orders, products }: ReportsManagement
           <CardHeader>
             <CardTitle>Ventas por categoría</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2 text-sm">
+          <CardContent className="space-y-4 text-sm">
             {categoryTotals.length === 0 ? (
               <p className="text-slate-500">Sin datos de categorías todavía.</p>
             ) : (
-              categoryTotals.map((item) => (
-                <div key={item.category} className="flex items-center justify-between">
-                  <span className="text-slate-600">{item.category}</span>
-                  <span className="font-medium">{formatPrice(item.total)}</span>
+              <>
+                <div className="flex justify-center">
+                  <div
+                    className="h-44 w-44 rounded-full border border-slate-200"
+                    style={{ background: pieBackground }}
+                    aria-label="Gráfico de torta de ventas por categoría"
+                    role="img"
+                  />
                 </div>
-              ))
+                <div className="space-y-2">
+                  {categoryTotals.map((item) => {
+                    const pct = categoryTotalAmount > 0 ? (item.total / categoryTotalAmount) * 100 : 0;
+                    return (
+                      <div key={item.category} className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-2">
+                          <span
+                            className="inline-block h-3 w-3 rounded-full"
+                            style={{ backgroundColor: item.color }}
+                          />
+                          <span className="text-slate-600">{item.category}</span>
+                        </div>
+                        <span className="font-medium">
+                          {formatPrice(item.total)} ({pct.toFixed(1)}%)
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
             )}
           </CardContent>
         </Card>

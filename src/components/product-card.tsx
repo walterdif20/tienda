@@ -17,6 +17,12 @@ const IMAGE_ROTATION_MS = 2800;
 
 export function ProductCard({ product }: ProductCardProps) {
   const addItem = useCartStore((state) => state.addItem);
+  const removeItem = useCartStore((state) => state.removeItem);
+  const updateQty = useCartStore((state) => state.updateQty);
+  const quantityInCart = useCartStore(
+    (state) =>
+      state.items.find((item) => item.productId === product.id)?.qty ?? 0,
+  );
   const { settings } = useStoreSettings();
   const [activeImageIndex, setActiveImageIndex] = useState(0);
 
@@ -94,6 +100,35 @@ export function ProductCard({ product }: ProductCardProps) {
                 Sin Stock - Consultar
               </a>
             </Button>
+          ) : quantityInCart > 0 ? (
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => {
+                  if (quantityInCart === 1) {
+                    removeItem(product.id);
+                    return;
+                  }
+                  updateQty(product.id, quantityInCart - 1);
+                }}
+              >
+                -
+              </Button>
+              <span className="min-w-6 text-center text-sm font-semibold text-slate-900">
+                {quantityInCart}
+              </span>
+              <Button
+                variant="secondary"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => addItem(product, 1)}
+                disabled={quantityInCart >= product.stock}
+              >
+                +
+              </Button>
+            </div>
           ) : (
             <Button variant="secondary" size="sm" onClick={() => addItem(product, 1)}>
               Agregar

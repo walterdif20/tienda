@@ -17,6 +17,10 @@ const IMAGE_ROTATION_MS = 2800;
 
 export function ProductCard({ product }: ProductCardProps) {
   const addItem = useCartStore((state) => state.addItem);
+  const quantityInCart = useCartStore(
+    (state) =>
+      state.items.find((item) => item.productId === product.id)?.qty ?? 0,
+  );
   const { settings } = useStoreSettings();
   const [activeImageIndex, setActiveImageIndex] = useState(0);
 
@@ -96,7 +100,7 @@ export function ProductCard({ product }: ProductCardProps) {
             </Button>
           ) : (
             <Button variant="secondary" size="sm" onClick={() => addItem(product, 1)}>
-              Agregar
+              {quantityInCart > 0 ? `Agregar (${quantityInCart})` : "Agregar"}
             </Button>
           )}
         </div>

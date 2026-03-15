@@ -3,6 +3,7 @@ import { Navigate } from "react-router-dom";
 import { OrderManagementSection } from "@/components/admin/order-management";
 import { ProductManagementSection } from "@/components/admin/product-management";
 import { StoreSettingsManagementSection } from "@/components/admin/store-settings-management";
+import { ReportsManagementSection } from "@/components/admin/reports-management";
 import { UserManagementSection } from "@/components/admin/user-management";
 import type {
   AdminOrder,
@@ -51,7 +52,7 @@ export function AdminPage() {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [activeSection, setActiveSection] = useState<
-    "products" | "sales" | "settings" | "users"
+    "products" | "sales" | "reports" | "settings" | "users"
   >("products");
 
   const reloadOrders = async () => {
@@ -95,6 +96,10 @@ export function AdminPage() {
     return <Navigate to="/" replace />;
   }
 
+
+  const visibleOrders = orders.filter(
+    (order) => order.status !== "completed" && order.status !== "cancelled",
+  );
   const onSaveProduct = async ({
     id,
     values,
@@ -319,6 +324,17 @@ export function AdminPage() {
         <button
           type="button"
           className={`rounded-full px-4 py-2 text-sm font-medium transition ${
+            activeSection === "reports"
+              ? "bg-slate-900 text-white"
+              : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+          }`}
+          onClick={() => setActiveSection("reports")}
+        >
+          Reportes
+        </button>
+        <button
+          type="button"
+          className={`rounded-full px-4 py-2 text-sm font-medium transition ${
             activeSection === "settings"
               ? "bg-slate-900 text-white"
               : "bg-slate-100 text-slate-600 hover:bg-slate-200"
@@ -350,12 +366,14 @@ export function AdminPage() {
         />
       ) : activeSection === "sales" ? (
         <OrderManagementSection
-          orders={orders}
+          orders={visibleOrders}
           products={adminProducts}
           onUpdateOrderStatus={onUpdateOrderStatus}
           onUpdateOrderNote={onUpdateOrderNote}
           onCreateManualSale={onCreateManualSale}
         />
+      ) : activeSection === "reports" ? (
+        <ReportsManagementSection orders={orders} products={adminProducts} />
       ) : activeSection === "settings" ? (
         <StoreSettingsManagementSection />
       ) : (

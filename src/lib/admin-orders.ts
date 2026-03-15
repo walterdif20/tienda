@@ -98,7 +98,7 @@ const discountOrderInventory = async (orderId: string) => {
 };
 
 export const updateAdminOrderStatus = async (orderId: string, status: AdminOrderStatus) => {
-  if (status === "in_progress") {
+  if (status === "in_progress" || status === "completed") {
     await discountOrderInventory(orderId);
   }
 

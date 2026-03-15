@@ -76,6 +76,7 @@ export type Order = {
     | "paid"
     | "in_progress"
     | "payment_in_review"
+    | "completed"
     | "cancelled";
   subtotal: number;
   shippingCost: number;

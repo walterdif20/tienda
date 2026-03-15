@@ -28,6 +28,7 @@ const statusLabel: Record<AdminOrderStatus, string> = {
   paid: "Pagada",
   in_progress: "En curso",
   payment_in_review: "Pago en revisión",
+  completed: "Completada",
   cancelled: "Cancelada",
 };
 
@@ -36,6 +37,7 @@ const statusClassName: Record<AdminOrderStatus, string> = {
   paid: "bg-emerald-100 text-emerald-700",
   in_progress: "bg-sky-100 text-sky-700",
   payment_in_review: "bg-violet-100 text-violet-700",
+  completed: "bg-teal-100 text-teal-700",
   cancelled: "bg-rose-100 text-rose-700",
 };
 
@@ -76,13 +78,13 @@ export function OrderManagementSection({
   }, [activeFilter, orders, searchTerm]);
 
   const totals = useMemo(() => {
-    const paid = orders
-      .filter((order) => order.status === "paid" || order.status === "in_progress")
+    const netSales = orders
+      .filter((order) => order.status !== "cancelled")
       .reduce((sum, order) => sum + order.total, 0);
 
     return {
       pending: orders.filter((order) => order.status === "pending").length,
-      paid,
+      netSales,
       inProgress: orders.filter((order) => order.status === "in_progress").length,
     };
   }, [orders]);
@@ -134,8 +136,8 @@ export function OrderManagementSection({
         </Card>
         <Card>
           <CardContent className="p-4">
-            <p className="text-xs uppercase text-slate-500">Ventas cobradas</p>
-            <p className="text-2xl font-semibold">{formatPrice(totals.paid)}</p>
+            <p className="text-xs uppercase text-slate-500">Ventas netas</p>
+            <p className="text-2xl font-semibold">{formatPrice(totals.netSales)}</p>
           </CardContent>
         </Card>
         <Card>
@@ -304,6 +306,13 @@ export function OrderManagementSection({
                   onClick={() => handleStatusChange(order.id, "payment_in_review")}
                 >
                   Marcar pago en revisión
+                </Button>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => handleStatusChange(order.id, "completed")}
+                >
+                  Marcar como completada
                 </Button>
                 <Button
                   size="sm"

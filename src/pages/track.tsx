@@ -10,6 +10,7 @@ const STATUS_LABELS: Record<string, string> = {
   paid: "Pagada",
   in_progress: "En preparación",
   payment_in_review: "Pago en revisión",
+  completed: "Completada",
   cancelled: "Cancelada",
 };
 

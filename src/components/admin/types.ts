@@ -5,6 +5,7 @@ export type AdminOrderStatus =
   | "paid"
   | "in_progress"
   | "payment_in_review"
+  | "completed"
   | "cancelled";
 
 export type AdminOrderItem = {

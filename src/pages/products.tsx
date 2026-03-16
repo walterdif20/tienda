@@ -1,15 +1,23 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Search } from "lucide-react";
 import { ProductCard } from "@/components/product-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { categories } from "@/data/products";
 import { useProducts } from "@/hooks/use-products";
+import { useSearchParams } from "react-router-dom";
 
 export function ProductsPage() {
   const [activeCategory, setActiveCategory] = useState("all");
   const [query, setQuery] = useState("");
   const { products, loading } = useProducts();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  useEffect(() => {
+    const categoryFromUrl = searchParams.get("category");
+    const isValidCategory = categories.some((category) => category.id === categoryFromUrl);
+    setActiveCategory(isValidCategory ? categoryFromUrl ?? "all" : "all");
+  }, [searchParams]);
 
   const filteredProducts = useMemo(() => {
     return products.filter((product) => {
@@ -34,7 +42,10 @@ export function ProductsPage() {
             <Button
               variant={activeCategory === "all" ? "secondary" : "outline"}
               size="sm"
-              onClick={() => setActiveCategory("all")}
+              onClick={() => {
+                setActiveCategory("all");
+                setSearchParams({});
+              }}
             >
               Todo
             </Button>
@@ -45,7 +56,10 @@ export function ProductsPage() {
                   key={category.id}
                   variant={activeCategory === category.id ? "secondary" : "outline"}
                   size="sm"
-                  onClick={() => setActiveCategory(category.id)}
+                  onClick={() => {
+                    setActiveCategory(category.id);
+                    setSearchParams({ category: category.id });
+                  }}
                 >
                   {category.name}
                 </Button>

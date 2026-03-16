@@ -283,7 +283,9 @@ export function CheckoutPage() {
                     <SelectValue placeholder="Selecciona" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="shipping">Envío a domicilio</SelectItem>
+                    <SelectItem value="shipping">
+                      Envío a domicilio (gratis en Necochea y Quequén)
+                    </SelectItem>
                     <SelectItem value="pickup">Retiro en tienda</SelectItem>
                   </SelectContent>
                 </Select>
@@ -436,7 +438,7 @@ export function CheckoutPage() {
           ))}
           <div className="flex items-center justify-between text-sm">
             <span>Envío</span>
-            <span>A definir</span>
+            <span>Gratis a Necochea y Quequén</span>
           </div>
           {!createdOrder && paymentMethod === "bank_transfer" && (
             <div className="flex items-center justify-between text-sm text-emerald-700">

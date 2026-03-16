@@ -7,6 +7,7 @@ export type StoreFontFamily = "inter" | "poppins" | "montserrat" | "lora";
 export type StoreSettings = {
   title: string;
   logoUrl: string;
+  heroImages: string[];
   primaryColor: string;
   secondaryColor: string;
   fontFamily: StoreFontFamily;
@@ -18,6 +19,7 @@ const SETTINGS_DOC = doc(db, "storeSettings", "main");
 export const defaultStoreSettings: StoreSettings = {
   title: "Tienda Minimal",
   logoUrl: "",
+  heroImages: [],
   primaryColor: "#0f172a",
   secondaryColor: "#e2e8f0",
   fontFamily: "inter",
@@ -27,6 +29,15 @@ export const defaultStoreSettings: StoreSettings = {
 const sanitizeHexColor = (value: string, fallback: string) => {
   const trimmed = value.trim();
   return /^#[0-9A-Fa-f]{6}$/.test(trimmed) ? trimmed : fallback;
+};
+
+const sanitizeHeroImages = (value: unknown): string[] => {
+  if (!Array.isArray(value)) return [];
+
+  return value
+    .filter((item): item is string => typeof item === "string")
+    .map((item) => item.trim())
+    .filter(Boolean);
 };
 
 const sanitizeFont = (value: string): StoreFontFamily => {
@@ -42,6 +53,7 @@ export const normalizeStoreSettings = (
 ): StoreSettings => ({
   title: value?.title?.trim() || defaultStoreSettings.title,
   logoUrl: value?.logoUrl?.trim() || "",
+  heroImages: sanitizeHeroImages(value?.heroImages),
   primaryColor: sanitizeHexColor(
     value?.primaryColor ?? "",
     defaultStoreSettings.primaryColor,
@@ -79,12 +91,17 @@ export const saveStoreSettings = async (input: StoreSettings) => {
   return payload;
 };
 
-export const uploadStoreLogo = async (file: File) => {
+const uploadStoreImage = async (folder: string, file: File) => {
   const fileRef = ref(
     storage,
-    `store-settings/logo-${Date.now()}-${file.name}`,
+    `store-settings/${folder}-${Date.now()}-${file.name}`,
   );
   const uploaded = await uploadBytes(fileRef, file);
-  const logoUrl = await getDownloadURL(uploaded.ref);
-  return logoUrl;
+  return getDownloadURL(uploaded.ref);
 };
+
+export const uploadStoreLogo = async (file: File) =>
+  uploadStoreImage("logo", file);
+
+export const uploadStoreHeroImage = async (file: File) =>
+  uploadStoreImage("hero", file);

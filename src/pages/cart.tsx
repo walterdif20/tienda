@@ -12,7 +12,7 @@ export function CartPage() {
   const freeShippingTag = (
     <Badge className="gap-2 bg-emerald-100 px-3 py-1 text-sm font-semibold text-emerald-800 ring-1 ring-emerald-200">
       <Truck className="h-4 w-4" />
-      Envío gratis
+      Envío gratis a Necochea y Quequén
     </Badge>
   );
 
@@ -87,7 +87,7 @@ export function CartPage() {
           </div>
           <div className="flex items-center justify-between text-sm">
             <span>Envío</span>
-            <span>Calculado en checkout</span>
+            <span>Gratis a Necochea y Quequén</span>
           </div>
           <div className="flex items-center justify-between text-base font-semibold">
             <span>Total estimado</span>

@@ -18,6 +18,7 @@ import { ProductCard } from "@/components/product-card";
 import { Button } from "@/components/ui/button";
 import { useProducts } from "@/hooks/use-products";
 import { useStoreSettings } from "@/hooks/use-store-settings";
+import { categories } from "@/data/products";
 
 const heroFallbackImages = [
   "https://images.unsplash.com/photo-1523381210434-271e8be1f52b?auto=format&fit=crop&w=1600&q=80",
@@ -29,8 +30,38 @@ export function HomePage() {
   const { products, loading } = useProducts();
   const { settings } = useStoreSettings();
 
-  const featured = products.filter((product) => product.featured).slice(0, 4);
   const latest = products.slice(0, 4);
+
+  const categoryTiles = useMemo(() => {
+    return categories
+      .map((category) => {
+        const firstProduct = products.find(
+          (product) =>
+            product.categoryId === category.id && product.images.length > 0,
+        );
+
+        if (!firstProduct?.images[0]) {
+          return null;
+        }
+
+        return {
+          id: category.id,
+          name: category.name,
+          imageUrl: firstProduct.images[0].url,
+          imageAlt: firstProduct.images[0].alt || category.name,
+        };
+      })
+      .filter(
+        (
+          item,
+        ): item is {
+          id: string;
+          name: string;
+          imageUrl: string;
+          imageAlt: string;
+        } => item !== null,
+      );
+  }, [products]);
 
   const heroImages = useMemo(() => {
     const configured = settings.heroImages
@@ -89,7 +120,11 @@ export function HomePage() {
               crear una experiencia inmersiva desde el primer segundo.
             </p>
             <div className="flex flex-wrap gap-3">
-              <Button asChild size="lg" className="bg-white text-slate-950 hover:bg-white/90">
+              <Button
+                asChild
+                size="lg"
+                className="bg-white text-slate-950 hover:bg-white/90"
+              >
                 <Link to="/products">Explorar catálogo</Link>
               </Button>
               <Button
@@ -149,15 +184,7 @@ export function HomePage() {
         </HighlightCard>
       </section>
 
-      <Section
-        title="Destacados"
-        description="Selección curada con los productos más elegidos."
-        loading={loading}
-      >
-        {featured.map((product) => (
-          <ProductCard key={product.id} product={product} />
-        ))}
-      </Section>
+      <CategorySection categoryTiles={categoryTiles} loading={loading} />
 
       <Section
         title="Novedades"
@@ -209,6 +236,55 @@ function HighlightCard({
       <h3 className="text-base font-semibold text-slate-900">{title}</h3>
       <p className="mt-1 text-sm text-slate-600">{children}</p>
     </article>
+  );
+}
+
+function CategorySection({
+  categoryTiles,
+  loading,
+}: {
+  categoryTiles: Array<{
+    id: string;
+    name: string;
+    imageUrl: string;
+    imageAlt: string;
+  }>;
+  loading: boolean;
+}) {
+  return (
+    <section className="mx-auto max-w-6xl px-4">
+      <div className="mb-6">
+        <h2 className="text-2xl font-semibold text-slate-900">Categorías</h2>
+        <p className="text-sm text-slate-500">
+          Explorá por tipo de producto desde una vista rápida visual.
+        </p>
+      </div>
+      {loading ? (
+        <div className="rounded-2xl border border-slate-200 p-8 text-center text-sm text-slate-500">
+          Cargando categorías...
+        </div>
+      ) : (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {categoryTiles.map((category) => (
+            <Link
+              key={category.id}
+              to="/products"
+              className="group relative block h-44 overflow-hidden rounded-2xl"
+            >
+              <img
+                src={category.imageUrl}
+                alt={category.imageAlt}
+                className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-900/20 to-transparent" />
+              <p className="absolute bottom-3 left-3 text-sm font-semibold text-white">
+                {category.name}
+              </p>
+            </Link>
+          ))}
+        </div>
+      )}
+    </section>
   );
 }
 

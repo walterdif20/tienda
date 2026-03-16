@@ -26,6 +26,7 @@ const schema = z
     email: z.string().email("Ingresa un email válido"),
     phone: z.string().min(6, "Ingresa un teléfono válido"),
     deliveryMethod: z.enum(["shipping", "pickup"]),
+    paymentMethod: z.enum(["mercado_pago_link", "bank_transfer"]),
     address: z.string().optional(),
   })
   .superRefine((values, context) => {
@@ -54,7 +55,7 @@ const resolveNameFromEmail = (email: string) => {
 type CreatedOrderData = {
   orderId: string;
   publicTrackingToken: string;
-  transferAlias: string;
+  transferAlias?: string;
   total: number;
 };
 
@@ -79,6 +80,7 @@ export function CheckoutPage() {
     resolver: zodResolver(schema),
     defaultValues: {
       deliveryMethod: "shipping",
+      paymentMethod: "mercado_pago_link",
     },
   });
 
@@ -137,6 +139,9 @@ export function CheckoutPage() {
   }, [form, user]);
 
   const deliveryMethod = form.watch("deliveryMethod");
+  const paymentMethod = form.watch("paymentMethod");
+  const transferDiscount = paymentMethod === "bank_transfer" ? subtotal * 0.1 : 0;
+  const totalPreview = subtotal - transferDiscount;
 
   const onSubmit = async (values: FormValues) => {
     if (items.length === 0 || createdOrder) return;
@@ -157,6 +162,7 @@ export function CheckoutPage() {
           productId: item.productId,
           qty: item.qty,
         })),
+        paymentMethod: values.paymentMethod,
       });
       setCreatedOrder(order);
       clear();
@@ -183,6 +189,7 @@ export function CheckoutPage() {
 
   const handleCopyAlias = async () => {
     if (!createdOrder) return;
+    if (!createdOrder.transferAlias) return;
     await navigator.clipboard.writeText(createdOrder.transferAlias);
     setCopiedAlias(true);
   };
@@ -303,12 +310,44 @@ export function CheckoutPage() {
             <div className="space-y-4">
               {!createdOrder ? (
                 <>
-                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
-                    <p>
-                      Al continuar, generamos tu orden con estado{" "}
-                      <strong>PENDIENTE</strong>. Luego te mostraremos el alias
-                      para transferir y confirmar tu pago.
-                    </p>
+                  <div className="space-y-3">
+                    <Label>Opciones de pago</Label>
+                    <button
+                      type="button"
+                      className={`w-full rounded-xl border p-4 text-left text-sm transition ${
+                        paymentMethod === "mercado_pago_link"
+                          ? "border-slate-900 bg-slate-100"
+                          : "border-slate-200"
+                      }`}
+                      onClick={() =>
+                        form.setValue("paymentMethod", "mercado_pago_link", {
+                          shouldDirty: true,
+                        })
+                      }
+                    >
+                      <p className="font-semibold">Link de pago (Mercado Pago)</p>
+                      <p className="text-slate-600">
+                        En las proximas horas te enviaremos un link de pago por whatsapp
+                      </p>
+                    </button>
+                    <button
+                      type="button"
+                      className={`w-full rounded-xl border p-4 text-left text-sm transition ${
+                        paymentMethod === "bank_transfer"
+                          ? "border-slate-900 bg-slate-100"
+                          : "border-slate-200"
+                      }`}
+                      onClick={() =>
+                        form.setValue("paymentMethod", "bank_transfer", {
+                          shouldDirty: true,
+                        })
+                      }
+                    >
+                      <p className="font-semibold">Transferencia bancaria (10% de descuento)</p>
+                      <p className="text-slate-600">
+                        Confirmá tu pago para que podamos revisar y aprobar la orden.
+                      </p>
+                    </button>
                   </div>
                   <Button
                     type="submit"
@@ -317,9 +356,23 @@ export function CheckoutPage() {
                   >
                     {loading
                       ? "Generando orden..."
-                      : "Generar pago por transferencia"}
+                      : paymentMethod === "mercado_pago_link"
+                        ? "Generar orden con link de pago"
+                        : "Generar pago por transferencia"}
                   </Button>
                 </>
+              ) : paymentMethod === "mercado_pago_link" ? (
+                <div className="space-y-4 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm">
+                  <p>
+                    <strong>Orden:</strong> {createdOrder.orderId}
+                  </p>
+                  <p>
+                    <strong>Total:</strong> {formatPrice(createdOrder.total)}
+                  </p>
+                  <p className="text-slate-700">
+                    En las proximas horas te enviaremos un link de pago por whatsapp
+                  </p>
+                </div>
               ) : (
                 <div className="space-y-4 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm">
                   <p>
@@ -376,9 +429,15 @@ export function CheckoutPage() {
             <span>Envío</span>
             <span>A definir</span>
           </div>
+          {!createdOrder && paymentMethod === "bank_transfer" && (
+            <div className="flex items-center justify-between text-sm text-emerald-700">
+              <span>Descuento transferencia (10%)</span>
+              <span>-{formatPrice(transferDiscount)}</span>
+            </div>
+          )}
           <div className="flex items-center justify-between text-base font-semibold">
             <span>Total</span>
-            <span>{formatPrice(createdOrder?.total ?? subtotal)}</span>
+            <span>{formatPrice(createdOrder?.total ?? totalPreview)}</span>
           </div>
         </div>
       </div>

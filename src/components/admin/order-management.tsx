@@ -283,7 +283,11 @@ export function OrderManagementSection({
               <p>
                 <strong>Total:</strong> {formatPrice(order.total)} ·
                 <strong> Método:</strong>{" "}
-                {order.paymentMethod === "bank_transfer" ? "Transferencia" : "Manual"}
+                {order.paymentMethod === "bank_transfer"
+                  ? "Transferencia"
+                  : order.paymentMethod === "mercado_pago_link"
+                    ? "Link de Mercado Pago"
+                    : "Manual"}
               </p>
               <ul className="list-disc space-y-1 pl-5 text-xs text-slate-500">
                 {order.items.map((item) => (

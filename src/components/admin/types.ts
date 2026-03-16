@@ -24,7 +24,7 @@ export type AdminOrder = {
   status: AdminOrderStatus;
   note: string;
   createdAt: string;
-  paymentMethod: "manual" | "bank_transfer";
+  paymentMethod: "manual" | "bank_transfer" | "mercado_pago_link";
 };
 
 export type ProductFormValues = {

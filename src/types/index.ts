@@ -84,7 +84,7 @@ export type Order = {
   createdAt: string;
   publicTrackingToken: string;
   payment?: {
-    provider: "bank_transfer" | "manual";
+    provider: "mercado_pago_link" | "bank_transfer" | "manual";
     transferAlias?: string;
     transferConfirmedAt?: string;
     transferReceiptUrl?: string;

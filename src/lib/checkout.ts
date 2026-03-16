@@ -19,12 +19,13 @@ export type CreateOrderInput = {
   buyer: OrderBuyer;
   delivery: OrderDelivery;
   items: CheckoutCartItemInput[];
+  paymentMethod: "mercado_pago_link" | "bank_transfer";
 };
 
 export type CreateOrderResponse = {
   orderId: string;
   publicTrackingToken: string;
-  transferAlias: string;
+  transferAlias?: string;
   total: number;
 };
 
@@ -84,7 +85,9 @@ export const createOrder = async (input: CreateOrderInput): Promise<CreateOrderR
 
   const subtotal = officialItems.reduce((sum, item) => sum + item.price * item.qty, 0);
   const shippingCost = input.delivery.method === "shipping" ? 1500 : 0;
-  const total = subtotal + shippingCost;
+  const baseTotal = subtotal + shippingCost;
+  const transferDiscount = input.paymentMethod === "bank_transfer" ? baseTotal * 0.1 : 0;
+  const total = Math.round(baseTotal - transferDiscount);
 
   const orderRef = doc(collection(db, "orders"));
   const publicTrackingToken = randomToken();
@@ -102,8 +105,8 @@ export const createOrder = async (input: CreateOrderInput): Promise<CreateOrderR
     publicTrackingToken,
     stockDiscounted: false,
     payment: {
-      provider: "bank_transfer",
-      transferAlias: TRANSFER_ALIAS,
+      provider: input.paymentMethod,
+      transferAlias: input.paymentMethod === "bank_transfer" ? TRANSFER_ALIAS : null,
     },
   });
 
@@ -122,7 +125,7 @@ export const createOrder = async (input: CreateOrderInput): Promise<CreateOrderR
   return {
     orderId: orderRef.id,
     publicTrackingToken,
-    transferAlias: TRANSFER_ALIAS,
+    transferAlias: input.paymentMethod === "bank_transfer" ? TRANSFER_ALIAS : undefined,
     total,
   };
 };
@@ -165,18 +168,4 @@ export const confirmOrderTransfer = async (input: ConfirmTransferInput) => {
   });
 
   return { ok: true, status: "paid" };
-};
-
-export type ConfirmTransferInput = {
-  orderId: string;
-  publicTrackingToken: string;
-};
-
-export const confirmOrderTransfer = async (input: ConfirmTransferInput) => {
-  const callable = httpsCallable<ConfirmTransferInput, { ok: boolean; status: string }>(
-    functions,
-    "confirmOrderTransfer",
-  );
-  const response = await callable(input);
-  return response.data;
 };

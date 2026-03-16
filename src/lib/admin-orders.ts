@@ -51,7 +51,12 @@ export const fetchAdminOrders = async (): Promise<AdminOrder[]> => {
         status: (data.status as AdminOrderStatus) ?? "pending",
         note: data.payment?.adminNotes ?? "",
         createdAt,
-        paymentMethod: data.payment?.provider === "bank_transfer" ? "bank_transfer" : "manual",
+        paymentMethod:
+          data.payment?.provider === "bank_transfer"
+            ? "bank_transfer"
+            : data.payment?.provider === "mercado_pago_link"
+              ? "mercado_pago_link"
+              : "manual",
       } satisfies AdminOrder;
     }),
   );

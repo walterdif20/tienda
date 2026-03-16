@@ -5,7 +5,14 @@ import {
   useMemo,
   useState,
 } from "react";
-import { ArrowRight, ShieldCheck, Sparkles, Truck } from "lucide-react";
+import {
+  ArrowRight,
+  Clock3,
+  ShieldCheck,
+  Sparkles,
+  Star,
+  Truck,
+} from "lucide-react";
 import { Link } from "react-router-dom";
 import { ProductCard } from "@/components/product-card";
 import { Button } from "@/components/ui/button";
@@ -13,9 +20,9 @@ import { useProducts } from "@/hooks/use-products";
 import { useStoreSettings } from "@/hooks/use-store-settings";
 
 const heroFallbackImages = [
-  "https://images.unsplash.com/photo-1523381210434-271e8be1f52b?auto=format&fit=crop&w=1200&q=80",
-  "https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&w=1200&q=80",
-  "https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=1200&q=80",
+  "https://images.unsplash.com/photo-1523381210434-271e8be1f52b?auto=format&fit=crop&w=1600&q=80",
+  "https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&w=1600&q=80",
+  "https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=1600&q=80",
 ];
 
 export function HomePage() {
@@ -46,87 +53,100 @@ export function HomePage() {
 
     const interval = window.setInterval(() => {
       setActiveHeroImage((current) => (current + 1) % heroImages.length);
-    }, 4500);
+    }, 5000);
 
     return () => window.clearInterval(interval);
   }, [heroImages]);
 
   return (
     <div className="space-y-16 pb-16">
-      <section className="border-b border-slate-200/80 bg-gradient-to-b from-slate-50 to-white">
-        <div className="mx-auto grid max-w-6xl gap-10 px-4 py-20 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
+      <section className="relative isolate min-h-[78vh] overflow-hidden border-b border-slate-200/30 bg-slate-950 text-white">
+        <div className="absolute inset-0">
+          {heroImages.map((image, index) => (
+            <img
+              key={`${image}-${index}`}
+              src={image}
+              alt={`Imagen de portada ${index + 1}`}
+              className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-1000 ease-in-out ${
+                index === activeHeroImage ? "opacity-100" : "opacity-0"
+              }`}
+            />
+          ))}
+          <div className="absolute inset-0 bg-slate-950/65" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.22),transparent_36%),radial-gradient(circle_at_80%_80%,rgba(167,139,250,0.28),transparent_34%)]" />
+        </div>
+
+        <div className="relative mx-auto grid max-w-6xl gap-10 px-4 py-16 md:py-24 lg:grid-cols-[1.15fr_0.85fr] lg:items-end">
           <div className="space-y-6">
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
-              Tienda online
+            <p className="inline-flex w-fit rounded-full border border-white/20 bg-white/10 px-4 py-1 text-xs font-semibold uppercase tracking-[0.22em] text-white/90 backdrop-blur">
+              {settings.title}
             </p>
-            <h1 className="text-4xl font-semibold tracking-tight text-slate-900 md:text-5xl">
-              Nueva experiencia de compra moderna y minimalista.
+            <h1 className="max-w-2xl text-4xl font-semibold tracking-tight text-white md:text-6xl">
+              Un inicio visual, premium y pensado para convertir más.
             </h1>
-            <p className="max-w-xl text-base text-slate-600">
-              Rediseñamos la tienda desde cero para que puedas descubrir,
-              comprar y seguir tus pedidos en menos pasos, manteniendo el mismo
-              stack y la misma base de datos.
+            <p className="max-w-xl text-base text-white/80 md:text-lg">
+              La portada ahora usa las imágenes configuradas desde Admin para
+              crear una experiencia inmersiva desde el primer segundo.
             </p>
-            <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-900">
-              Envío gratis a Necochea y Quequén.
-            </div>
             <div className="flex flex-wrap gap-3">
-              <Button asChild size="lg">
-                <Link to="/products">Ver productos</Link>
+              <Button asChild size="lg" className="bg-white text-slate-950 hover:bg-white/90">
+                <Link to="/products">Explorar catálogo</Link>
               </Button>
-              <Button asChild variant="outline" size="lg">
+              <Button
+                asChild
+                variant="outline"
+                size="lg"
+                className="border-white/30 bg-white/10 text-white hover:bg-white/20"
+              >
                 <Link to="/track" className="inline-flex items-center gap-2">
                   Seguir pedido <ArrowRight className="h-4 w-4" />
                 </Link>
               </Button>
             </div>
-          </div>
 
-          <div className="space-y-3">
-            <div className="relative h-[360px] overflow-hidden rounded-3xl border border-slate-200 bg-slate-100 shadow-sm">
-              {heroImages.map((image, index) => (
-                <img
-                  key={`${image}-${index}`}
-                  src={image}
-                  alt={`Imagen destacada ${index + 1}`}
-                  className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-1000 ease-in-out ${
-                    index === activeHeroImage ? "opacity-100" : "opacity-0"
-                  }`}
-                />
-              ))}
-            </div>
             {heroImages.length > 1 && (
-              <div className="flex justify-center gap-2">
+              <div className="flex flex-wrap gap-2 pt-2">
                 {heroImages.map((image, index) => (
                   <button
                     key={`${image}-dot-${index}`}
                     type="button"
                     onClick={() => setActiveHeroImage(index)}
                     aria-label={`Ir a imagen ${index + 1}`}
-                    className={`h-2.5 w-2.5 rounded-full transition ${
+                    className={`h-2.5 rounded-full transition-all duration-300 ${
                       index === activeHeroImage
-                        ? "bg-slate-900"
-                        : "bg-slate-300"
+                        ? "w-10 bg-white"
+                        : "w-2.5 bg-white/40 hover:bg-white/70"
                     }`}
                   />
                 ))}
               </div>
             )}
-            <div className="grid gap-3 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-              <Feature icon={Sparkles} title="Catálogo limpio">
-                Diseño sobrio con foco en producto, precio y stock real.
-              </Feature>
-              <Feature icon={Truck} title="Checkout unificado">
-                Flujo rápido con envío gratis a Necochea y Quequén o retiro en
-                tienda.
-              </Feature>
-              <Feature icon={ShieldCheck} title="Estado y gestión">
-                Seguimiento público para clientes y panel admin para
-                operaciones.
-              </Feature>
-            </div>
+          </div>
+
+          <div className="grid gap-4">
+            <GlassFeature icon={Sparkles} title="Diseño impactante">
+              Hero full-screen con transición automática y enfoque editorial.
+            </GlassFeature>
+            <GlassFeature icon={Truck} title="Envío local gratis">
+              Entregas sin costo en Necochea y Quequén + retiro en tienda.
+            </GlassFeature>
+            <GlassFeature icon={ShieldCheck} title="Compra con confianza">
+              Seguimiento de pedidos y gestión centralizada para tu operación.
+            </GlassFeature>
           </div>
         </div>
+      </section>
+
+      <section className="mx-auto grid max-w-6xl gap-4 px-4 md:grid-cols-3">
+        <HighlightCard icon={Star} title="Selección destacada">
+          Productos protagonistas con stock actualizado en tiempo real.
+        </HighlightCard>
+        <HighlightCard icon={Clock3} title="Checkout más ágil">
+          Menos pasos para cerrar la compra y confirmar el pedido.
+        </HighlightCard>
+        <HighlightCard icon={Sparkles} title="Experiencia renovada">
+          Estética moderna con foco en contenido, navegación y conversión.
+        </HighlightCard>
       </section>
 
       <Section
@@ -152,7 +172,7 @@ export function HomePage() {
   );
 }
 
-function Feature({
+function GlassFeature({
   icon: Icon,
   title,
   children,
@@ -162,13 +182,33 @@ function Feature({
   children: ReactNode;
 }) {
   return (
-    <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
-      <div className="mb-2 inline-flex rounded-lg bg-white p-2 text-slate-700 shadow-sm">
+    <div className="rounded-2xl border border-white/20 bg-white/10 p-5 backdrop-blur-md">
+      <div className="mb-2 inline-flex rounded-xl bg-white/20 p-2 text-white">
         <Icon className="h-4 w-4" />
       </div>
-      <h3 className="text-sm font-semibold text-slate-900">{title}</h3>
-      <p className="mt-1 text-sm text-slate-600">{children}</p>
+      <h3 className="text-sm font-semibold text-white">{title}</h3>
+      <p className="mt-1 text-sm text-white/80">{children}</p>
     </div>
+  );
+}
+
+function HighlightCard({
+  icon: Icon,
+  title,
+  children,
+}: {
+  icon: ComponentType<{ className?: string }>;
+  title: string;
+  children: ReactNode;
+}) {
+  return (
+    <article className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm shadow-slate-900/5 transition hover:-translate-y-0.5 hover:shadow-md">
+      <div className="mb-3 inline-flex rounded-xl bg-slate-100 p-2 text-slate-700">
+        <Icon className="h-4 w-4" />
+      </div>
+      <h3 className="text-base font-semibold text-slate-900">{title}</h3>
+      <p className="mt-1 text-sm text-slate-600">{children}</p>
+    </article>
   );
 }
 
@@ -199,9 +239,7 @@ function Section({
           Cargando productos...
         </div>
       ) : (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-          {children}
-        </div>
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">{children}</div>
       )}
     </section>
   );

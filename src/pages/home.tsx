@@ -8,8 +8,11 @@ import {
 import {
   ArrowRight,
   Clock3,
+  CreditCard,
+  ShieldCheck,
   Sparkles,
   Star,
+  Truck,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { ProductCard } from "@/components/product-card";
@@ -101,7 +104,7 @@ export function HomePage() {
               }`}
             />
           ))}
-          <div className="absolute inset-0 bg-slate-950/65" />
+          <div className="absolute inset-0 bg-slate-950/70" />
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.22),transparent_36%),radial-gradient(circle_at_80%_80%,rgba(167,139,250,0.28),transparent_34%)]" />
         </div>
 
@@ -111,11 +114,11 @@ export function HomePage() {
               {settings.title}
             </p>
             <h1 className="max-w-2xl text-4xl font-semibold tracking-tight text-white md:text-6xl">
-              Un inicio visual, premium y pensado para convertir más.
+              Descubrí prendas elegidas para elevar tu estilo todos los días.
             </h1>
             <p className="max-w-xl text-base text-white/80 md:text-lg">
-              La portada ahora usa las imágenes configuradas desde Admin para
-              crear una experiencia inmersiva desde el primer segundo.
+              Novedades semanales, stock actualizado y una compra simple de
+              principio a fin.
             </p>
             <div className="flex flex-wrap gap-3">
               <Button
@@ -137,6 +140,15 @@ export function HomePage() {
               </Button>
             </div>
 
+            <div className="flex flex-wrap gap-2 text-xs text-white/90 md:text-sm">
+              <span className="rounded-full border border-white/20 bg-white/10 px-3 py-1">
+                {products.length}+ productos activos
+              </span>
+              <span className="rounded-full border border-white/20 bg-white/10 px-3 py-1">
+                {categoryTiles.length} categorías para explorar
+              </span>
+            </div>
+
             {heroImages.length > 1 && (
               <div className="flex flex-wrap gap-2 pt-2">
                 {heroImages.map((image, index) => (
@@ -156,7 +168,7 @@ export function HomePage() {
             )}
           </div>
 
-        
+          <HeroDetails />
         </div>
       </section>
 
@@ -187,7 +199,46 @@ export function HomePage() {
   );
 }
 
+function HeroDetails() {
+  return (
+    <aside className="hidden rounded-3xl border border-white/20 bg-white/10 p-6 backdrop-blur md:block">
+      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/80">
+        ¿Por qué comprar acá?
+      </p>
+      <ul className="mt-4 space-y-4">
+        <HeroFeature icon={Truck} title="Envíos rápidos">
+          Despachamos tu pedido en 24/48 hs hábiles.
+        </HeroFeature>
+        <HeroFeature icon={ShieldCheck} title="Pago seguro">
+          Checkout protegido y confirmación inmediata.
+        </HeroFeature>
+        <HeroFeature icon={CreditCard} title="Múltiples medios de pago">
+          Tarjeta, transferencia y opciones en cuotas.
+        </HeroFeature>
+      </ul>
+    </aside>
+  );
+}
 
+function HeroFeature({
+  icon: Icon,
+  title,
+  children,
+}: {
+  icon: ComponentType<{ className?: string }>;
+  title: string;
+  children: ReactNode;
+}) {
+  return (
+    <li className="rounded-2xl border border-white/20 bg-slate-950/25 p-4">
+      <div className="inline-flex rounded-xl bg-white/10 p-2 text-white">
+        <Icon className="h-4 w-4" />
+      </div>
+      <p className="mt-3 text-sm font-semibold text-white">{title}</p>
+      <p className="text-sm text-white/75">{children}</p>
+    </li>
+  );
+}
 
 function HighlightCard({
   icon: Icon,
@@ -285,7 +336,9 @@ function Section({
           Cargando productos...
         </div>
       ) : (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">{children}</div>
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+          {children}
+        </div>
       )}
     </section>
   );

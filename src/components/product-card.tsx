@@ -46,13 +46,14 @@ export function ProductCard({ product }: ProductCardProps) {
   }, [images.length]);
 
   return (
-    <Card className="group overflow-hidden rounded-2xl border-slate-200 shadow-none transition hover:border-slate-300">
+    <Card className="group overflow-hidden rounded-2xl border-slate-200 shadow-sm shadow-slate-900/5 transition duration-300 hover:-translate-y-1 hover:border-slate-300 hover:shadow-lg hover:shadow-slate-900/10">
       <div className="relative overflow-hidden">
         <img
           src={activeImage?.url}
           alt={activeImage?.alt ?? product.name}
-          className="h-72 w-full object-cover transition duration-500 group-hover:scale-105"
+          className="h-72 w-full object-cover transition duration-700 group-hover:scale-105"
         />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-slate-950/15 via-transparent to-transparent opacity-0 transition duration-500 group-hover:opacity-100" />
         {images.length > 1 && (
           <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 gap-1 rounded-full bg-white/80 px-2 py-1">
             {images.map((image, index) => (
@@ -76,7 +77,7 @@ export function ProductCard({ product }: ProductCardProps) {
         <div className="space-y-1">
           <Link
             to={`/products/${product.slug}`}
-            className="line-clamp-1 text-base font-semibold text-slate-900"
+            className="line-clamp-1 text-base font-semibold text-slate-900 transition group-hover:text-slate-700"
           >
             {product.name}
           </Link>
@@ -106,7 +107,7 @@ export function ProductCard({ product }: ProductCardProps) {
             <div className="flex items-center gap-2">
               <Button
                 variant="outline"
-                size="icon"
+                size="sm"
                 className="h-8 w-8"
                 onClick={() => {
                   if (quantityInCart === 1) {
@@ -123,7 +124,7 @@ export function ProductCard({ product }: ProductCardProps) {
               </span>
               <Button
                 variant="secondary"
-                size="icon"
+                size="sm"
                 className="h-8 w-8"
                 onClick={() => addItem(product, 1)}
                 disabled={quantityInCart >= product.stock}

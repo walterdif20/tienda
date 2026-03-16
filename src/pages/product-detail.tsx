@@ -37,9 +37,7 @@ export function ProductDetailPage() {
   }
 
   const safeActiveImageIndex =
-    images.length > 0
-      ? Math.min(activeImageIndex, images.length - 1)
-      : 0;
+    images.length > 0 ? Math.min(activeImageIndex, images.length - 1) : 0;
 
   const activeImage = images[safeActiveImageIndex];
 
@@ -123,7 +121,9 @@ export function ProductDetailPage() {
         <div className="space-y-6 rounded-3xl border border-slate-200 bg-white p-6">
           <div className="space-y-3">
             <div className="flex items-center gap-2">
-              <h1 className="text-3xl font-semibold tracking-tight">{product.name}</h1>
+              <h1 className="text-3xl font-semibold tracking-tight">
+                {product.name}
+              </h1>
               {product.badge && <Badge>{product.badge}</Badge>}
             </div>
             <p className="text-sm text-slate-600">{product.description}</p>
@@ -136,7 +136,8 @@ export function ProductDetailPage() {
               <strong>Stock disponible:</strong> {product.stock}
             </p>
             <p>
-              <strong>Entrega:</strong> envío a domicilio o retiro en tienda.
+              <strong>Entrega:</strong> envío gratis a Necochea y Quequén o
+              retiro en tienda.
             </p>
           </div>
 

@@ -120,7 +120,7 @@ export const createOrder = async (
     (sum, item) => sum + item.price * item.qty,
     0,
   );
-  const shippingCost = input.delivery.method === "shipping" ? 1500 : 0;
+  const shippingCost = 0;
   const baseTotal = subtotal + shippingCost;
   const transferDiscount =
     input.paymentMethod === "bank_transfer" ? baseTotal * 0.1 : 0;

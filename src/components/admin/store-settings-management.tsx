@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Upload } from "lucide-react";
+import { Plus, Upload, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -11,7 +11,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { uploadStoreLogo, type StoreSettings } from "@/lib/store-settings";
+import {
+  uploadStoreHeroImage,
+  uploadStoreLogo,
+  type StoreSettings,
+} from "@/lib/store-settings";
 import { useStoreSettings } from "@/hooks/use-store-settings";
 
 const fontOptions: Array<{
@@ -29,6 +33,7 @@ export function StoreSettingsManagementSection() {
   const [form, setForm] = useState(settings);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [uploadingHero, setUploadingHero] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
 
   useEffect(() => {
@@ -72,6 +77,52 @@ export function StoreSettingsManagementSection() {
     } finally {
       setUploading(false);
     }
+  };
+
+  const onUploadHeroImage = async (file?: File) => {
+    if (!file) {
+      return;
+    }
+
+    if (!file.type.startsWith("image/")) {
+      setFeedback("Seleccioná una imagen válida para el carrusel.");
+      return;
+    }
+
+    setUploadingHero(true);
+    setFeedback(null);
+
+    try {
+      const imageUrl = await uploadStoreHeroImage(file);
+      setForm((current) => ({
+        ...current,
+        heroImages: [...current.heroImages, imageUrl],
+      }));
+      setFeedback("Imagen destacada cargada. Recordá guardar los cambios.");
+    } catch (error) {
+      console.error(error);
+      setFeedback("No se pudo subir la imagen destacada.");
+    } finally {
+      setUploadingHero(false);
+    }
+  };
+
+  const updateHeroImage = (index: number, value: string) => {
+    setForm((current) => ({
+      ...current,
+      heroImages: current.heroImages.map((image, imageIndex) =>
+        imageIndex === index ? value : image,
+      ),
+    }));
+  };
+
+  const removeHeroImage = (index: number) => {
+    setForm((current) => ({
+      ...current,
+      heroImages: current.heroImages.filter(
+        (_, imageIndex) => imageIndex !== index,
+      ),
+    }));
   };
 
   return (
@@ -123,6 +174,69 @@ export function StoreSettingsManagementSection() {
                 </span>
               )}
             </div>
+          </div>
+
+          <div className="space-y-2 md:col-span-2">
+            <div className="flex items-center justify-between gap-3">
+              <Label>Imágenes del carrusel principal</Label>
+              <label className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-slate-200 px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50">
+                <Upload className="h-3.5 w-3.5" />
+                {uploadingHero ? "Subiendo..." : "Subir imagen"}
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="sr-only"
+                  disabled={uploadingHero}
+                  onChange={(event) =>
+                    onUploadHeroImage(event.target.files?.[0])
+                  }
+                />
+              </label>
+            </div>
+
+            {form.heroImages.length === 0 ? (
+              <p className="rounded-md border border-dashed border-slate-200 p-3 text-sm text-slate-500">
+                Agregá URLs o subí imágenes para mostrar en la sección
+                principal.
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {form.heroImages.map((image, index) => (
+                  <div key={`${image}-${index}`} className="flex gap-2">
+                    <Input
+                      value={image}
+                      onChange={(event) =>
+                        updateHeroImage(index, event.target.value)
+                      }
+                      placeholder="https://..."
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-9 w-9 p-0"
+                      onClick={() => removeHeroImage(index)}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() =>
+                setForm((current) => ({
+                  ...current,
+                  heroImages: [...current.heroImages, ""],
+                }))
+              }
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Agregar URL manual
+            </Button>
           </div>
 
           <div className="space-y-2">
@@ -201,7 +315,10 @@ export function StoreSettingsManagementSection() {
           <p className="text-sm text-slate-500">
             Estos cambios impactan en encabezado, pie y estilo global.
           </p>
-          <Button onClick={onSave} disabled={saving || uploading}>
+          <Button
+            onClick={onSave}
+            disabled={saving || uploading || uploadingHero}
+          >
             {saving ? "Guardando..." : "Guardar configuración"}
           </Button>
         </div>

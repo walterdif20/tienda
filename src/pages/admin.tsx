@@ -56,6 +56,38 @@ export function AdminPage() {
     "products" | "sales" | "reports" | "settings" | "users"
   >("products");
 
+  const adminSections: Array<{
+    id: "products" | "sales" | "reports" | "settings" | "users";
+    label: string;
+    description: string;
+  }> = [
+    {
+      id: "products",
+      label: "Productos",
+      description: "Stock, altas y edición de catálogo",
+    },
+    {
+      id: "sales",
+      label: "Órdenes y ventas",
+      description: "Seguimiento de pedidos activos",
+    },
+    {
+      id: "reports",
+      label: "Reportes",
+      description: "Métricas de rendimiento",
+    },
+    {
+      id: "settings",
+      label: "Configuración",
+      description: "Datos de la tienda y operación",
+    },
+    {
+      id: "users",
+      label: "Cuentas",
+      description: "Administradores y bloqueos",
+    },
+  ];
+
   const reloadOrders = async () => {
     const remoteOrders = await fetchAdminOrders();
     setOrders(remoteOrders);
@@ -294,103 +326,126 @@ export function AdminPage() {
     await reloadUsers();
   };
 
+  const activeSectionInfo =
+    adminSections.find((section) => section.id === activeSection) ??
+    adminSections[0];
+
   return (
-    <section className="mx-auto max-w-5xl space-y-10 px-4 py-12">
-      <div>
+    <section className="mx-auto max-w-7xl space-y-8 px-4 py-8 lg:py-10">
+      <div className="rounded-2xl border border-slate-200 bg-white px-5 py-6 shadow-sm sm:px-6">
         <h1 className="text-3xl font-semibold">Panel admin</h1>
         <p className="mt-2 text-sm text-slate-500">
-          Elegí un área para trabajar productos, ventas, configuración o
-          cuentas.
+          Organización más clara por áreas para acelerar tareas diarias.
         </p>
+
+        <div className="mt-4 grid gap-3 sm:grid-cols-3">
+          <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+            <p className="text-xs uppercase tracking-wide text-slate-500">
+              Órdenes activas
+            </p>
+            <p className="mt-1 text-2xl font-semibold text-slate-900">
+              {visibleOrders.length}
+            </p>
+          </div>
+          <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+            <p className="text-xs uppercase tracking-wide text-slate-500">
+              Productos cargados
+            </p>
+            <p className="mt-1 text-2xl font-semibold text-slate-900">
+              {adminProducts.length}
+            </p>
+          </div>
+          <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+            <p className="text-xs uppercase tracking-wide text-slate-500">
+              Cuentas registradas
+            </p>
+            <p className="mt-1 text-2xl font-semibold text-slate-900">
+              {users.length}
+            </p>
+          </div>
+        </div>
       </div>
 
-      <div className="flex flex-wrap gap-2">
-        <button
-          type="button"
-          className={`rounded-full px-4 py-2 text-sm font-medium transition ${
-            activeSection === "products"
-              ? "bg-slate-900 text-white"
-              : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-          }`}
-          onClick={() => setActiveSection("products")}
-        >
-          Gestión de productos y stock
-        </button>
-        <button
-          type="button"
-          className={`rounded-full px-4 py-2 text-sm font-medium transition ${
-            activeSection === "sales"
-              ? "bg-slate-900 text-white"
-              : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-          }`}
-          onClick={() => setActiveSection("sales")}
-        >
-          Gestión de órdenes y ventas
-        </button>
-        <button
-          type="button"
-          className={`rounded-full px-4 py-2 text-sm font-medium transition ${
-            activeSection === "reports"
-              ? "bg-slate-900 text-white"
-              : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-          }`}
-          onClick={() => setActiveSection("reports")}
-        >
-          Reportes
-        </button>
-        <button
-          type="button"
-          className={`rounded-full px-4 py-2 text-sm font-medium transition ${
-            activeSection === "settings"
-              ? "bg-slate-900 text-white"
-              : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-          }`}
-          onClick={() => setActiveSection("settings")}
-        >
-          Configuración de la tienda
-        </button>
-        <button
-          type="button"
-          className={`rounded-full px-4 py-2 text-sm font-medium transition ${
-            activeSection === "users"
-              ? "bg-slate-900 text-white"
-              : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-          }`}
-          onClick={() => setActiveSection("users")}
-        >
-          Cuentas
-        </button>
-      </div>
+      <div className="grid gap-6 lg:grid-cols-[260px_1fr]">
+        <aside className="h-fit rounded-2xl border border-slate-200 bg-white p-4 shadow-sm lg:sticky lg:top-24">
+          <p className="px-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
+            Navegación
+          </p>
+          <nav className="mt-3 space-y-1">
+            {adminSections.map((section) => {
+              const isActive = section.id === activeSection;
 
-      {activeSection === "products" ? (
-        <ProductManagementSection
-          products={adminProducts}
-          loading={loading && adminProducts.length === 0}
-          onSaveProduct={onSaveProduct}
-          onDeleteProduct={onDeleteProduct}
-          onUploadProductImage={onUploadProductImage}
-        />
-      ) : activeSection === "sales" ? (
-        <OrderManagementSection
-          orders={visibleOrders}
-          products={adminProducts}
-          onUpdateOrderStatus={onUpdateOrderStatus}
-          onUpdateOrderNote={onUpdateOrderNote}
-          onCreateManualSale={onCreateManualSale}
-        />
-      ) : activeSection === "reports" ? (
-        <ReportsManagementSection orders={orders} products={adminProducts} />
-      ) : activeSection === "settings" ? (
-        <StoreSettingsManagementSection />
-      ) : (
-        <UserManagementSection
-          users={users}
-          loading={loadingUsers}
-          onReload={reloadUsers}
-          onMakeAdmin={onMakeUserAdmin}
-          onToggleBlocked={onToggleUserBlocked}
-        />
-      )}
+              return (
+                <button
+                  key={section.id}
+                  type="button"
+                  onClick={() => setActiveSection(section.id)}
+                  className={`w-full rounded-xl px-3 py-2 text-left transition ${
+                    isActive
+                      ? "bg-slate-900 text-white"
+                      : "text-slate-600 hover:bg-slate-100"
+                  }`}
+                >
+                  <p className="text-sm font-medium">{section.label}</p>
+                  <p
+                    className={`text-xs ${
+                      isActive ? "text-slate-300" : "text-slate-500"
+                    }`}
+                  >
+                    {section.description}
+                  </p>
+                </button>
+              );
+            })}
+          </nav>
+        </aside>
+
+        <div className="space-y-4">
+          <div className="rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm sm:px-6">
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+              Sección activa
+            </p>
+            <h2 className="mt-1 text-xl font-semibold text-slate-900">
+              {activeSectionInfo.label}
+            </h2>
+            <p className="mt-1 text-sm text-slate-500">
+              {activeSectionInfo.description}
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
+            {activeSection === "products" ? (
+              <ProductManagementSection
+                products={adminProducts}
+                loading={loading && adminProducts.length === 0}
+                onSaveProduct={onSaveProduct}
+                onDeleteProduct={onDeleteProduct}
+                onUploadProductImage={onUploadProductImage}
+              />
+            ) : activeSection === "sales" ? (
+              <OrderManagementSection
+                orders={visibleOrders}
+                products={adminProducts}
+                onUpdateOrderStatus={onUpdateOrderStatus}
+                onUpdateOrderNote={onUpdateOrderNote}
+                onCreateManualSale={onCreateManualSale}
+              />
+            ) : activeSection === "reports" ? (
+              <ReportsManagementSection orders={orders} products={adminProducts} />
+            ) : activeSection === "settings" ? (
+              <StoreSettingsManagementSection />
+            ) : (
+              <UserManagementSection
+                users={users}
+                loading={loadingUsers}
+                onReload={reloadUsers}
+                onMakeAdmin={onMakeUserAdmin}
+                onToggleBlocked={onToggleUserBlocked}
+              />
+            )}
+          </div>
+        </div>
+      </div>
     </section>
   );
 }

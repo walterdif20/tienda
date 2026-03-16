@@ -1,5 +1,11 @@
 import { useState } from "react";
-import { doc, getDoc, Timestamp } from "firebase/firestore";
+import {
+  collection,
+  getDocs,
+  query,
+  Timestamp,
+  where,
+} from "firebase/firestore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -7,8 +13,11 @@ import { db } from "@/lib/firebase";
 
 const STATUS_LABELS: Record<string, string> = {
   pending: "Pendiente de pago",
+  link_pending: "Envío de link pendiente",
+  link_sent: "Link enviado",
   paid: "Pagada",
-  in_progress: "En preparación",
+  in_progress: "En curso",
+  in_transit: "En viaje",
   payment_in_review: "Pago en revisión",
   completed: "Completada",
   cancelled: "Cancelada",
@@ -47,8 +56,8 @@ export function TrackPage() {
     event.preventDefault();
     const sanitizedOrderId = orderId.trim();
 
-    if (!sanitizedOrderId) {
-      setError("Ingresá un ID de pedido válido.");
+    if (!/^\d{6}$/.test(sanitizedOrderId)) {
+      setError("Ingresá un número de orden válido de 6 dígitos.");
       setResult(null);
       return;
     }
@@ -58,14 +67,22 @@ export function TrackPage() {
     setResult(null);
 
     try {
-      const orderSnapshot = await getDoc(doc(db, "orders", sanitizedOrderId));
+      const ordersSnapshot = await getDocs(
+        query(
+          collection(db, "orders"),
+          where("orderNumber", "==", sanitizedOrderId),
+        ),
+      );
 
-      if (!orderSnapshot.exists()) {
-        setError("No encontramos un pedido con ese ID.");
+      if (ordersSnapshot.empty) {
+        setError("No encontramos un pedido con ese número.");
         return;
       }
 
-      const data = orderSnapshot.data() as { status?: string; createdAt?: unknown };
+      const data = ordersSnapshot.docs[0]?.data() as {
+        status?: string;
+        createdAt?: unknown;
+      };
       const status = String(data.status ?? "pending");
 
       setResult({
@@ -73,7 +90,9 @@ export function TrackPage() {
         updated: formatDate(data.createdAt),
       });
     } catch {
-      setError("No pudimos consultar el estado del pedido. Intentá nuevamente.");
+      setError(
+        "No pudimos consultar el estado del pedido. Intentá nuevamente.",
+      );
     } finally {
       setIsLoading(false);
     }
@@ -88,10 +107,15 @@ export function TrackPage() {
 
       <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
         <div className="space-y-2">
-          <Label>ID de pedido</Label>
+          <Label>Número de orden (6 dígitos)</Label>
           <Input
             value={orderId}
-            onChange={(event) => setOrderId(event.target.value)}
+            maxLength={6}
+            inputMode="numeric"
+            pattern="[0-9]*"
+            onChange={(event) =>
+              setOrderId(event.target.value.replace(/\D/g, "").slice(0, 6))
+            }
           />
         </div>
         <Button type="submit" disabled={isLoading}>

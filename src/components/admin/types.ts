@@ -2,8 +2,11 @@ import type { Product } from "@/types";
 
 export type AdminOrderStatus =
   | "pending"
+  | "link_pending"
+  | "link_sent"
   | "paid"
   | "in_progress"
+  | "in_transit"
   | "payment_in_review"
   | "completed"
   | "cancelled";
@@ -17,6 +20,7 @@ export type AdminOrderItem = {
 
 export type AdminOrder = {
   id: string;
+  orderNumber?: string;
   buyer: string;
   email: string;
   items: AdminOrderItem[];

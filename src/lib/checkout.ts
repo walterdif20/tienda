@@ -3,8 +3,11 @@ import {
   collection,
   doc,
   getDoc,
+  getDocs,
+  query,
   runTransaction,
   serverTimestamp,
+  where,
   writeBatch,
 } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
@@ -24,22 +27,49 @@ export type CreateOrderInput = {
 
 export type CreateOrderResponse = {
   orderId: string;
+  orderNumber: string;
   publicTrackingToken: string;
   transferAlias?: string;
   total: number;
 };
 
-const TRANSFER_ALIAS = import.meta.env.VITE_TRANSFER_ALIAS ?? "tienda.demo.alias";
+const TRANSFER_ALIAS =
+  import.meta.env.VITE_TRANSFER_ALIAS ?? "tienda.demo.alias";
+
+const randomOrderNumber = () =>
+  Math.floor(100000 + Math.random() * 900000).toString();
+
+const buildUniqueOrderNumber = async () => {
+  for (let attempt = 0; attempt < 10; attempt += 1) {
+    const candidate = randomOrderNumber();
+    const existing = await getDocs(
+      query(collection(db, "orders"), where("orderNumber", "==", candidate)),
+    );
+
+    if (existing.empty) {
+      return candidate;
+    }
+  }
+
+  throw new Error("No se pudo generar un número de orden único");
+};
 
 const randomToken = () => {
-  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+  if (
+    typeof crypto !== "undefined" &&
+    typeof crypto.randomUUID === "function"
+  ) {
     return crypto.randomUUID().split("-").join("");
   }
 
-  return Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
+  return (
+    Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2)
+  );
 };
 
-export const createOrder = async (input: CreateOrderInput): Promise<CreateOrderResponse> => {
+export const createOrder = async (
+  input: CreateOrderInput,
+): Promise<CreateOrderResponse> => {
   if (!input.items.length) {
     throw new Error("Carrito vacío");
   }
@@ -53,7 +83,10 @@ export const createOrder = async (input: CreateOrderInput): Promise<CreateOrderR
       return;
     }
 
-    groupedQtyByProduct.set(productId, (groupedQtyByProduct.get(productId) ?? 0) + qty);
+    groupedQtyByProduct.set(
+      productId,
+      (groupedQtyByProduct.get(productId) ?? 0) + qty,
+    );
   });
 
   if (groupedQtyByProduct.size === 0) {
@@ -83,21 +116,28 @@ export const createOrder = async (input: CreateOrderInput): Promise<CreateOrderR
     }),
   );
 
-  const subtotal = officialItems.reduce((sum, item) => sum + item.price * item.qty, 0);
+  const subtotal = officialItems.reduce(
+    (sum, item) => sum + item.price * item.qty,
+    0,
+  );
   const shippingCost = input.delivery.method === "shipping" ? 1500 : 0;
   const baseTotal = subtotal + shippingCost;
-  const transferDiscount = input.paymentMethod === "bank_transfer" ? baseTotal * 0.1 : 0;
+  const transferDiscount =
+    input.paymentMethod === "bank_transfer" ? baseTotal * 0.1 : 0;
   const total = Math.round(baseTotal - transferDiscount);
 
   const orderRef = doc(collection(db, "orders"));
   const publicTrackingToken = randomToken();
+  const orderNumber = await buildUniqueOrderNumber();
 
   const batch = writeBatch(db);
   batch.set(orderRef, {
     userId: auth.currentUser?.uid ?? null,
     buyer: input.buyer,
     delivery: input.delivery,
-    status: "pending",
+    status:
+      input.paymentMethod === "mercado_pago_link" ? "link_pending" : "pending",
+    orderNumber,
     subtotal,
     shippingCost,
     total,
@@ -106,7 +146,8 @@ export const createOrder = async (input: CreateOrderInput): Promise<CreateOrderR
     stockDiscounted: false,
     payment: {
       provider: input.paymentMethod,
-      transferAlias: input.paymentMethod === "bank_transfer" ? TRANSFER_ALIAS : null,
+      transferAlias:
+        input.paymentMethod === "bank_transfer" ? TRANSFER_ALIAS : null,
     },
   });
 
@@ -124,8 +165,10 @@ export const createOrder = async (input: CreateOrderInput): Promise<CreateOrderR
 
   return {
     orderId: orderRef.id,
+    orderNumber,
     publicTrackingToken,
-    transferAlias: input.paymentMethod === "bank_transfer" ? TRANSFER_ALIAS : undefined,
+    transferAlias:
+      input.paymentMethod === "bank_transfer" ? TRANSFER_ALIAS : undefined,
     total,
   };
 };

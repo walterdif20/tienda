@@ -68,13 +68,17 @@ export type OrderDelivery = {
 
 export type Order = {
   id: string;
+  orderNumber?: string;
   userId?: string | null;
   buyer: OrderBuyer;
   delivery: OrderDelivery;
   status:
     | "pending"
+    | "link_pending"
+    | "link_sent"
     | "paid"
     | "in_progress"
+    | "in_transit"
     | "payment_in_review"
     | "completed"
     | "cancelled";

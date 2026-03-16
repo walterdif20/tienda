@@ -13,10 +13,26 @@ type MonthlySale = {
   total: number;
 };
 
-const INCLUDED_STATUSES = new Set(["paid", "in_progress", "payment_in_review", "completed"]);
-const PIE_COLORS = ["#0f172a", "#334155", "#475569", "#64748b", "#94a3b8", "#cbd5e1"];
+const INCLUDED_STATUSES = new Set([
+  "paid",
+  "in_progress",
+  "in_transit",
+  "payment_in_review",
+  "completed",
+]);
+const PIE_COLORS = [
+  "#0f172a",
+  "#334155",
+  "#475569",
+  "#64748b",
+  "#94a3b8",
+  "#cbd5e1",
+];
 
-export function ReportsManagementSection({ orders, products }: ReportsManagementProps) {
+export function ReportsManagementSection({
+  orders,
+  products,
+}: ReportsManagementProps) {
   const validOrders = useMemo(
     () => orders.filter((order) => INCLUDED_STATUSES.has(order.status)),
     [orders],
@@ -33,18 +49,26 @@ export function ReportsManagementSection({ orders, products }: ReportsManagement
       byMonth.set(key, (byMonth.get(key) ?? 0) + order.total);
     }
 
-    return Array.from(byMonth.entries()).map(([month, total]) => ({ month, total }));
+    return Array.from(byMonth.entries()).map(([month, total]) => ({
+      month,
+      total,
+    }));
   }, [validOrders]);
 
   const categoryTotals = useMemo(() => {
-    const productsById = new Map(products.map((product) => [product.id, product]));
+    const productsById = new Map(
+      products.map((product) => [product.id, product]),
+    );
     const totals = new Map<string, number>();
 
     for (const order of validOrders) {
       for (const item of order.items) {
         const product = productsById.get(item.productId);
         const category = product?.categoryId || "Sin categoría";
-        totals.set(category, (totals.get(category) ?? 0) + item.qty * item.unitPrice);
+        totals.set(
+          category,
+          (totals.get(category) ?? 0) + item.qty * item.unitPrice,
+        );
       }
     }
 
@@ -74,20 +98,22 @@ export function ReportsManagementSection({ orders, products }: ReportsManagement
   const globalTotal = validOrders.reduce((sum, order) => sum + order.total, 0);
   const maxMonthly = Math.max(...monthlySales.map((item) => item.total), 1);
 
-  const categoryTotalAmount = categoryTotals.reduce((sum, item) => sum + item.total, 0);
-  const pieStops = categoryTotals
-    .reduce(
-      (acc, item) => {
-        const pct = categoryTotalAmount > 0 ? (item.total / categoryTotalAmount) * 100 : 0;
-        const start = acc.current;
-        const end = acc.current + pct;
-        acc.current = end;
-        acc.stops.push(`${item.color} ${start}% ${end}%`);
-        return acc;
-      },
-      { current: 0, stops: [] as string[] },
-    )
-    .stops;
+  const categoryTotalAmount = categoryTotals.reduce(
+    (sum, item) => sum + item.total,
+    0,
+  );
+  const pieStops = categoryTotals.reduce(
+    (acc, item) => {
+      const pct =
+        categoryTotalAmount > 0 ? (item.total / categoryTotalAmount) * 100 : 0;
+      const start = acc.current;
+      const end = acc.current + pct;
+      acc.current = end;
+      acc.stops.push(`${item.color} ${start}% ${end}%`);
+      return acc;
+    },
+    { current: 0, stops: [] as string[] },
+  ).stops;
 
   const pieBackground = pieStops.length
     ? `conic-gradient(${pieStops.join(", ")})`
@@ -98,7 +124,8 @@ export function ReportsManagementSection({ orders, products }: ReportsManagement
       <div>
         <h2 className="text-xl font-semibold">Reportes</h2>
         <p className="mt-1 text-sm text-slate-500">
-          Ventas netas (sin órdenes canceladas), comportamiento mensual y principales segmentos.
+          Ventas netas (sin órdenes canceladas), comportamiento mensual y
+          principales segmentos.
         </p>
       </div>
 
@@ -111,7 +138,9 @@ export function ReportsManagementSection({ orders, products }: ReportsManagement
         </Card>
         <Card>
           <CardContent className="p-4">
-            <p className="text-xs uppercase text-slate-500">Órdenes consideradas</p>
+            <p className="text-xs uppercase text-slate-500">
+              Órdenes consideradas
+            </p>
             <p className="text-2xl font-semibold">{validOrders.length}</p>
           </CardContent>
         </Card>
@@ -119,7 +148,9 @@ export function ReportsManagementSection({ orders, products }: ReportsManagement
           <CardContent className="p-4">
             <p className="text-xs uppercase text-slate-500">Ticket promedio</p>
             <p className="text-2xl font-semibold">
-              {formatPrice(validOrders.length === 0 ? 0 : globalTotal / validOrders.length)}
+              {formatPrice(
+                validOrders.length === 0 ? 0 : globalTotal / validOrders.length,
+              )}
             </p>
           </CardContent>
         </Card>
@@ -131,7 +162,9 @@ export function ReportsManagementSection({ orders, products }: ReportsManagement
         </CardHeader>
         <CardContent className="space-y-3">
           {monthlySales.length === 0 ? (
-            <p className="text-sm text-slate-500">Todavía no hay ventas para graficar.</p>
+            <p className="text-sm text-slate-500">
+              Todavía no hay ventas para graficar.
+            </p>
           ) : (
             monthlySales.map((item) => (
               <div key={item.month}>
@@ -142,7 +175,9 @@ export function ReportsManagementSection({ orders, products }: ReportsManagement
                 <div className="h-2 w-full rounded-full bg-slate-100">
                   <div
                     className="h-2 rounded-full bg-slate-900"
-                    style={{ width: `${Math.max((item.total / maxMonthly) * 100, 4)}%` }}
+                    style={{
+                      width: `${Math.max((item.total / maxMonthly) * 100, 4)}%`,
+                    }}
                   />
                 </div>
               </div>
@@ -171,15 +206,23 @@ export function ReportsManagementSection({ orders, products }: ReportsManagement
                 </div>
                 <div className="space-y-2">
                   {categoryTotals.map((item) => {
-                    const pct = categoryTotalAmount > 0 ? (item.total / categoryTotalAmount) * 100 : 0;
+                    const pct =
+                      categoryTotalAmount > 0
+                        ? (item.total / categoryTotalAmount) * 100
+                        : 0;
                     return (
-                      <div key={item.category} className="flex items-center justify-between gap-3">
+                      <div
+                        key={item.category}
+                        className="flex items-center justify-between gap-3"
+                      >
                         <div className="flex items-center gap-2">
                           <span
                             className="inline-block h-3 w-3 rounded-full"
                             style={{ backgroundColor: item.color }}
                           />
-                          <span className="text-slate-600">{item.category}</span>
+                          <span className="text-slate-600">
+                            {item.category}
+                          </span>
                         </div>
                         <span className="font-medium">
                           {formatPrice(item.total)} ({pct.toFixed(1)}%)
@@ -199,10 +242,15 @@ export function ReportsManagementSection({ orders, products }: ReportsManagement
           </CardHeader>
           <CardContent className="space-y-2 text-sm">
             {topClients.length === 0 ? (
-              <p className="text-slate-500">Sin clientes con compras registradas.</p>
+              <p className="text-slate-500">
+                Sin clientes con compras registradas.
+              </p>
             ) : (
               topClients.map((item) => (
-                <div key={item.customer} className="flex items-center justify-between">
+                <div
+                  key={item.customer}
+                  className="flex items-center justify-between"
+                >
                   <span className="text-slate-600">{item.customer}</span>
                   <span className="font-medium">{formatPrice(item.total)}</span>
                 </div>

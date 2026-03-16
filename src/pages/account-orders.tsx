@@ -10,8 +10,11 @@ import type { Order } from "@/types";
 
 const STATUS_LABELS: Record<Order["status"], string> = {
   pending: "Pendiente de pago",
+  link_pending: "Envío de link pendiente",
+  link_sent: "Link enviado",
   paid: "Pagada",
-  in_progress: "En preparación",
+  in_progress: "En curso",
+  in_transit: "En viaje",
   payment_in_review: "Pago en revisión",
   completed: "Completada",
   cancelled: "Cancelada",
@@ -95,7 +98,9 @@ export function AccountOrdersPage() {
 
       {loading ? (
         <Card className="mt-8">
-          <CardContent className="p-6 text-sm text-slate-600">Cargando cuenta...</CardContent>
+          <CardContent className="p-6 text-sm text-slate-600">
+            Cargando cuenta...
+          </CardContent>
         </Card>
       ) : null}
 
@@ -105,7 +110,9 @@ export function AccountOrdersPage() {
             <CardTitle>Ingresá a tu cuenta</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 text-sm text-slate-600">
-            <p>Para ver tus compras, iniciá sesión o registrate con tu email.</p>
+            <p>
+              Para ver tus compras, iniciá sesión o registrate con tu email.
+            </p>
             <div className="flex flex-wrap gap-3">
               <Button asChild>
                 <Link to="/login">Ingresar</Link>
@@ -130,7 +137,9 @@ export function AccountOrdersPage() {
 
           {error ? (
             <Card>
-              <CardContent className="p-6 text-sm text-rose-700">{error}</CardContent>
+              <CardContent className="p-6 text-sm text-rose-700">
+                {error}
+              </CardContent>
             </Card>
           ) : null}
 
@@ -145,7 +154,9 @@ export function AccountOrdersPage() {
           {sortedOrders.map((order) => (
             <Card key={order.id}>
               <CardHeader className="space-y-1">
-                <CardTitle className="text-lg">Compra #{order.id}</CardTitle>
+                <CardTitle className="text-lg">
+                  Compra #{order.orderNumber ?? order.id}
+                </CardTitle>
                 <p className="text-xs text-slate-500">
                   Realizada el {formatOrderDate(order.createdAt)}
                 </p>

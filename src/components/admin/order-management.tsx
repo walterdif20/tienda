@@ -24,9 +24,12 @@ type OrderManagementProps = {
 };
 
 const statusLabel: Record<AdminOrderStatus, string> = {
-  pending: "Pendiente",
+  pending: "Pendiente de pago",
+  link_pending: "Envío de link pendiente",
+  link_sent: "Link enviado",
   paid: "Pagada",
   in_progress: "En curso",
+  in_transit: "En viaje",
   payment_in_review: "Pago en revisión",
   completed: "Completada",
   cancelled: "Cancelada",
@@ -34,8 +37,11 @@ const statusLabel: Record<AdminOrderStatus, string> = {
 
 const statusClassName: Record<AdminOrderStatus, string> = {
   pending: "bg-amber-100 text-amber-700",
+  link_pending: "bg-orange-100 text-orange-700",
+  link_sent: "bg-indigo-100 text-indigo-700",
   paid: "bg-emerald-100 text-emerald-700",
   in_progress: "bg-sky-100 text-sky-700",
+  in_transit: "bg-cyan-100 text-cyan-700",
   payment_in_review: "bg-violet-100 text-violet-700",
   completed: "bg-teal-100 text-teal-700",
   cancelled: "bg-rose-100 text-rose-700",
@@ -85,11 +91,15 @@ export function OrderManagementSection({
     return {
       pending: orders.filter((order) => order.status === "pending").length,
       netSales,
-      inProgress: orders.filter((order) => order.status === "in_progress").length,
+      inProgress: orders.filter((order) => order.status === "in_progress")
+        .length,
     };
   }, [orders]);
 
-  const handleStatusChange = async (orderId: string, status: AdminOrderStatus) => {
+  const handleStatusChange = async (
+    orderId: string,
+    status: AdminOrderStatus,
+  ) => {
     const result = await onUpdateOrderStatus(orderId, status);
     setFeedback(result.message ?? null);
   };
@@ -137,7 +147,9 @@ export function OrderManagementSection({
         <Card>
           <CardContent className="p-4">
             <p className="text-xs uppercase text-slate-500">Ventas netas</p>
-            <p className="text-2xl font-semibold">{formatPrice(totals.netSales)}</p>
+            <p className="text-2xl font-semibold">
+              {formatPrice(totals.netSales)}
+            </p>
           </CardContent>
         </Card>
         <Card>
@@ -227,6 +239,20 @@ export function OrderManagementSection({
         </Button>
         <Button
           size="sm"
+          variant={activeFilter === "link_pending" ? "secondary" : "outline"}
+          onClick={() => setActiveFilter("link_pending")}
+        >
+          Link pendiente
+        </Button>
+        <Button
+          size="sm"
+          variant={activeFilter === "link_sent" ? "secondary" : "outline"}
+          onClick={() => setActiveFilter("link_sent")}
+        >
+          Link enviado
+        </Button>
+        <Button
+          size="sm"
           variant={activeFilter === "paid" ? "secondary" : "outline"}
           onClick={() => setActiveFilter("paid")}
         >
@@ -241,7 +267,16 @@ export function OrderManagementSection({
         </Button>
         <Button
           size="sm"
-          variant={activeFilter === "payment_in_review" ? "secondary" : "outline"}
+          variant={activeFilter === "in_transit" ? "secondary" : "outline"}
+          onClick={() => setActiveFilter("in_transit")}
+        >
+          En viaje
+        </Button>
+        <Button
+          size="sm"
+          variant={
+            activeFilter === "payment_in_review" ? "secondary" : "outline"
+          }
           onClick={() => setActiveFilter("payment_in_review")}
         >
           Pago en revisión
@@ -269,7 +304,7 @@ export function OrderManagementSection({
         {filteredOrders.map((order) => (
           <Card key={order.id}>
             <CardHeader className="flex flex-row items-center justify-between gap-2">
-              <CardTitle>{order.id}</CardTitle>
+              <CardTitle>Orden #{order.orderNumber ?? order.id}</CardTitle>
               <span
                 className={`rounded-full px-3 py-1 text-xs font-medium ${statusClassName[order.status]}`}
               >
@@ -297,20 +332,53 @@ export function OrderManagementSection({
                 ))}
               </ul>
               <div className="flex flex-wrap gap-2">
+                {order.paymentMethod === "mercado_pago_link" &&
+                order.status === "link_pending" ? (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleStatusChange(order.id, "link_sent")}
+                  >
+                    Marcar link enviado
+                  </Button>
+                ) : null}
+                {order.paymentMethod === "mercado_pago_link" &&
+                order.status === "link_sent" ? (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleStatusChange(order.id, "in_progress")}
+                  >
+                    Confirmar pago (En curso)
+                  </Button>
+                ) : null}
+                {order.paymentMethod !== "mercado_pago_link" ? (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleStatusChange(order.id, "in_progress")}
+                  >
+                    Aprobar pago (En curso)
+                  </Button>
+                ) : null}
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => handleStatusChange(order.id, "in_progress")}
-                >
-                  Aprobar pago (En curso)
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => handleStatusChange(order.id, "payment_in_review")}
+                  onClick={() =>
+                    handleStatusChange(order.id, "payment_in_review")
+                  }
                 >
                   Marcar pago en revisión
                 </Button>
+                {order.status === "in_progress" ? (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleStatusChange(order.id, "in_transit")}
+                  >
+                    Marcar en viaje
+                  </Button>
+                ) : null}
                 <Button
                   size="sm"
                   variant="secondary"

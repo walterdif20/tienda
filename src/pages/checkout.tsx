@@ -54,6 +54,7 @@ const resolveNameFromEmail = (email: string) => {
 
 type CreatedOrderData = {
   orderId: string;
+  orderNumber: string;
   publicTrackingToken: string;
   transferAlias?: string;
   total: number;
@@ -140,7 +141,8 @@ export function CheckoutPage() {
 
   const deliveryMethod = form.watch("deliveryMethod");
   const paymentMethod = form.watch("paymentMethod");
-  const transferDiscount = paymentMethod === "bank_transfer" ? subtotal * 0.1 : 0;
+  const transferDiscount =
+    paymentMethod === "bank_transfer" ? subtotal * 0.1 : 0;
   const totalPreview = subtotal - transferDiscount;
 
   const onSubmit = async (values: FormValues) => {
@@ -325,9 +327,12 @@ export function CheckoutPage() {
                         })
                       }
                     >
-                      <p className="font-semibold">Link de pago (Mercado Pago)</p>
+                      <p className="font-semibold">
+                        Link de pago (Mercado Pago)
+                      </p>
                       <p className="text-slate-600">
-                        En las proximas horas te enviaremos un link de pago por whatsapp
+                        En las proximas horas te enviaremos un link de pago por
+                        whatsapp
                       </p>
                     </button>
                     <button
@@ -343,9 +348,12 @@ export function CheckoutPage() {
                         })
                       }
                     >
-                      <p className="font-semibold">Transferencia bancaria (10% de descuento)</p>
+                      <p className="font-semibold">
+                        Transferencia bancaria (10% de descuento)
+                      </p>
                       <p className="text-slate-600">
-                        Confirmá tu pago para que podamos revisar y aprobar la orden.
+                        Confirmá tu pago para que podamos revisar y aprobar la
+                        orden.
                       </p>
                     </button>
                   </div>
@@ -364,19 +372,20 @@ export function CheckoutPage() {
               ) : paymentMethod === "mercado_pago_link" ? (
                 <div className="space-y-4 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm">
                   <p>
-                    <strong>Orden:</strong> {createdOrder.orderId}
+                    <strong>Orden:</strong> {createdOrder.orderNumber}
                   </p>
                   <p>
                     <strong>Total:</strong> {formatPrice(createdOrder.total)}
                   </p>
                   <p className="text-slate-700">
-                    En las proximas horas te enviaremos un link de pago por whatsapp
+                    En las proximas horas te enviaremos un link de pago por
+                    whatsapp
                   </p>
                 </div>
               ) : (
                 <div className="space-y-4 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm">
                   <p>
-                    <strong>Orden:</strong> {createdOrder.orderId}
+                    <strong>Orden:</strong> {createdOrder.orderNumber}
                   </p>
                   <p>
                     <strong>Total a transferir:</strong>{" "}

@@ -16,7 +16,9 @@ import type { Product } from "@/types";
 const orderCollection = collection(db, "orders");
 
 export const fetchAdminOrders = async (): Promise<AdminOrder[]> => {
-  const snapshot = await getDocs(query(orderCollection, orderBy("createdAt", "desc")));
+  const snapshot = await getDocs(
+    query(orderCollection, orderBy("createdAt", "desc")),
+  );
 
   const orders = await Promise.all(
     snapshot.docs.map(async (orderDoc) => {
@@ -38,13 +40,15 @@ export const fetchAdminOrders = async (): Promise<AdminOrder[]> => {
         };
       });
 
-      const createdAt = data.createdAt instanceof Timestamp
-        ? data.createdAt.toDate().toISOString()
-        : new Date().toISOString();
+      const createdAt =
+        data.createdAt instanceof Timestamp
+          ? data.createdAt.toDate().toISOString()
+          : new Date().toISOString();
 
       return {
         id: orderDoc.id,
         buyer: data.buyer?.name ?? "Cliente",
+        orderNumber: data.orderNumber ?? orderDoc.id,
         email: data.buyer?.email ?? "",
         items,
         total: data.total ?? 0,
@@ -102,8 +106,11 @@ const discountOrderInventory = async (orderId: string) => {
   });
 };
 
-export const updateAdminOrderStatus = async (orderId: string, status: AdminOrderStatus) => {
-  if (status === "in_progress" || status === "completed") {
+export const updateAdminOrderStatus = async (
+  orderId: string,
+  status: AdminOrderStatus,
+) => {
+  if (status === "in_progress") {
     await discountOrderInventory(orderId);
   }
 

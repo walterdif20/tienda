@@ -51,7 +51,7 @@ export function ProductCard({ product }: ProductCardProps) {
         <img
           src={activeImage?.url}
           alt={activeImage?.alt ?? product.name}
-          className="h-56 w-full object-cover transition duration-500 group-hover:scale-105"
+          className="h-72 w-full object-cover transition duration-500 group-hover:scale-105"
         />
         {images.length > 1 && (
           <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 gap-1 rounded-full bg-white/80 px-2 py-1">
@@ -80,7 +80,9 @@ export function ProductCard({ product }: ProductCardProps) {
           >
             {product.name}
           </Link>
-          <p className="line-clamp-2 text-sm text-slate-500">{product.description}</p>
+          <p className="line-clamp-2 text-sm text-slate-500">
+            {product.description}
+          </p>
         </div>
 
         <div className="flex items-center justify-between gap-3">
@@ -130,7 +132,11 @@ export function ProductCard({ product }: ProductCardProps) {
               </Button>
             </div>
           ) : (
-            <Button variant="secondary" size="sm" onClick={() => addItem(product, 1)}>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => addItem(product, 1)}
+            >
               {quantityInCart > 0 ? `Agregar (${quantityInCart})` : "Agregar"}
             </Button>
           )}

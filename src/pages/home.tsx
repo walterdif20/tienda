@@ -269,7 +269,7 @@ function CategorySection({
             <Link
               key={category.id}
               to="/products"
-              className="group relative block h-44 overflow-hidden rounded-2xl"
+              className="group relative block h-56 overflow-hidden rounded-2xl md:h-64"
             >
               <img
                 src={category.imageUrl}

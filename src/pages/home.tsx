@@ -18,6 +18,7 @@ import { Link } from "react-router-dom";
 import { ProductCard } from "@/components/product-card";
 import { Button } from "@/components/ui/button";
 import { useProducts } from "@/hooks/use-products";
+import { useFavorites } from "@/hooks/use-favorites";
 import { useStoreSettings } from "@/hooks/use-store-settings";
 import { categories } from "@/data/products";
 
@@ -29,6 +30,7 @@ const heroFallbackImages = [
 export function HomePage() {
   const { products, loading } = useProducts();
   const { settings } = useStoreSettings();
+  const { isFavorite, toggleFavorite } = useFavorites();
 
   const latest = products.slice(0, 4);
 
@@ -191,7 +193,12 @@ export function HomePage() {
         loading={loading}
       >
         {latest.map((product) => (
-          <ProductCard key={product.id} product={product} />
+          <ProductCard
+            key={product.id}
+            product={product}
+            isFavorite={isFavorite(product.id)}
+            onToggleFavorite={(productId) => void toggleFavorite(productId)}
+          />
         ))}
       </Section>
     </div>

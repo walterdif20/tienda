@@ -7,6 +7,7 @@ export type AdminUser = {
   email: string;
   displayName: string;
   whatsappNumber: string;
+  favoriteProductIds: string[];
   role: "admin" | "customer";
   isBlocked: boolean;
   createdAtMs: number;
@@ -26,12 +27,18 @@ export const fetchAdminUsers = async () => {
     const createdAt = data.createdAt as { toMillis?: () => number } | undefined;
     const role = data.role === "admin" ? "admin" : "customer";
     const isBlocked = data.isBlocked === true;
+    const favoriteProductIds = Array.isArray(data.favoriteProductIds)
+      ? data.favoriteProductIds.filter(
+          (item): item is string => typeof item === "string",
+        )
+      : [];
 
     return {
       id: doc.id,
       email: String(data.email ?? "Sin email"),
       displayName: String(data.displayName ?? "Sin nombre"),
       whatsappNumber: String(data.whatsappNumber ?? ""),
+      favoriteProductIds,
       role,
       isBlocked,
       createdAtMs: createdAt?.toMillis?.() ?? 0,
@@ -46,7 +53,6 @@ export const makeUserAdmin = async (uid: string) => {
 
 export const toWhatsAppLink = (phone: string) =>
   `https://wa.me/${normalizePhoneForLink(phone)}`;
-
 
 export const setUserBlockedStatus = async (uid: string, blocked: boolean) => {
   const setBlockedStatus = httpsCallable(functions, "setUserBlockedStatus");

@@ -437,6 +437,7 @@ export function AdminPage() {
             ) : (
               <UserManagementSection
                 users={users}
+                products={adminProducts}
                 loading={loadingUsers}
                 onReload={reloadUsers}
                 onMakeAdmin={onMakeUserAdmin}

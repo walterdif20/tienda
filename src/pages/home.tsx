@@ -281,8 +281,10 @@ function CategorySection({
         </p>
       </div>
       {loading ? (
-        <div className="rounded-2xl border border-slate-200 p-8 text-center text-sm text-slate-500">
-          Cargando categorías...
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, index) => (
+            <CategorySkeleton key={`category-skeleton-${index}`} />
+          ))}
         </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -309,6 +311,28 @@ function CategorySection({
   );
 }
 
+function CategorySkeleton() {
+  return (
+    <article className="h-56 animate-pulse overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 md:h-64">
+      <div className="h-full w-full bg-gradient-to-br from-slate-100 via-slate-200 to-slate-100" />
+    </article>
+  );
+}
+
+function ProductSkeleton() {
+  return (
+    <article className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+      <div className="h-72 animate-pulse bg-slate-100" />
+      <div className="space-y-3 p-4">
+        <div className="h-4 w-3/4 animate-pulse rounded bg-slate-100" />
+        <div className="h-3 w-full animate-pulse rounded bg-slate-100" />
+        <div className="h-3 w-2/3 animate-pulse rounded bg-slate-100" />
+        <div className="h-8 w-24 animate-pulse rounded bg-slate-100" />
+      </div>
+    </article>
+  );
+}
+
 function Section({
   title,
   description,
@@ -332,8 +356,10 @@ function Section({
         </Button>
       </div>
       {loading ? (
-        <div className="rounded-2xl border border-slate-200 p-8 text-center text-sm text-slate-500">
-          Cargando productos...
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, index) => (
+            <ProductSkeleton key={`product-skeleton-${index}`} />
+          ))}
         </div>
       ) : (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">

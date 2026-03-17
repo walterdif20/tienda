@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   collection,
   getDocs,
@@ -52,6 +52,30 @@ export function TrackPage() {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
+  const fetchOrderStatus = async (orderNumber: string) => {
+    const ordersSnapshot = await getDocs(
+      query(collection(db, "orders"), where("orderNumber", "==", orderNumber)),
+    );
+
+    if (ordersSnapshot.empty) {
+      setError("No encontramos un pedido con ese número.");
+      setResult(null);
+      return;
+    }
+
+    const data = ordersSnapshot.docs[0]?.data() as {
+      status?: string;
+      createdAt?: unknown;
+    };
+    const status = String(data.status ?? "pending");
+
+    setResult({
+      status: resolveStatusLabel(status),
+      updated: formatDate(data.createdAt),
+    });
+    setError("");
+  };
+
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     const sanitizedOrderId = orderId.trim();
@@ -67,28 +91,7 @@ export function TrackPage() {
     setResult(null);
 
     try {
-      const ordersSnapshot = await getDocs(
-        query(
-          collection(db, "orders"),
-          where("orderNumber", "==", sanitizedOrderId),
-        ),
-      );
-
-      if (ordersSnapshot.empty) {
-        setError("No encontramos un pedido con ese número.");
-        return;
-      }
-
-      const data = ordersSnapshot.docs[0]?.data() as {
-        status?: string;
-        createdAt?: unknown;
-      };
-      const status = String(data.status ?? "pending");
-
-      setResult({
-        status: resolveStatusLabel(status),
-        updated: formatDate(data.createdAt),
-      });
+      await fetchOrderStatus(sanitizedOrderId);
     } catch {
       setError(
         "No pudimos consultar el estado del pedido. Intentá nuevamente.",
@@ -97,6 +100,24 @@ export function TrackPage() {
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (!/^\d{6}$/.test(orderId.trim()) || !result) {
+      return;
+    }
+
+    const intervalId = window.setInterval(() => {
+      void fetchOrderStatus(orderId.trim()).catch(() => {
+        setError(
+          "No pudimos consultar el estado del pedido. Intentá nuevamente.",
+        );
+      });
+    }, 15000);
+
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, [orderId, result]);
 
   return (
     <section className="mx-auto max-w-3xl px-4 py-12">

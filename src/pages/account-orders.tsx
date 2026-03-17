@@ -74,8 +74,13 @@ export function AccountOrdersPage() {
 
     void loadOrders();
 
+    const intervalId = window.setInterval(() => {
+      void loadOrders();
+    }, 15000);
+
     return () => {
       isMounted = false;
+      window.clearInterval(intervalId);
     };
   }, [user]);
 

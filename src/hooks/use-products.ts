@@ -27,6 +27,16 @@ export function useProducts() {
     };
   }, [reloadToken]);
 
+  useEffect(() => {
+    const intervalId = window.setInterval(() => {
+      setReloadToken((value) => value + 1);
+    }, 15000);
+
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, []);
+
   return {
     products,
     loading,

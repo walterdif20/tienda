@@ -8,11 +8,13 @@ export function useProduct(slug?: string) {
 
   useEffect(() => {
     let mounted = true;
+
     const load = async () => {
       if (!slug) {
         setLoading(false);
         return;
       }
+
       try {
         const remote = await fetchProductBySlug(slug);
         if (mounted && remote) {
@@ -24,9 +26,22 @@ export function useProduct(slug?: string) {
         if (mounted) setLoading(false);
       }
     };
-    load();
+
+    void load();
+
+    if (!slug) {
+      return () => {
+        mounted = false;
+      };
+    }
+
+    const intervalId = window.setInterval(() => {
+      void load();
+    }, 15000);
+
     return () => {
       mounted = false;
+      window.clearInterval(intervalId);
     };
   }, [slug]);
 

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Plus, Upload, X } from "lucide-react";
+import { Upload, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -107,15 +107,6 @@ export function StoreSettingsManagementSection() {
     }
   };
 
-  const updateHeroImage = (index: number, value: string) => {
-    setForm((current) => ({
-      ...current,
-      heroImages: current.heroImages.map((image, imageIndex) =>
-        imageIndex === index ? value : image,
-      ),
-    }));
-  };
-
   const removeHeroImage = (index: number) => {
     setForm((current) => ({
       ...current,
@@ -196,20 +187,28 @@ export function StoreSettingsManagementSection() {
 
             {form.heroImages.length === 0 ? (
               <p className="rounded-md border border-dashed border-slate-200 p-3 text-sm text-slate-500">
-                Agregá URLs o subí imágenes para mostrar en la sección
-                principal.
+                Subí imágenes para mostrar en la sección principal.
               </p>
             ) : (
               <div className="space-y-2">
                 {form.heroImages.map((image, index) => (
-                  <div key={`${image}-${index}`} className="flex gap-2">
-                    <Input
-                      value={image}
-                      onChange={(event) =>
-                        updateHeroImage(index, event.target.value)
-                      }
-                      placeholder="https://..."
+                  <div
+                    key={`${image}-${index}`}
+                    className="flex items-start gap-3 rounded-md border border-slate-200 p-2"
+                  >
+                    <img
+                      src={image}
+                      alt={`Vista previa carrusel ${index + 1}`}
+                      className="h-20 w-32 rounded object-cover"
                     />
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-slate-700">
+                        Vista previa {index + 1}
+                      </p>
+                      <p className="mt-1 truncate text-xs text-slate-500">
+                        Imagen cargada en el carrusel
+                      </p>
+                    </div>
                     <Button
                       type="button"
                       variant="outline"
@@ -223,20 +222,6 @@ export function StoreSettingsManagementSection() {
                 ))}
               </div>
             )}
-
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() =>
-                setForm((current) => ({
-                  ...current,
-                  heroImages: [...current.heroImages, ""],
-                }))
-              }
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              Agregar URL manual
-            </Button>
           </div>
 
           <div className="space-y-2">

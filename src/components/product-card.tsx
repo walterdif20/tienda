@@ -82,14 +82,14 @@ export function ProductCard({
           type="button"
           variant="outline"
           size="sm"
-          className="absolute right-3 top-3 h-8 w-8 rounded-full bg-white/90"
+          className="absolute right-3 top-3 h-10 w-10 rounded-full bg-white/90"
           onClick={() => void onToggleFavorite(product.id)}
           aria-label={
             isFavorite ? "Quitar de favoritos" : "Agregar a favoritos"
           }
         >
           <Heart
-            className={`h-4 w-4 ${
+            className={`h-5 w-5 ${
               isFavorite ? "fill-rose-500 text-rose-500" : "text-slate-700"
             }`}
           />

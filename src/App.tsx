@@ -4,6 +4,7 @@ import { HomePage } from "@/pages/home";
 import { ProductsPage } from "@/pages/products";
 import { ProductDetailPage } from "@/pages/product-detail";
 import { CartPage } from "@/pages/cart";
+import { FavoritesPage } from "@/pages/favorites";
 import { CheckoutPage } from "@/pages/checkout";
 import { SuccessPage } from "@/pages/success";
 import { TrackPage } from "@/pages/track";
@@ -19,6 +20,7 @@ export default function App() {
         <Route path="/products" element={<ProductsPage />} />
         <Route path="/products/:slug" element={<ProductDetailPage />} />
         <Route path="/cart" element={<CartPage />} />
+        <Route path="/favoritos" element={<FavoritesPage />} />
         <Route path="/checkout" element={<CheckoutPage />} />
         <Route path="/success" element={<SuccessPage />} />
         <Route path="/track" element={<TrackPage />} />

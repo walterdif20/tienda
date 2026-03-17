@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronRight, Menu, ShoppingBag, X } from "lucide-react";
+import { ChevronDown, ChevronRight, Heart, Menu, ShoppingBag, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Link, NavLink } from "react-router-dom";
 import { categories } from "@/data/products";
@@ -222,6 +222,14 @@ export function SiteHeader() {
               ) : null}
             </div>
           )}
+
+          <Link
+            to="/favoritos"
+            className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:text-slate-900"
+          >
+            <Heart className="h-4 w-4" />
+            <span className="hidden sm:inline">Favoritos</span>
+          </Link>
 
           <Link
             to="/cart"

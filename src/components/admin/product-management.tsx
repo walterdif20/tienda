@@ -49,6 +49,7 @@ export function ProductManagementSection({
   onDeleteProduct,
   onUploadProductImage,
 }: ProductManagementProps) {
+  const [view, setView] = useState<"list" | "form">("list");
   const [editingProductId, setEditingProductId] = useState<string | null>(null);
   const [productForm, setProductForm] =
     useState<ProductFormValues>(emptyProductForm());
@@ -94,6 +95,7 @@ export function ProductManagementSection({
   };
 
   const startEditingProduct = (product: AdminProduct) => {
+    setView("form");
     setEditingProductId(product.id);
     setFeedback(null);
     setProductForm({
@@ -115,6 +117,18 @@ export function ProductManagementSection({
   const resetProductForm = () => {
     setEditingProductId(null);
     setProductForm(emptyProductForm());
+  };
+
+  const startCreatingProduct = () => {
+    resetProductForm();
+    setFeedback(null);
+    setView("form");
+  };
+
+  const backToList = () => {
+    resetProductForm();
+    setFeedback(null);
+    setView("list");
   };
 
   const onSelectImage = async (event: ChangeEvent<HTMLInputElement>) => {
@@ -181,7 +195,7 @@ export function ProductManagementSection({
       setFeedback(
         editingProductId ? "Producto actualizado." : "Producto creado.",
       );
-      resetProductForm();
+      backToList();
     } finally {
       setSavingProduct(false);
     }
@@ -232,218 +246,249 @@ export function ProductManagementSection({
         </span>
       </div>
 
-      <Card className="mt-4">
-        <CardHeader>
-          <CardTitle>
-            {editingProductId ? "Editar producto" : "Cargar nuevo producto"}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="grid gap-3 md:grid-cols-2">
-          <Input
-            value={productForm.name}
-            onChange={(event) => handleProductField("name", event.target.value)}
-            placeholder="Nombre"
-          />
-          <Input
-            value={productForm.slug}
-            onChange={(event) => handleProductField("slug", event.target.value)}
-            placeholder="Slug (opcional)"
-          />
-          <Input
-            value={productForm.price}
-            onChange={(event) =>
-              handleProductField("price", event.target.value)
-            }
-            placeholder="Precio"
-            type="number"
-            min="0"
-          />
-          <Input
-            value={productForm.stock}
-            onChange={(event) =>
-              handleProductField("stock", event.target.value)
-            }
-            placeholder="Stock"
-            type="number"
-            min="0"
-          />
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+            Subnavegación de productos
+          </p>
+          <p className="text-sm text-slate-600">
+            {view === "list"
+              ? "Vista de listado"
+              : editingProductId
+                ? "Vista de edición"
+                : "Vista de alta"}
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            type="button"
+            variant={view === "list" ? "default" : "outline"}
+            onClick={backToList}
+          >
+            Listado
+          </Button>
+          <Button
+            type="button"
+            variant={view === "form" ? "default" : "outline"}
+            onClick={startCreatingProduct}
+          >
+            Nuevo producto
+          </Button>
+        </div>
+      </div>
 
-          <label className="text-sm">
-            <span className="mb-1 block text-slate-600">Categoría</span>
-            <select
-              className="h-10 w-full rounded-md border border-slate-200 px-3 text-sm"
-              value={productForm.categoryId}
-              onChange={(event) =>
-                handleProductField("categoryId", event.target.value)
-              }
-            >
-              {categories.map((category) => (
-                <option key={category.id} value={category.id}>
-                  {category.name}
-                </option>
-              ))}
-            </select>
-          </label>
+      {view === "form" ? (
+        <Card className="mt-4">
+          <CardHeader>
+            <CardTitle>
+              {editingProductId ? "Editar producto" : "Cargar nuevo producto"}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-3 md:grid-cols-2">
+            <Input
+              value={productForm.name}
+              onChange={(event) => handleProductField("name", event.target.value)}
+              placeholder="Nombre"
+            />
+            <Input
+              value={productForm.slug}
+              onChange={(event) => handleProductField("slug", event.target.value)}
+              placeholder="Slug (opcional)"
+            />
+            <Input
+              value={productForm.price}
+              onChange={(event) => handleProductField("price", event.target.value)}
+              placeholder="Precio"
+              type="number"
+              min="0"
+            />
+            <Input
+              value={productForm.stock}
+              onChange={(event) => handleProductField("stock", event.target.value)}
+              placeholder="Stock"
+              type="number"
+              min="0"
+            />
 
-          <Input
-            value={productForm.badge}
-            onChange={(event) =>
-              handleProductField("badge", event.target.value)
-            }
-            placeholder="Badge (opcional)"
-          />
-
-          <div className="rounded-md border border-slate-200 p-3 md:col-span-2">
-            <p className="text-sm font-medium text-slate-700">Imágenes</p>
-            <div className="mt-2 flex flex-wrap items-center gap-2">
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={onSelectImage}
-              />
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={uploadingImage}
+            <label className="text-sm">
+              <span className="mb-1 block text-slate-600">Categoría</span>
+              <select
+                className="h-10 w-full rounded-md border border-slate-200 px-3 text-sm"
+                value={productForm.categoryId}
+                onChange={(event) => handleProductField("categoryId", event.target.value)}
               >
-                {uploadingImage ? "Subiendo..." : "Agregar imagen"}
+                {categories.map((category) => (
+                  <option key={category.id} value={category.id}>
+                    {category.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <Input
+              value={productForm.badge}
+              onChange={(event) => handleProductField("badge", event.target.value)}
+              placeholder="Badge (opcional)"
+            />
+
+            <div className="rounded-md border border-slate-200 p-3 md:col-span-2">
+              <p className="text-sm font-medium text-slate-700">Imágenes</p>
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={onSelectImage}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploadingImage}
+                >
+                  {uploadingImage ? "Subiendo..." : "Agregar imagen"}
+                </Button>
+              </div>
+
+              {productForm.images.length > 0 ? (
+                <div className="mt-3 space-y-3">
+                  {productForm.images.map((image, index) => (
+                    <div
+                      key={`${image.url}-${index}`}
+                      className="rounded-md border border-slate-200 p-2"
+                    >
+                      <div className="flex flex-col gap-3 md:flex-row md:items-start">
+                        <img
+                          src={image.url}
+                          alt={image.alt || `Imagen ${index + 1}`}
+                          className="h-24 w-full rounded-md border border-slate-200 object-cover md:w-32"
+                          loading="lazy"
+                        />
+                        <div className="w-full space-y-2">
+                          <p className="truncate text-xs text-slate-500">{image.url}</p>
+                          <Input
+                            value={image.alt}
+                            onChange={(event) =>
+                              handleImageAlt(index, event.target.value)
+                            }
+                            placeholder="Texto alternativo"
+                          />
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            onClick={() => removeImage(index)}
+                          >
+                            Quitar
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="mt-3 text-sm text-slate-500">
+                  Este producto todavía no tiene imágenes cargadas.
+                </p>
+              )}
+            </div>
+
+            <div className="md:col-span-2">
+              <Input
+                value={productForm.description}
+                onChange={(event) => handleProductField("description", event.target.value)}
+                placeholder="Descripción"
+              />
+            </div>
+
+            <label className="md:col-span-2 flex items-center gap-2 text-sm text-slate-700">
+              <input
+                type="checkbox"
+                checked={productForm.isActive}
+                onChange={(event) =>
+                  setProductForm((current) => ({
+                    ...current,
+                    isActive: event.target.checked,
+                  }))
+                }
+              />
+              Producto activo para la tienda
+            </label>
+
+            <div className="md:col-span-2 flex flex-wrap gap-2">
+              <Button onClick={saveProduct} disabled={uploadingImage || savingProduct}>
+                {savingProduct
+                  ? "Guardando..."
+                  : editingProductId
+                    ? "Guardar cambios"
+                    : "Agregar producto"}
+              </Button>
+              <Button variant="outline" onClick={backToList}>
+                Volver al listado
               </Button>
             </div>
 
-            {productForm.images.length > 0 ? (
-              <div className="mt-3 space-y-3">
-                {productForm.images.map((image, index) => (
-                  <div
-                    key={`${image.url}-${index}`}
-                    className="rounded-md border border-slate-200 p-2"
-                  >
-                    <p className="truncate text-xs text-slate-500">{image.url}</p>
-                    <div className="mt-2 flex flex-col gap-2 md:flex-row">
-                      <Input
-                        value={image.alt}
-                        onChange={(event) =>
-                          handleImageAlt(index, event.target.value)
-                        }
-                        placeholder="Texto alternativo"
-                      />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        onClick={() => removeImage(index)}
-                      >
-                        Quitar
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="mt-3 text-sm text-slate-500">
-                Este producto todavía no tiene imágenes cargadas.
-              </p>
-            )}
-          </div>
-
-          <div className="md:col-span-2">
+            {feedback && <p className="md:col-span-2 text-sm text-slate-600">{feedback}</p>}
+          </CardContent>
+        </Card>
+      ) : (
+        <>
+          <div className="mt-4">
             <Input
-              value={productForm.description}
-              onChange={(event) =>
-                handleProductField("description", event.target.value)
-              }
-              placeholder="Descripción"
+              value={searchTerm}
+              onChange={(event) => setSearchTerm(event.target.value)}
+              placeholder="Buscar por nombre, slug o categoría"
             />
           </div>
 
-          <label className="md:col-span-2 flex items-center gap-2 text-sm text-slate-700">
-            <input
-              type="checkbox"
-              checked={productForm.isActive}
-              onChange={(event) =>
-                setProductForm((current) => ({
-                  ...current,
-                  isActive: event.target.checked,
-                }))
-              }
-            />
-            Producto activo para la tienda
-          </label>
-
-          <div className="md:col-span-2 flex flex-wrap gap-2">
-            <Button onClick={saveProduct} disabled={uploadingImage || savingProduct}>
-              {savingProduct
-                ? "Guardando..."
-                : editingProductId
-                  ? "Guardar cambios"
-                  : "Agregar producto"}
-            </Button>
-            {editingProductId && (
-              <Button variant="outline" onClick={resetProductForm}>
-                Cancelar edición
-              </Button>
+          <div className="mt-4 grid gap-3">
+            {loading && products.length === 0 && (
+              <p className="text-sm text-slate-500">Cargando productos...</p>
             )}
+
+            {visibleProducts.map((product) => (
+              <Card key={product.id}>
+                <CardContent className="flex flex-col gap-3 p-4 md:flex-row md:items-center md:justify-between">
+                  <div>
+                    <p className="font-medium text-slate-900">{product.name}</p>
+                    <p className="text-sm text-slate-500">
+                      {formatPrice(product.price)} · Stock: {product.stock} · Cat:{" "}
+                      {product.categoryId} · {" "}
+                      {product.isActive ? "Activo" : "Inactivo"}
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => startEditingProduct(product)}
+                      disabled={deletingProductId === product.id}
+                    >
+                      Editar
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      onClick={() => {
+                        handleDeleteProduct(product).catch((error) => {
+                          console.error(error);
+                          setFeedback("No se pudo eliminar el producto.");
+                          setDeletingProductId(null);
+                        });
+                      }}
+                      disabled={deletingProductId !== null}
+                    >
+                      {deletingProductId === product.id ? "Eliminando..." : "Eliminar"}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+
+            {feedback && <p className="text-sm text-slate-600">{feedback}</p>}
           </div>
-
-          {feedback && (
-            <p className="md:col-span-2 text-sm text-slate-600">{feedback}</p>
-          )}
-        </CardContent>
-      </Card>
-
-      <div className="mt-4">
-        <Input
-          value={searchTerm}
-          onChange={(event) => setSearchTerm(event.target.value)}
-          placeholder="Buscar por nombre, slug o categoría"
-        />
-      </div>
-
-      <div className="mt-4 grid gap-3">
-        {loading && products.length === 0 && (
-          <p className="text-sm text-slate-500">Cargando productos...</p>
-        )}
-
-        {visibleProducts.map((product) => (
-          <Card key={product.id}>
-            <CardContent className="flex flex-col gap-3 p-4 md:flex-row md:items-center md:justify-between">
-              <div>
-                <p className="font-medium text-slate-900">{product.name}</p>
-                <p className="text-sm text-slate-500">
-                  {formatPrice(product.price)} · Stock: {product.stock} · Cat:{" "}
-                  {product.categoryId} · {" "}
-                  {product.isActive ? "Activo" : "Inactivo"}
-                </p>
-              </div>
-              <div className="flex gap-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => startEditingProduct(product)}
-                  disabled={deletingProductId === product.id}
-                >
-                  Editar
-                </Button>
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  onClick={() => {
-                    handleDeleteProduct(product).catch((error) => {
-                      console.error(error);
-                      setFeedback("No se pudo eliminar el producto.");
-                      setDeletingProductId(null);
-                    });
-                  }}
-                  disabled={deletingProductId !== null}
-                >
-                  {deletingProductId === product.id ? "Eliminando..." : "Eliminar"}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+        </>
+      )}
     </div>
   );
 }

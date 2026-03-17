@@ -1,4 +1,5 @@
 import { Link, useParams } from "react-router-dom";
+import { Heart } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -7,12 +8,14 @@ import { buildProductAvailabilityWhatsAppLink } from "@/lib/whatsapp";
 import { useCartStore } from "@/store/cartStore";
 import { useProduct } from "@/hooks/use-product";
 import { useStoreSettings } from "@/hooks/use-store-settings";
+import { useFavorites } from "@/hooks/use-favorites";
 
 export function ProductDetailPage() {
   const { slug } = useParams();
   const addItem = useCartStore((state) => state.addItem);
   const { product, loading } = useProduct(slug);
   const { settings } = useStoreSettings();
+  const { isFavorite, toggleFavorite } = useFavorites();
   const [activeImageIndex, setActiveImageIndex] = useState(0);
 
   const images = useMemo(() => product?.images ?? [], [product?.images]);
@@ -40,6 +43,7 @@ export function ProductDetailPage() {
     images.length > 0 ? Math.min(activeImageIndex, images.length - 1) : 0;
 
   const activeImage = images[safeActiveImageIndex];
+  const productIsFavorite = isFavorite(product.id);
 
   const goToPrevImage = () => {
     if (images.length <= 1) return;
@@ -142,6 +146,23 @@ export function ProductDetailPage() {
           </div>
 
           <div className="flex flex-wrap gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              size="lg"
+              onClick={() => void toggleFavorite(product.id)}
+            >
+              <Heart
+                className={`mr-2 h-4 w-4 ${
+                  productIsFavorite
+                    ? "fill-rose-500 text-rose-500"
+                    : "text-slate-700"
+                }`}
+              />
+              {productIsFavorite
+                ? "Quitar de favoritos"
+                : "Guardar en favoritos"}
+            </Button>
             {product.stock === 0 ? (
               <Button asChild size="lg">
                 <a

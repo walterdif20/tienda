@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { Heart } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -11,11 +12,17 @@ import type { Product } from "@/types";
 
 interface ProductCardProps {
   product: Product;
+  isFavorite: boolean;
+  onToggleFavorite: (productId: string) => void | Promise<void>;
 }
 
 const IMAGE_ROTATION_MS = 2800;
 
-export function ProductCard({ product }: ProductCardProps) {
+export function ProductCard({
+  product,
+  isFavorite,
+  onToggleFavorite,
+}: ProductCardProps) {
   const addItem = useCartStore((state) => state.addItem);
   const removeItem = useCartStore((state) => state.removeItem);
   const updateQty = useCartStore((state) => state.updateQty);
@@ -71,6 +78,22 @@ export function ProductCard({ product }: ProductCardProps) {
             {product.badge}
           </Badge>
         )}
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="absolute right-3 top-3 h-8 w-8 rounded-full bg-white/90"
+          onClick={() => void onToggleFavorite(product.id)}
+          aria-label={
+            isFavorite ? "Quitar de favoritos" : "Agregar a favoritos"
+          }
+        >
+          <Heart
+            className={`h-4 w-4 ${
+              isFavorite ? "fill-rose-500 text-rose-500" : "text-slate-700"
+            }`}
+          />
+        </Button>
       </div>
 
       <CardContent className="space-y-4 p-4">

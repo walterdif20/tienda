@@ -3,10 +3,12 @@ import {
   collection,
   doc,
   getDocs,
+  increment,
   orderBy,
   query,
   runTransaction,
   serverTimestamp,
+  Transaction,
   updateDoc,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -14,6 +16,56 @@ import type { AdminOrder, AdminOrderStatus } from "@/components/admin/types";
 import type { Product } from "@/types";
 
 const orderCollection = collection(db, "orders");
+
+const syncOrderLoyaltyAfterStatusChange = async (
+  tx: Transaction,
+  orderId: string,
+  orderData: Record<string, unknown>,
+  nextStatus: AdminOrderStatus,
+) => {
+  const orderRef = doc(db, "orders", orderId);
+  const userId = String(orderData.userId ?? "").trim();
+  const loyalty = (orderData.loyalty ?? {}) as Record<string, unknown>;
+  const loyaltyStatus = String(loyalty.status ?? "pending");
+  const pointsEarned = Number(loyalty.pointsEarned ?? 0);
+
+  if (nextStatus === "paid") {
+    tx.update(orderRef, {
+      status: nextStatus,
+      "loyalty.pointsEarned": pointsEarned,
+      "loyalty.status": loyaltyStatus === "credited" ? "credited" : "pending",
+      "loyalty.paidAt": serverTimestamp(),
+    });
+    return;
+  }
+
+  if (nextStatus === "in_progress") {
+    if (userId && pointsEarned > 0 && loyaltyStatus !== "credited") {
+      tx.set(
+        doc(db, "users", userId),
+        {
+          loyaltyPoints: increment(pointsEarned),
+          updatedAt: serverTimestamp(),
+        },
+        { merge: true },
+      );
+    }
+
+    tx.update(orderRef, {
+      status: nextStatus,
+      ...(pointsEarned > 0
+        ? {
+            "loyalty.pointsEarned": pointsEarned,
+            "loyalty.status": "credited",
+            "loyalty.creditedAt": serverTimestamp(),
+          }
+        : {}),
+    });
+    return;
+  }
+
+  tx.update(orderRef, { status: nextStatus });
+};
 
 export const fetchAdminOrders = async (): Promise<AdminOrder[]> => {
   const snapshot = await getDocs(
@@ -114,6 +166,25 @@ export const updateAdminOrderStatus = async (
     await discountOrderInventory(orderId);
   }
 
+  if (status === "paid" || status === "in_progress") {
+    await runTransaction(db, async (tx) => {
+      const orderRef = doc(db, "orders", orderId);
+      const orderSnapshot = await tx.get(orderRef);
+
+      if (!orderSnapshot.exists()) {
+        throw new Error("No se encontró la orden.");
+      }
+
+      await syncOrderLoyaltyAfterStatusChange(
+        tx,
+        orderId,
+        orderSnapshot.data() as Record<string, unknown>,
+        status,
+      );
+    });
+    return;
+  }
+
   await updateDoc(doc(db, "orders", orderId), {
     status,
   });
@@ -165,6 +236,10 @@ export const createManualSale = async (input: {
         provider: "manual",
         transferConfirmedAt: serverTimestamp(),
         adminNotes: "Venta manual creada desde admin.",
+      },
+      loyalty: {
+        pointsEarned: 0,
+        status: "credited",
       },
     });
 

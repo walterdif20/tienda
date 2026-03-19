@@ -11,6 +11,7 @@ import {
   writeBatch,
 } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
+import { calculateLoyaltyPoints } from "@/lib/loyalty";
 import type { OrderBuyer, OrderDelivery } from "@/types";
 
 export type CheckoutCartItemInput = {
@@ -31,6 +32,7 @@ export type CreateOrderResponse = {
   publicTrackingToken: string;
   transferAlias?: string;
   total: number;
+  loyaltyPoints: number;
 };
 
 const TRANSFER_ALIAS =
@@ -125,6 +127,7 @@ export const createOrder = async (
   const transferDiscount =
     input.paymentMethod === "bank_transfer" ? baseTotal * 0.1 : 0;
   const total = Math.round(baseTotal - transferDiscount);
+  const loyaltyPoints = calculateLoyaltyPoints(total);
 
   const orderRef = doc(collection(db, "orders"));
   const publicTrackingToken = randomToken();
@@ -149,6 +152,10 @@ export const createOrder = async (
       transferAlias:
         input.paymentMethod === "bank_transfer" ? TRANSFER_ALIAS : null,
     },
+    loyalty: {
+      pointsEarned: loyaltyPoints,
+      status: "pending",
+    },
   });
 
   officialItems.forEach((item) => {
@@ -170,6 +177,7 @@ export const createOrder = async (
     transferAlias:
       input.paymentMethod === "bank_transfer" ? TRANSFER_ALIAS : undefined,
     total,
+    loyaltyPoints,
   };
 };
 
@@ -193,6 +201,7 @@ export const confirmOrderTransfer = async (input: ConfirmTransferInput) => {
           publicTrackingToken?: string;
           status?: string;
           payment?: { provider?: string; transferConfirmedAt?: Timestamp };
+          loyalty?: { pointsEarned?: number; status?: string };
         }
       | undefined;
 
@@ -207,6 +216,9 @@ export const confirmOrderTransfer = async (input: ConfirmTransferInput) => {
     tx.update(orderRef, {
       status: "paid",
       "payment.transferConfirmedAt": serverTimestamp(),
+      "loyalty.pointsEarned": Number(data?.loyalty?.pointsEarned ?? 0),
+      "loyalty.status": "pending",
+      "loyalty.paidAt": serverTimestamp(),
     });
   });
 

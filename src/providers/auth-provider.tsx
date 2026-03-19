@@ -9,7 +9,7 @@ import {
   signOut,
   updateProfile,
 } from "firebase/auth";
-import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
+import { doc, onSnapshot, serverTimestamp, setDoc } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 
 interface AuthContextValue {
@@ -17,6 +17,7 @@ interface AuthContextValue {
   isAdmin: boolean;
   isBlocked: boolean;
   loading: boolean;
+  loyaltyPoints: number;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (input: {
     email: string;
@@ -29,19 +30,6 @@ interface AuthContextValue {
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
-
-const getUserStatusFromDoc = async (uid: string) => {
-  const userSnapshot = await getDoc(doc(db, "users", uid));
-  if (!userSnapshot.exists()) {
-    return { isAdmin: false, isBlocked: false };
-  }
-
-  const data = userSnapshot.data() as Record<string, unknown>;
-  return {
-    isAdmin: data.role === "admin" || data.isAdmin === true,
-    isBlocked: data.isBlocked === true,
-  };
-};
 
 const upsertUserProfile = async (
   user: User,
@@ -66,30 +54,56 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isAdmin, setIsAdmin] = useState(false);
   const [isBlocked, setIsBlocked] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [loyaltyPoints, setLoyaltyPoints] = useState(0);
 
   useEffect(() => {
+    let unsubscribeUserDoc: (() => void) | undefined;
+
     const unsub = onAuthStateChanged(auth, async (nextUser) => {
+      unsubscribeUserDoc?.();
+      unsubscribeUserDoc = undefined;
       setUser(nextUser);
 
       if (nextUser) {
         await upsertUserProfile(nextUser);
-        const status = await getUserStatusFromDoc(nextUser.uid);
-        setIsAdmin(status.isAdmin);
-        setIsBlocked(status.isBlocked);
 
-        if (status.isBlocked) {
-          await signOut(auth);
-          setUser(null);
-        }
+        unsubscribeUserDoc = onSnapshot(
+          doc(db, "users", nextUser.uid),
+          (userSnapshot) => {
+            if (!userSnapshot.exists()) {
+              setIsAdmin(false);
+              setIsBlocked(false);
+              setLoyaltyPoints(0);
+              setLoading(false);
+              return;
+            }
+
+            const data = userSnapshot.data() as Record<string, unknown>;
+            const nextIsBlocked = data.isBlocked === true;
+
+            setIsAdmin(data.role === "admin" || data.isAdmin === true);
+            setIsBlocked(nextIsBlocked);
+            setLoyaltyPoints(Number(data.loyaltyPoints ?? 0));
+            setLoading(false);
+
+            if (nextIsBlocked) {
+              void signOut(auth);
+              setUser(null);
+            }
+          },
+        );
       } else {
         setIsAdmin(false);
         setIsBlocked(false);
+        setLoyaltyPoints(0);
+        setLoading(false);
       }
-
-      setLoading(false);
     });
 
-    return () => unsub();
+    return () => {
+      unsubscribeUserDoc?.();
+      unsub();
+    };
   }, []);
 
   const value = useMemo(
@@ -98,6 +112,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       isAdmin,
       isBlocked,
       loading,
+      loyaltyPoints,
       signIn: async (email: string, password: string) => {
         await signInWithEmailAndPassword(auth, email, password);
       },
@@ -135,7 +150,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         await signOut(auth);
       },
     }),
-    [user, isAdmin, isBlocked, loading],
+    [user, isAdmin, isBlocked, loading, loyaltyPoints],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

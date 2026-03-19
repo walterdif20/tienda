@@ -94,4 +94,10 @@ export type Order = {
     transferReceiptUrl?: string;
     adminNotes?: string;
   };
+  loyalty?: {
+    pointsEarned: number;
+    status: "pending" | "credited";
+    paidAt?: string;
+    creditedAt?: string;
+  };
 };

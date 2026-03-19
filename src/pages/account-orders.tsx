@@ -179,6 +179,14 @@ export function AccountOrdersPage() {
                     ? `Envío a ${order.delivery.address ?? "domicilio"}`
                     : "Retiro en tienda"}
                 </p>
+                {order.loyalty?.pointsEarned ? (
+                  <p>
+                    <strong>Puntos:</strong> {order.loyalty.pointsEarned} ·{" "}
+                    {order.loyalty.status === "credited"
+                      ? "Ya acreditados en tu cuenta."
+                      : "Se acreditarán cuando comencemos a preparar tu pedido."}
+                  </p>
+                ) : null}
               </CardContent>
             </Card>
           ))}

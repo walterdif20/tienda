@@ -4,11 +4,13 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { formatPrice } from "@/lib/format";
+import { calculateLoyaltyPoints, formatLoyaltyPoints } from "@/lib/loyalty";
 import { useCartStore } from "@/store/cartStore";
 
 export function CartPage() {
   const { items, updateQty, removeItem } = useCartStore();
   const subtotal = items.reduce((sum, item) => sum + item.price * item.qty, 0);
+  const estimatedPoints = calculateLoyaltyPoints(subtotal);
   const freeShippingTag = (
     <Badge className="gap-2 bg-emerald-100 px-3 py-1 text-sm font-semibold text-emerald-800 ring-1 ring-emerald-200">
       <Truck className="h-4 w-4" />
@@ -88,6 +90,11 @@ export function CartPage() {
           <div className="flex items-center justify-between text-sm">
             <span>Envío</span>
             <span>Gratis a Necochea y Quequén</span>
+          </div>
+          <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+            Sumás <strong>{formatLoyaltyPoints(estimatedPoints)} puntos</strong>{" "}
+            con esta compra. Se acreditarán una vez que comencemos a preparar tu
+            pedido.
           </div>
           <div className="flex items-center justify-between text-base font-semibold">
             <span>Total estimado</span>

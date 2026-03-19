@@ -157,7 +157,7 @@ export function StoreSettingsManagementSection() {
                 <img
                   src={form.logoUrl}
                   alt="Preview logo"
-                  className="h-14 w-14 rounded-full border border-slate-200 object-cover"
+                  className="h-16 max-w-[180px] rounded-lg border border-slate-200 bg-white object-contain p-2"
                 />
               ) : (
                 <span className="text-sm text-slate-500">

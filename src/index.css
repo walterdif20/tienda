@@ -17,10 +17,9 @@ body {
 .logo {
   width: auto;
   max-width: min(180px, 38vw);
-  height: 56px;
+  height: 95px;
   padding: 0.35rem 0.5rem;
   border-radius: 0.75rem;
-  image-rendering: -webkit-optimize-contrast;
 }
 
 .store-primary-text {

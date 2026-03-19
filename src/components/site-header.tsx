@@ -200,14 +200,9 @@ export function SiteHeader() {
                         {user.email ?? "No disponible"}
                       </p>
                     </div>
-                    <div>
-                      <p className="text-xs text-slate-400">Rol</p>
-                      <p className="font-medium text-slate-900">
-                        {isAdmin ? "Administrador" : "Cliente"}
-                      </p>
-                    </div>
                   </div>
-
+                  <br /> 
+                  <hr />
                   <Button
                     variant="ghost"
                     className="mt-4 w-full justify-center"

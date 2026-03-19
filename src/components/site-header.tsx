@@ -82,7 +82,7 @@ export function SiteHeader() {
             <img
               src={settings.logoUrl}
               alt={`${settings.title} logo`}
-              className="logo rounded-full border border-slate-200 object-cover"
+              className="logo border border-slate-200 bg-white object-contain"
             />
           ) : null}
         </Link>

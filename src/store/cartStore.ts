@@ -4,19 +4,24 @@ import type { CartItem, Product } from "@/types";
 
 interface CartState {
   items: CartItem[];
+  appliedPoints: number;
   addItem: (product: Product, qty?: number) => void;
   removeItem: (productId: string) => void;
   updateQty: (productId: string, qty: number) => void;
+  setAppliedPoints: (points: number) => void;
   clear: () => void;
 }
 
 const clampQty = (qty: number, stock: number) =>
   Math.min(Math.max(qty, 1), stock);
 
+const normalizePoints = (points: number) => Math.max(0, Math.floor(points));
+
 export const useCartStore = create<CartState>()(
   persist(
     (set, get) => ({
       items: [],
+      appliedPoints: 0,
       addItem: (product, qty = 1) => {
         const items = get().items;
         const existing = items.find((item) => item.productId === product.id);
@@ -58,7 +63,9 @@ export const useCartStore = create<CartState>()(
           ),
         });
       },
-      clear: () => set({ items: [] }),
+      setAppliedPoints: (points) =>
+        set({ appliedPoints: normalizePoints(points) }),
+      clear: () => set({ items: [], appliedPoints: 0 }),
     }),
     { name: "tienda-cart" },
   ),

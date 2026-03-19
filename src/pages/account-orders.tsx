@@ -179,9 +179,16 @@ export function AccountOrdersPage() {
                     ? `Envío a ${order.delivery.address ?? "domicilio"}`
                     : "Retiro en tienda"}
                 </p>
+                {order.loyalty?.redeemedPoints ? (
+                  <p>
+                    <strong>Puntos usados:</strong>{" "}
+                    {order.loyalty.redeemedPoints}
+                  </p>
+                ) : null}
                 {order.loyalty?.pointsEarned ? (
                   <p>
-                    <strong>Puntos:</strong> {order.loyalty.pointsEarned} ·{" "}
+                    <strong>Puntos ganados:</strong>{" "}
+                    {order.loyalty.pointsEarned} ·{" "}
                     {order.loyalty.status === "credited"
                       ? "Ya acreditados en tu cuenta."
                       : "Se acreditarán cuando comencemos a preparar tu pedido."}

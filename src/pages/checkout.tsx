@@ -60,12 +60,13 @@ type CreatedOrderData = {
   transferAlias?: string;
   total: number;
   loyaltyPoints: number;
+  redeemedPoints: number;
 };
 
 export function CheckoutPage() {
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const { items, clear } = useCartStore();
+  const { loyaltyPoints, user } = useAuth();
+  const { appliedPoints, clear, items, setAppliedPoints } = useCartStore();
   const [step, setStep] = useState<"buyer" | "payment">("buyer");
   const [loading, setLoading] = useState(false);
   const [confirmingTransfer, setConfirmingTransfer] = useState(false);
@@ -145,11 +146,25 @@ export function CheckoutPage() {
   const paymentMethod = form.watch("paymentMethod");
   const transferDiscount =
     paymentMethod === "bank_transfer" ? subtotal * 0.1 : 0;
-  const totalPreview = subtotal - transferDiscount;
+  const maxRedeemablePoints = Math.max(
+    0,
+    Math.min(loyaltyPoints, Math.floor(subtotal - transferDiscount)),
+  );
+  const redeemedPoints = Math.min(appliedPoints, maxRedeemablePoints);
+  const totalPreview = Math.max(
+    0,
+    subtotal - transferDiscount - redeemedPoints,
+  );
   const estimatedPoints = useMemo(
     () => calculateLoyaltyPoints(totalPreview),
     [totalPreview],
   );
+
+  useEffect(() => {
+    if (appliedPoints !== redeemedPoints) {
+      setAppliedPoints(redeemedPoints);
+    }
+  }, [appliedPoints, redeemedPoints, setAppliedPoints]);
 
   const onSubmit = async (values: FormValues) => {
     if (items.length === 0 || createdOrder) return;
@@ -171,6 +186,7 @@ export function CheckoutPage() {
           qty: item.qty,
         })),
         paymentMethod: values.paymentMethod,
+        redeemedPoints,
       });
       setCreatedOrder(order);
       clear();
@@ -393,6 +409,12 @@ export function CheckoutPage() {
                   <p>
                     <strong>Total:</strong> {formatPrice(createdOrder.total)}
                   </p>
+                  {createdOrder.redeemedPoints > 0 ? (
+                    <p>
+                      <strong>Puntos usados:</strong>{" "}
+                      {formatLoyaltyPoints(createdOrder.redeemedPoints)}
+                    </p>
+                  ) : null}
                   <p className="text-slate-700">
                     En las proximas horas te enviaremos un link de pago por
                     whatsapp. Cuando el pago quede acreditado, se reservarán{" "}
@@ -412,6 +434,12 @@ export function CheckoutPage() {
                     <strong>Total a transferir:</strong>{" "}
                     {formatPrice(createdOrder.total)}
                   </p>
+                  {createdOrder.redeemedPoints > 0 ? (
+                    <p>
+                      <strong>Puntos usados:</strong>{" "}
+                      {formatLoyaltyPoints(createdOrder.redeemedPoints)}
+                    </p>
+                  ) : null}
                   <p>
                     <strong>Alias:</strong> {createdOrder.transferAlias}
                   </p>
@@ -470,6 +498,12 @@ export function CheckoutPage() {
               <span>-{formatPrice(transferDiscount)}</span>
             </div>
           )}
+          {redeemedPoints > 0 ? (
+            <div className="flex items-center justify-between text-sm text-emerald-700">
+              <span>Puntos usados</span>
+              <span>-{formatPrice(redeemedPoints)}</span>
+            </div>
+          ) : null}
           <div className="flex items-center justify-between text-base font-semibold">
             <span>Total</span>
             <span>{formatPrice(createdOrder?.total ?? totalPreview)}</span>

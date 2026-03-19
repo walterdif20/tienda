@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Truck } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -5,18 +6,30 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { formatPrice } from "@/lib/format";
 import { calculateLoyaltyPoints, formatLoyaltyPoints } from "@/lib/loyalty";
+import { useAuth } from "@/providers/auth-provider";
 import { useCartStore } from "@/store/cartStore";
 
 export function CartPage() {
-  const { items, updateQty, removeItem } = useCartStore();
+  const { loyaltyPoints, user } = useAuth();
+  const { items, appliedPoints, removeItem, setAppliedPoints, updateQty } =
+    useCartStore();
   const subtotal = items.reduce((sum, item) => sum + item.price * item.qty, 0);
-  const estimatedPoints = calculateLoyaltyPoints(subtotal);
+  const maxUsablePoints = Math.min(loyaltyPoints, subtotal);
+  const effectiveAppliedPoints = Math.min(appliedPoints, maxUsablePoints);
+  const totalAfterPoints = Math.max(0, subtotal - effectiveAppliedPoints);
+  const estimatedPoints = calculateLoyaltyPoints(totalAfterPoints);
   const freeShippingTag = (
     <Badge className="gap-2 bg-emerald-100 px-3 py-1 text-sm font-semibold text-emerald-800 ring-1 ring-emerald-200">
       <Truck className="h-4 w-4" />
       Envío gratis a Necochea y Quequén
     </Badge>
   );
+
+  useEffect(() => {
+    if (appliedPoints !== effectiveAppliedPoints) {
+      setAppliedPoints(effectiveAppliedPoints);
+    }
+  }, [appliedPoints, effectiveAppliedPoints, setAppliedPoints]);
 
   if (items.length === 0) {
     return (
@@ -91,14 +104,72 @@ export function CartPage() {
             <span>Envío</span>
             <span>Gratis a Necochea y Quequén</span>
           </div>
+
+          {user ? (
+            <div className="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
+              <div className="flex items-center justify-between gap-3 text-sm">
+                <div>
+                  <p className="font-medium text-slate-900">Usar puntos</p>
+                  <p className="text-slate-500">
+                    Tenés {formatLoyaltyPoints(loyaltyPoints)} puntos
+                    disponibles. Cada punto descuenta $1.
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setAppliedPoints(maxUsablePoints)}
+                  disabled={maxUsablePoints === 0}
+                >
+                  Usar todos
+                </Button>
+              </div>
+              <Input
+                type="number"
+                min={0}
+                max={maxUsablePoints}
+                value={effectiveAppliedPoints}
+                onChange={(event) =>
+                  setAppliedPoints(
+                    Math.min(maxUsablePoints, Number(event.target.value) || 0),
+                  )
+                }
+                placeholder="0"
+              />
+            </div>
+          ) : (
+            <div className="rounded-xl border border-dashed border-slate-300 bg-white p-4 text-sm text-slate-600">
+              Iniciá sesión para usar tus puntos y descontarlos del total.
+            </div>
+          )}
+
+          {effectiveAppliedPoints > 0 ? (
+            <div className="flex items-center justify-between text-sm text-emerald-700">
+              <span>Canje de puntos</span>
+              <span>-{formatPrice(effectiveAppliedPoints)}</span>
+            </div>
+          ) : null}
+
           <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
-            Sumás <strong>{formatLoyaltyPoints(estimatedPoints)} puntos</strong>{" "}
-            con esta compra. Se acreditarán una vez que comencemos a preparar tu
-            pedido.
+            {effectiveAppliedPoints > 0 ? (
+              <>
+                Después de usar tus puntos, sumás{" "}
+                <strong>{formatLoyaltyPoints(estimatedPoints)} puntos</strong>{" "}
+                con esta compra.
+              </>
+            ) : (
+              <>
+                Sumás{" "}
+                <strong>{formatLoyaltyPoints(estimatedPoints)} puntos</strong>{" "}
+                con esta compra.
+              </>
+            )}{" "}
+            Se acreditarán una vez que comencemos a preparar tu pedido.
           </div>
           <div className="flex items-center justify-between text-base font-semibold">
             <span>Total estimado</span>
-            <span>{formatPrice(subtotal)}</span>
+            <span>{formatPrice(totalAfterPoints)}</span>
           </div>
           <Button asChild size="lg" className="w-full">
             <Link to="/checkout">Continuar al checkout</Link>

@@ -347,12 +347,21 @@ export function OrderManagementSection({
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => handleStatusChange(order.id, "in_progress")}
+                    onClick={() => handleStatusChange(order.id, "paid")}
                   >
-                    Confirmar pago (En curso)
+                    Marcar pago acreditado
                   </Button>
                 ) : null}
-                {order.paymentMethod !== "mercado_pago_link" ? (
+                {order.status === "paid" ? (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleStatusChange(order.id, "in_progress")}
+                  >
+                    Comenzar preparación
+                  </Button>
+                ) : null}
+                {order.paymentMethod === "manual" && order.status !== "paid" ? (
                   <Button
                     size="sm"
                     variant="outline"

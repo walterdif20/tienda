@@ -1,4 +1,11 @@
-import { ChevronDown, ChevronRight, Heart, Menu, ShoppingBag, X } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronRight,
+  Heart,
+  Menu,
+  ShoppingBag,
+  X,
+} from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Link, NavLink } from "react-router-dom";
 import { categories } from "@/data/products";
@@ -6,6 +13,7 @@ import { useStoreSettings } from "@/hooks/use-store-settings";
 import { useAuth } from "@/providers/auth-provider";
 import { useCartStore } from "@/store/cartStore";
 import { Button } from "@/components/ui/button";
+import { formatLoyaltyPoints } from "@/lib/loyalty";
 
 const baseLinks = [
   { to: "/", label: "Inicio" },
@@ -18,7 +26,7 @@ export function SiteHeader() {
   const [isMobileProductsOpen, setIsMobileProductsOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const { settings } = useStoreSettings();
-  const { isAdmin, user, signOutUser } = useAuth();
+  const { isAdmin, loyaltyPoints, user, signOutUser } = useAuth();
   const displayName =
     user?.displayName?.trim() || user?.email?.split("@")[0] || "Cliente";
   const userInitial = displayName.charAt(0).toUpperCase();
@@ -200,8 +208,14 @@ export function SiteHeader() {
                         {user.email ?? "No disponible"}
                       </p>
                     </div>
+                    <div>
+                      <p className="text-xs text-slate-400">Puntos</p>
+                      <p className="font-medium text-slate-900">
+                        {formatLoyaltyPoints(loyaltyPoints)} puntos
+                      </p>
+                    </div>
                   </div>
-                  <br /> 
+                  <br />
                   <hr />
                   <Button
                     variant="ghost"

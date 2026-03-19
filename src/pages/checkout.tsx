@@ -14,6 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { formatPrice } from "@/lib/format";
+import { calculateLoyaltyPoints, formatLoyaltyPoints } from "@/lib/loyalty";
 import { useCartStore } from "@/store/cartStore";
 import { doc, getDoc } from "firebase/firestore";
 import { confirmOrderTransfer, createOrder } from "@/lib/checkout";
@@ -58,6 +59,7 @@ type CreatedOrderData = {
   publicTrackingToken: string;
   transferAlias?: string;
   total: number;
+  loyaltyPoints: number;
 };
 
 export function CheckoutPage() {
@@ -144,6 +146,10 @@ export function CheckoutPage() {
   const transferDiscount =
     paymentMethod === "bank_transfer" ? subtotal * 0.1 : 0;
   const totalPreview = subtotal - transferDiscount;
+  const estimatedPoints = useMemo(
+    () => calculateLoyaltyPoints(totalPreview),
+    [totalPreview],
+  );
 
   const onSubmit = async (values: FormValues) => {
     if (items.length === 0 || createdOrder) return;
@@ -359,6 +365,14 @@ export function CheckoutPage() {
                       </p>
                     </button>
                   </div>
+                  <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+                    Esta compra suma{" "}
+                    <strong>
+                      {formatLoyaltyPoints(estimatedPoints)} puntos
+                    </strong>
+                    . Tus puntos se acreditarán una vez que comencemos a
+                    preparar el pedido.
+                  </div>
                   <Button
                     type="submit"
                     size="lg"
@@ -381,7 +395,12 @@ export function CheckoutPage() {
                   </p>
                   <p className="text-slate-700">
                     En las proximas horas te enviaremos un link de pago por
-                    whatsapp
+                    whatsapp. Cuando el pago quede acreditado, se reservarán{" "}
+                    <strong>
+                      {formatLoyaltyPoints(createdOrder.loyaltyPoints)} puntos
+                    </strong>
+                    para tu cuenta y se acreditarán cuando comencemos a preparar
+                    tu pedido.
                   </p>
                 </div>
               ) : (
@@ -416,7 +435,12 @@ export function CheckoutPage() {
                   </div>
                   <p className="text-xs text-slate-600">
                     Cuando confirmes, la orden pasará a <strong>PAGADA</strong>{" "}
-                    y quedará pendiente de revisión del administrador.
+                    y sumará{" "}
+                    <strong>
+                      {formatLoyaltyPoints(createdOrder.loyaltyPoints)} puntos
+                    </strong>{" "}
+                    pendientes. Los acreditaremos cuando comencemos a preparar
+                    tu pedido.
                   </p>
                 </div>
               )}

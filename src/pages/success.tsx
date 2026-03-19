@@ -20,7 +20,7 @@ export function SuccessPage() {
         {isError
           ? "Podés intentar nuevamente o contactarnos para asistencia."
           : isTransferConfirmed
-            ? "Tu orden quedó en estado PAGADA. El administrador revisará tu pago para avanzarla a EN CURSO o marcarla como PAGO EN REVISIÓN."
+            ? "Tu orden quedó en estado PAGADA. Tus puntos quedaron pendientes y se acreditarán cuando comencemos a preparar el pedido."
             : "Te enviamos un email con el detalle y el tracking de tu pedido."}
       </p>
       <div className="mt-6 flex flex-wrap justify-center gap-3">

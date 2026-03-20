@@ -139,7 +139,7 @@ export function ProductCard({
 
         <div className="rounded-2xl bg-slate-50 p-3 text-xs text-slate-600">
           {product.stock <= 5
-            ? `Quedan ${product.stock} unidades. Si te gusta, no cuelgues.`
+            ? `Quedan ${product.stock} unidades. Si te gusta, no esperes.`
             : "Ideal para sumar al look diario o resolver un regalo con estilo."}
         </div>
 

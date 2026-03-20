@@ -47,6 +47,17 @@ const statusClassName: Record<AdminOrderStatus, string> = {
   cancelled: "bg-rose-100 text-rose-700",
 };
 
+const statusConfirmationMessage: Partial<Record<AdminOrderStatus, string>> = {
+  payment_in_review:
+    "¿Seguro que querés marcar esta orden como pago en revisión?",
+  cancelled: "¿Seguro que querés cancelar esta orden?",
+  completed: "¿Seguro que querés marcar esta orden como completada?",
+  in_progress: "¿Seguro que querés mover esta orden a en curso?",
+  in_transit: "¿Seguro que querés marcar esta orden como en viaje?",
+  link_sent: "¿Seguro que querés marcar el link como enviado?",
+  paid: "¿Seguro que querés marcar el pago como acreditado?",
+};
+
 export function OrderManagementSection({
   orders,
   products,
@@ -100,6 +111,11 @@ export function OrderManagementSection({
     orderId: string,
     status: AdminOrderStatus,
   ) => {
+    const confirmationMessage = statusConfirmationMessage[status];
+    if (confirmationMessage && !window.confirm(confirmationMessage)) {
+      return;
+    }
+
     const result = await onUpdateOrderStatus(orderId, status);
     setFeedback(result.message ?? null);
   };
@@ -311,7 +327,7 @@ export function OrderManagementSection({
                 {statusLabel[order.status]}
               </span>
             </CardHeader>
-            <CardContent className="space-y-3 text-sm text-slate-600">
+            <CardContent className="space-y-4 text-sm text-slate-600">
               <p>
                 <strong>Cliente:</strong> {order.buyer} · {order.email}
               </p>
@@ -331,77 +347,96 @@ export function OrderManagementSection({
                   </li>
                 ))}
               </ul>
-              <div className="flex flex-wrap gap-2">
-                {order.paymentMethod === "mercado_pago_link" &&
-                order.status === "link_pending" ? (
+              <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  Acciones principales
+                </p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {order.paymentMethod === "mercado_pago_link" &&
+                  order.status === "link_pending" ? (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleStatusChange(order.id, "link_sent")}
+                    >
+                      Marcar link enviado
+                    </Button>
+                  ) : null}
+                  {order.paymentMethod === "mercado_pago_link" &&
+                  order.status === "link_sent" ? (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleStatusChange(order.id, "paid")}
+                    >
+                      Marcar pago acreditado
+                    </Button>
+                  ) : null}
+                  {order.status === "paid" ? (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleStatusChange(order.id, "in_progress")}
+                    >
+                      Comenzar preparación
+                    </Button>
+                  ) : null}
+                  {order.paymentMethod === "manual" && order.status !== "paid" ? (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleStatusChange(order.id, "in_progress")}
+                    >
+                      Aprobar pago (En curso)
+                    </Button>
+                  ) : null}
+                  {order.status === "in_progress" ? (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleStatusChange(order.id, "in_transit")}
+                    >
+                      Marcar en viaje
+                    </Button>
+                  ) : null}
                   <Button
                     size="sm"
-                    variant="outline"
-                    onClick={() => handleStatusChange(order.id, "link_sent")}
+                    variant="secondary"
+                    onClick={() => handleStatusChange(order.id, "completed")}
                   >
-                    Marcar link enviado
+                    Marcar como completada
                   </Button>
-                ) : null}
-                {order.paymentMethod === "mercado_pago_link" &&
-                order.status === "link_sent" ? (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => handleStatusChange(order.id, "paid")}
-                  >
-                    Marcar pago acreditado
-                  </Button>
-                ) : null}
-                {order.status === "paid" ? (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => handleStatusChange(order.id, "in_progress")}
-                  >
-                    Comenzar preparación
-                  </Button>
-                ) : null}
-                {order.paymentMethod === "manual" && order.status !== "paid" ? (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => handleStatusChange(order.id, "in_progress")}
-                  >
-                    Aprobar pago (En curso)
-                  </Button>
-                ) : null}
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() =>
-                    handleStatusChange(order.id, "payment_in_review")
-                  }
-                >
-                  Marcar pago en revisión
-                </Button>
-                {order.status === "in_progress" ? (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => handleStatusChange(order.id, "in_transit")}
-                  >
-                    Marcar en viaje
-                  </Button>
-                ) : null}
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  onClick={() => handleStatusChange(order.id, "completed")}
-                >
-                  Marcar como completada
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => handleStatusChange(order.id, "cancelled")}
-                >
-                  Cancelar
-                </Button>
+                </div>
+              </div>
+              <div className="rounded-lg border border-amber-200 bg-amber-50 p-3">
+                <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-amber-700">
+                      Acciones sensibles
+                    </p>
+                    <p className="mt-1 text-xs text-amber-700/80">
+                      Reubicamos revisión de pago y cancelación para evitar errores.
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap gap-2 md:justify-end">
+                    <Button
+                      size="sm"
+                      className="bg-violet-600 text-white hover:bg-violet-700"
+                      onClick={() =>
+                        handleStatusChange(order.id, "payment_in_review")
+                      }
+                    >
+                      Marcar pago en revisión
+                    </Button>
+                    <Button
+                      size="sm"
+                      className="bg-rose-600 text-white hover:bg-rose-700"
+                      onClick={() => handleStatusChange(order.id, "cancelled")}
+                    >
+                      Cancelar orden
+                    </Button>
+                  </div>
+                </div>
               </div>
               <Input
                 value={order.note}

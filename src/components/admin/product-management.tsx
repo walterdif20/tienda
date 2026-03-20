@@ -1,5 +1,6 @@
 import { type ChangeEvent, useMemo, useRef, useState } from "react";
 import { categories } from "@/data/products";
+import { productCollections } from "@/lib/collections";
 import { formatPrice } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -28,6 +29,7 @@ const emptyProductForm = (): ProductFormValues => ({
   price: "",
   stock: "",
   categoryId: categories[0]?.id ?? "",
+  collectionIds: [],
   badge: "",
   images: [],
   isActive: true,
@@ -94,6 +96,17 @@ export function ProductManagementSection({
     }));
   };
 
+  const toggleCollection = (
+    collectionId: ProductFormValues["collectionIds"][number],
+  ) => {
+    setProductForm((current) => ({
+      ...current,
+      collectionIds: current.collectionIds.includes(collectionId)
+        ? current.collectionIds.filter((id) => id !== collectionId)
+        : [...current.collectionIds, collectionId],
+    }));
+  };
+
   const startEditingProduct = (product: AdminProduct) => {
     setView("form");
     setEditingProductId(product.id);
@@ -105,6 +118,7 @@ export function ProductManagementSection({
       price: String(product.price),
       stock: String(product.stock),
       categoryId: product.categoryId,
+      collectionIds: product.collectionIds ?? [],
       badge: product.badge ?? "",
       images: product.images.map((image) => ({
         url: image.url,
@@ -332,6 +346,38 @@ export function ProductManagementSection({
             />
 
             <div className="rounded-md border border-slate-200 p-3 md:col-span-2">
+              <p className="text-sm font-medium text-slate-700">
+                Comprar por ocasión
+              </p>
+              <p className="mt-1 text-sm text-slate-500">
+                Configurá en qué categorías editoriales entra este artículo.
+              </p>
+              <div className="mt-3 grid gap-2 md:grid-cols-2">
+                {productCollections.map((collection) => (
+                  <label
+                    key={collection.id}
+                    className="flex items-start gap-3 rounded-md border border-slate-200 px-3 py-2 text-sm text-slate-700"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={productForm.collectionIds.includes(collection.id)}
+                      onChange={() => toggleCollection(collection.id)}
+                      className="mt-1"
+                    />
+                    <span>
+                      <span className="block font-medium text-slate-900">
+                        {collection.label}
+                      </span>
+                      <span className="text-slate-500">
+                        {collection.description}
+                      </span>
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded-md border border-slate-200 p-3 md:col-span-2">
               <p className="text-sm font-medium text-slate-700">Imágenes</p>
               <div className="mt-2 flex flex-wrap items-center gap-2">
                 <input
@@ -455,6 +501,19 @@ export function ProductManagementSection({
                       {formatPrice(product.price)} · Stock: {product.stock} · Cat:{" "}
                       {product.categoryId} · {" "}
                       {product.isActive ? "Activo" : "Inactivo"}
+                    </p>
+                    <p className="mt-1 text-sm text-slate-500">
+                      Ocasiones:{" "}
+                      {product.collectionIds?.length
+                        ? product.collectionIds
+                            .map(
+                              (collectionId) =>
+                                productCollections.find(
+                                  (collection) => collection.id === collectionId,
+                                )?.shortLabel ?? collectionId,
+                            )
+                            .join(", ")
+                        : "Sin asignar"}
                     </p>
                   </div>
                   <div className="flex gap-2">

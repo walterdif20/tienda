@@ -1,13 +1,7 @@
-import type { Product } from "@/types";
+import type { Product, ProductCollectionId } from "@/types";
 
 export type ProductCollection = {
-  id:
-    | "gift"
-    | "daily"
-    | "premium"
-    | "last-units"
-    | "layering"
-    | "trending";
+  id: ProductCollectionId;
   label: string;
   shortLabel: string;
   description: string;
@@ -63,8 +57,14 @@ export const getCollectionById = (collectionId?: string | null) =>
   productCollections.find((collection) => collection.id === collectionId);
 
 export const getProductCollectionIds = (product: Product) => {
+  if (product.collectionIds !== undefined) {
+    return [...new Set(product.collectionIds)].filter((collectionId) =>
+      productCollections.some((collection) => collection.id === collectionId),
+    );
+  }
+
   const normalizedText = `${product.name} ${product.description} ${product.badge ?? ""}`.toLowerCase();
-  const collections = new Set<ProductCollection["id"]>();
+  const collections = new Set<ProductCollectionId>();
 
   if (
     product.featured ||
@@ -108,7 +108,5 @@ export const productMatchesCollection = (
   collectionId?: string | null,
 ) => {
   if (!collectionId) return true;
-  return getProductCollectionIds(product).includes(
-    collectionId as ProductCollection["id"],
-  );
+  return getProductCollectionIds(product).includes(collectionId as ProductCollectionId);
 };

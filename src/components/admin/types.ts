@@ -1,4 +1,4 @@
-import type { Product } from "@/types";
+import type { Product, ProductCollectionId } from "@/types";
 
 export type AdminOrderStatus =
   | "pending"
@@ -38,6 +38,7 @@ export type ProductFormValues = {
   price: string;
   stock: string;
   categoryId: string;
+  collectionIds: ProductCollectionId[];
   badge: string;
   images: Array<{
     url: string;

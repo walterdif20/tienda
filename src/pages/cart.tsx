@@ -65,36 +65,38 @@ export function CartPage() {
           {items.map((item) => (
             <div
               key={item.productId}
-              className="flex gap-4 rounded-2xl border border-slate-200 p-4"
+              className="flex flex-col gap-4 rounded-2xl border border-slate-200 p-4 sm:flex-row"
             >
-              <img
-                src={item.imageUrl}
-                alt={item.name}
-                className="h-24 w-24 rounded-lg object-cover"
-              />
-              <div className="flex-1">
-                <h2 className="text-lg font-semibold">{item.name}</h2>
-                <p className="text-sm text-slate-500">{formatPrice(item.price)}</p>
-                <div className="mt-3 flex items-center gap-3">
-                  <Input
-                    type="number"
-                    min={1}
-                    max={item.stock}
-                    value={item.qty}
-                    onChange={(event) =>
-                      updateQty(item.productId, Number(event.target.value))
-                    }
-                    className="w-20"
-                  />
-                  <Button
-                    variant="ghost"
-                    onClick={() => removeItem(item.productId)}
-                  >
-                    Quitar
-                  </Button>
+              <div className="flex gap-4 sm:flex-1">
+                <img
+                  src={item.imageUrl}
+                  alt={item.name}
+                  className="h-24 w-24 shrink-0 rounded-lg object-cover"
+                />
+                <div className="min-w-0 flex-1">
+                  <h2 className="text-lg font-semibold">{item.name}</h2>
+                  <p className="text-sm text-slate-500">{formatPrice(item.price)}</p>
+                  <div className="mt-3 flex items-center gap-3">
+                    <Input
+                      type="number"
+                      min={1}
+                      max={item.stock}
+                      value={item.qty}
+                      onChange={(event) =>
+                        updateQty(item.productId, Number(event.target.value))
+                      }
+                      className="w-20"
+                    />
+                    <Button
+                      variant="ghost"
+                      onClick={() => removeItem(item.productId)}
+                    >
+                      Quitar
+                    </Button>
+                  </div>
                 </div>
               </div>
-              <div className="text-right text-sm font-semibold">
+              <div className="text-left text-sm font-semibold sm:text-right">
                 {formatPrice(item.price * item.qty)}
               </div>
             </div>
@@ -208,7 +210,7 @@ function ValueCard({
       }`}
     >
       <p className="text-xs uppercase tracking-[0.18em] opacity-70">{label}</p>
-      <p className="mt-2 text-xl font-semibold">{value}</p>
+      <p className="mt-2 break-words text-lg font-semibold sm:text-xl">{value}</p>
     </div>
   );
 }

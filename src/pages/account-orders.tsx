@@ -20,6 +20,21 @@ const STATUS_LABELS: Record<Order["status"], string> = {
   cancelled: "Cancelada",
 };
 
+const getOrderTime = (createdAt: unknown) => {
+  if (createdAt instanceof Timestamp) {
+    return createdAt.toMillis();
+  }
+
+  if (typeof createdAt === "string" || typeof createdAt === "number") {
+    const parsedDate = new Date(createdAt);
+    if (!Number.isNaN(parsedDate.getTime())) {
+      return parsedDate.getTime();
+    }
+  }
+
+  return 0;
+};
+
 const formatOrderDate = (createdAt: unknown) => {
   if (createdAt instanceof Timestamp) {
     return createdAt.toDate().toLocaleString("es-AR");
@@ -40,10 +55,12 @@ export function AccountOrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoadingOrders, setIsLoadingOrders] = useState(false);
   const [error, setError] = useState("");
+  const [showAllOrders, setShowAllOrders] = useState(false);
 
   useEffect(() => {
     if (!user) {
       setOrders([]);
+      setShowAllOrders(false);
       return;
     }
 
@@ -88,11 +105,17 @@ export function AccountOrdersPage() {
     () =>
       [...orders].sort(
         (left, right) =>
-          new Date(String(right.createdAt)).getTime() -
-          new Date(String(left.createdAt)).getTime(),
+          getOrderTime(right.createdAt) - getOrderTime(left.createdAt),
       ),
     [orders],
   );
+
+  const visibleOrders = useMemo(
+    () => (showAllOrders ? sortedOrders : sortedOrders.slice(0, 3)),
+    [showAllOrders, sortedOrders],
+  );
+
+  const hasPreviousOrders = sortedOrders.length > 3;
 
   return (
     <section className="mx-auto max-w-4xl px-4 py-12">
@@ -156,7 +179,7 @@ export function AccountOrdersPage() {
             </Card>
           ) : null}
 
-          {sortedOrders.map((order) => (
+          {visibleOrders.map((order) => (
             <Card key={order.id}>
               <CardHeader className="space-y-1">
                 <CardTitle className="text-lg">
@@ -197,6 +220,14 @@ export function AccountOrdersPage() {
               </CardContent>
             </Card>
           ))}
+
+          {!isLoadingOrders && !error && hasPreviousOrders && !showAllOrders ? (
+            <div className="flex justify-center">
+              <Button variant="outline" onClick={() => setShowAllOrders(true)}>
+                Mostrar anteriores
+              </Button>
+            </div>
+          ) : null}
         </div>
       ) : null}
     </section>

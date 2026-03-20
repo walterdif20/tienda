@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
+import { Gift, ShieldCheck } from "lucide-react";
 import { Timestamp } from "firebase/firestore";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatPrice } from "@/lib/format";
 import { fetchOrdersByUser } from "@/lib/orders";
+import { formatLoyaltyPoints, getLoyaltyProgress } from "@/lib/loyalty";
 import { useAuth } from "@/providers/auth-provider";
 import type { Order } from "@/types";
 
@@ -51,7 +53,7 @@ const formatOrderDate = (createdAt: unknown) => {
 };
 
 export function AccountOrdersPage() {
-  const { user, loading } = useAuth();
+  const { loyaltyPoints, user, loading } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoadingOrders, setIsLoadingOrders] = useState(false);
   const [error, setError] = useState("");
@@ -116,6 +118,7 @@ export function AccountOrdersPage() {
   );
 
   const hasPreviousOrders = sortedOrders.length > 3;
+  const loyaltyProgress = getLoyaltyProgress(loyaltyPoints);
 
   return (
     <section className="mx-auto max-w-4xl px-4 py-12">
@@ -155,6 +158,36 @@ export function AccountOrdersPage() {
 
       {!loading && user ? (
         <div className="mt-8 grid gap-4">
+          <Card>
+            <CardContent className="grid gap-4 p-6 md:grid-cols-[1fr_0.85fr]">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Club de fidelización</p>
+                <h2 className="mt-2 text-xl font-semibold text-slate-900">Nivel {loyaltyProgress.currentTier.label}</h2>
+                <p className="mt-2 text-sm text-slate-600">
+                  Tenés {formatLoyaltyPoints(loyaltyPoints)} puntos disponibles.
+                  {loyaltyProgress.nextTier
+                    ? ` Te faltan ${formatLoyaltyPoints(loyaltyProgress.missingPoints)} para subir a ${loyaltyProgress.nextTier.label}.`
+                    : " Ya alcanzaste el nivel más alto del club."}
+                </p>
+              </div>
+              <div className="space-y-3 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <div className="flex items-center gap-2 text-sm font-medium text-slate-900">
+                  <Gift className="h-4 w-4 text-amber-500" />
+                  Recompra con beneficios
+                </div>
+                <div className="h-2 rounded-full bg-slate-200">
+                  <div className="h-full rounded-full bg-slate-900" style={{ width: `${loyaltyProgress.percentage}%` }} />
+                </div>
+                <p className="text-sm text-slate-600">
+                  Usá tus puntos en carrito/checkout y seguí el estado de tus órdenes desde tu cuenta.
+                </p>
+                <div className="flex items-start gap-2 text-sm text-slate-600">
+                  <ShieldCheck className="mt-0.5 h-4 w-4 text-emerald-600" />
+                  Tus puntos se acreditan cuando comenzamos a preparar el pedido.
+                </div>
+              </div>
+            </CardContent>
+          </Card>
           {isLoadingOrders ? (
             <Card>
               <CardContent className="p-6 text-sm text-slate-600">

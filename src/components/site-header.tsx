@@ -3,17 +3,19 @@ import {
   ChevronRight,
   Heart,
   Menu,
+  Search,
   ShoppingBag,
   X,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { Link, NavLink } from "react-router-dom";
+import { Link, NavLink, useNavigate } from "react-router-dom";
 import { categories } from "@/data/products";
 import { useStoreSettings } from "@/hooks/use-store-settings";
 import { useAuth } from "@/providers/auth-provider";
 import { useCartStore } from "@/store/cartStore";
 import { Button } from "@/components/ui/button";
-import { formatLoyaltyPoints } from "@/lib/loyalty";
+import { Input } from "@/components/ui/input";
+import { formatLoyaltyPoints, getLoyaltyProgress } from "@/lib/loyalty";
 
 const baseLinks = [
   { to: "/", label: "Inicio" },
@@ -25,6 +27,8 @@ export function SiteHeader() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMobileProductsOpen, setIsMobileProductsOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const navigate = useNavigate();
   const { settings } = useStoreSettings();
   const { isAdmin, loyaltyPoints, user, signOutUser } = useAuth();
   const displayName =
@@ -34,6 +38,7 @@ export function SiteHeader() {
     state.items.reduce((total, item) => total + item.qty, 0),
   );
   const userMenuRef = useRef<HTMLDivElement>(null);
+  const loyaltyProgress = getLoyaltyProgress(loyaltyPoints);
 
   useEffect(() => {
     if (!isUserMenuOpen) {
@@ -78,9 +83,16 @@ export function SiteHeader() {
       ? "rounded-full bg-slate-100 px-3 py-1.5 text-slate-900"
       : "rounded-full px-3 py-1.5 transition hover:bg-slate-100/80 hover:text-slate-900";
 
+  const handleSearchSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const sanitized = searchQuery.trim();
+    navigate(sanitized ? `/products?query=${encodeURIComponent(sanitized)}` : "/products");
+    closeMobileMenu();
+  };
+
   return (
     <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/90 backdrop-blur">
-      <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
+      <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4">
         <Link
           to="/"
           className="flex items-center gap-2 text-lg font-semibold tracking-tight text-slate-900"
@@ -92,10 +104,25 @@ export function SiteHeader() {
               alt={`${settings.title} logo`}
               className="logo border border-slate-200 bg-white object-contain"
             />
-          ) : null}
+          ) : (
+            <span>{settings.title}</span>
+          )}
         </Link>
 
-        <nav className="hidden items-center gap-6 text-sm font-medium text-slate-600 md:flex">
+        <form
+          onSubmit={handleSearchSubmit}
+          className="relative hidden max-w-sm flex-1 md:block"
+        >
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+          <Input
+            value={searchQuery}
+            onChange={(event) => setSearchQuery(event.target.value)}
+            placeholder="Buscar regalos, básicos o productos..."
+            className="rounded-full border-slate-200 pl-9"
+          />
+        </form>
+
+        <nav className="hidden items-center gap-3 text-sm font-medium text-slate-600 xl:flex">
           {links.map((link) =>
             link.to === "/products" ? (
               <div key={link.to} className="group relative">
@@ -147,7 +174,7 @@ export function SiteHeader() {
           <Button
             variant="ghost"
             size="sm"
-            className="h-9 w-9 p-0 md:hidden"
+            className="h-9 w-9 p-0 xl:hidden"
             onClick={toggleMobileMenu}
             aria-label={isMobileMenuOpen ? "Cerrar menú" : "Abrir menú"}
             aria-expanded={isMobileMenuOpen}
@@ -163,7 +190,7 @@ export function SiteHeader() {
           {!user ? (
             <Link
               to="/registro"
-              className="inline-flex items-center rounded-full bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800"
+              className="hidden items-center rounded-full bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800 sm:inline-flex"
             >
               Login / Registro
             </Link>
@@ -191,16 +218,14 @@ export function SiteHeader() {
               </button>
 
               {isUserMenuOpen ? (
-                <div className="absolute right-0 top-[calc(100%+0.5rem)] z-50 w-64 rounded-2xl border border-slate-200 bg-white p-4 shadow-lg">
+                <div className="absolute right-0 top-[calc(100%+0.5rem)] z-50 w-72 rounded-2xl border border-slate-200 bg-white p-4 shadow-lg">
                   <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
                     Mi cuenta
                   </p>
                   <div className="mt-3 space-y-2 text-sm text-slate-600">
                     <div>
                       <p className="text-xs text-slate-400">Nombre</p>
-                      <p className="font-medium text-slate-900">
-                        {displayName}
-                      </p>
+                      <p className="font-medium text-slate-900">{displayName}</p>
                     </div>
                     <div>
                       <p className="text-xs text-slate-400">Email</p>
@@ -208,10 +233,21 @@ export function SiteHeader() {
                         {user.email ?? "No disponible"}
                       </p>
                     </div>
-                    <div>
-                      <p className="text-xs text-slate-400">Puntos</p>
+                    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
+                      <p className="text-xs text-slate-400">Club</p>
                       <p className="font-medium text-slate-900">
-                        {formatLoyaltyPoints(loyaltyPoints)} puntos
+                        {formatLoyaltyPoints(loyaltyPoints)} puntos · Nivel {loyaltyProgress.currentTier.label}
+                      </p>
+                      <div className="mt-3 h-2 rounded-full bg-slate-200">
+                        <div
+                          className="h-full rounded-full bg-slate-900 transition-all"
+                          style={{ width: `${loyaltyProgress.percentage}%` }}
+                        />
+                      </div>
+                      <p className="mt-2 text-xs text-slate-500">
+                        {loyaltyProgress.nextTier
+                          ? `Te faltan ${formatLoyaltyPoints(loyaltyProgress.missingPoints)} puntos para ${loyaltyProgress.nextTier.label}.`
+                          : "Ya estás en el nivel más alto del club."}
                       </p>
                     </div>
                   </div>
@@ -258,9 +294,18 @@ export function SiteHeader() {
       {isMobileMenuOpen ? (
         <nav
           id="mobile-menu"
-          className="border-t border-slate-200 px-4 py-3 md:hidden"
+          className="border-t border-slate-200 px-4 py-3 xl:hidden"
         >
-          <div className="mx-auto flex max-w-6xl flex-col gap-3 text-sm font-medium text-slate-600">
+          <div className="mx-auto flex max-w-7xl flex-col gap-3 text-sm font-medium text-slate-600">
+            <form onSubmit={handleSearchSubmit} className="relative pb-2">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <Input
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+                placeholder="Buscar productos..."
+                className="pl-9"
+              />
+            </form>
             {links.map((link) =>
               link.to === "/products" ? (
                 <div key={link.to} className="space-y-2">

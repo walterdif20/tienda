@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   collection,
   getDocs,
@@ -23,9 +23,18 @@ const STATUS_LABELS: Record<string, string> = {
   cancelled: "Cancelada",
 };
 
+const TIMELINE_STEPS = [
+  { id: "pending", label: "Pedido recibido", statuses: ["pending", "link_pending", "link_sent", "payment_in_review", "paid", "in_progress", "in_transit", "completed"] },
+  { id: "paid", label: "Pago resuelto", statuses: ["paid", "in_progress", "in_transit", "completed"] },
+  { id: "in_progress", label: "Preparando pedido", statuses: ["in_progress", "in_transit", "completed"] },
+  { id: "in_transit", label: "En camino", statuses: ["in_transit", "completed"] },
+  { id: "completed", label: "Entregado", statuses: ["completed"] },
+];
+
 const resolveStatusLabel = (status: string) => STATUS_LABELS[status] ?? status;
 
 type TrackResult = {
+  rawStatus: string;
   status: string;
   updated: string;
 };
@@ -70,6 +79,7 @@ export function TrackPage() {
     const status = String(data.status ?? "pending");
 
     setResult({
+      rawStatus: status,
       status: resolveStatusLabel(status),
       updated: formatDate(data.createdAt),
     });
@@ -119,14 +129,28 @@ export function TrackPage() {
     };
   }, [orderId, result]);
 
+  const timelineSteps = useMemo(() => {
+    if (!result) return [];
+
+    return TIMELINE_STEPS.map((step) => ({
+      ...step,
+      completed: step.statuses.includes(result.rawStatus),
+      current:
+        step.id === result.rawStatus ||
+        (result.rawStatus === "link_pending" && step.id === "pending") ||
+        (result.rawStatus === "link_sent" && step.id === "pending") ||
+        (result.rawStatus === "payment_in_review" && step.id === "paid"),
+    }));
+  }, [result]);
+
   return (
-    <section className="mx-auto max-w-3xl px-4 py-12">
-      <h1 className="text-3xl font-semibold">Seguimiento guest</h1>
+    <section className="mx-auto max-w-4xl px-4 py-12">
+      <h1 className="text-3xl font-semibold">Seguimiento de pedido</h1>
       <p className="mt-2 text-sm text-slate-500">
-        Ingresá el número de orden para ver el estado de tu pedido.
+        Ingresá el número de orden para ver el estado y una línea de tiempo simple del pedido.
       </p>
 
-      <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
+      <form className="mt-6 space-y-4 rounded-2xl border border-slate-200 p-6" onSubmit={handleSubmit}>
         <div className="space-y-2">
           <Label>Número de orden (6 dígitos)</Label>
           <Input
@@ -151,13 +175,35 @@ export function TrackPage() {
       )}
 
       {result && (
-        <div className="mt-6 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm">
-          <p>
-            <strong>Estado:</strong> {result.status}
-          </p>
-          <p>
-            <strong>Última actualización:</strong> {result.updated}
-          </p>
+        <div className="mt-6 space-y-6 rounded-2xl border border-slate-200 bg-white p-6">
+          <div className="rounded-2xl bg-slate-50 p-4 text-sm">
+            <p>
+              <strong>Estado actual:</strong> {result.status}
+            </p>
+            <p>
+              <strong>Última actualización:</strong> {result.updated}
+            </p>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-5">
+            {timelineSteps.map((step) => (
+              <div key={step.id} className="relative rounded-2xl border border-slate-200 p-4 text-sm">
+                <div
+                  className={`mb-3 h-3 w-3 rounded-full ${
+                    step.completed
+                      ? "bg-emerald-500"
+                      : step.current
+                        ? "bg-slate-900"
+                        : "bg-slate-300"
+                  }`}
+                />
+                <p className="font-medium text-slate-900">{step.label}</p>
+                <p className="mt-1 text-slate-500">
+                  {step.completed ? "Completado" : step.current ? "Estado actual" : "Pendiente"}
+                </p>
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </section>

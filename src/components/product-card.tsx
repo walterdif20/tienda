@@ -4,8 +4,10 @@ import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { ProductQuickShop } from "@/components/product-quick-shop";
 import { formatPrice } from "@/lib/format";
 import { buildProductAvailabilityWhatsAppLink } from "@/lib/whatsapp";
+import { getCollectionById, getProductCollectionIds } from "@/lib/collections";
 import { useStoreSettings } from "@/hooks/use-store-settings";
 import { useCartStore } from "@/store/cartStore";
 import type { Product } from "@/types";
@@ -35,6 +37,16 @@ export function ProductCard({
 
   const images = useMemo(() => product.images ?? [], [product.images]);
   const activeImage = images[activeImageIndex] ?? images[0];
+  const collectionBadges = getProductCollectionIds(product)
+    .slice(0, 2)
+    .map((collectionId) => getCollectionById(collectionId)?.shortLabel)
+    .filter(Boolean);
+  const urgencyLabel =
+    product.stock <= 3
+      ? "Últimas unidades"
+      : product.stock <= 8
+        ? "Stock acotado"
+        : "Disponible";
 
   useEffect(() => {
     setActiveImageIndex(0);
@@ -60,7 +72,7 @@ export function ProductCard({
           alt={activeImage?.alt ?? product.name}
           className="h-72 w-full object-cover transition duration-700 group-hover:scale-105"
         />
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-slate-950/15 via-transparent to-transparent opacity-0 transition duration-500 group-hover:opacity-100" />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-slate-950/20 via-transparent to-transparent opacity-0 transition duration-500 group-hover:opacity-100" />
         {images.length > 1 && (
           <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 gap-1 rounded-full bg-white/80 px-2 py-1">
             {images.map((image, index) => (
@@ -73,11 +85,12 @@ export function ProductCard({
             ))}
           </div>
         )}
-        {product.badge && (
-          <Badge className="absolute left-3 top-3 bg-white text-slate-800">
-            {product.badge}
-          </Badge>
-        )}
+        <div className="absolute left-3 top-3 flex flex-wrap gap-2">
+          {product.badge && (
+            <Badge className="bg-white text-slate-800">{product.badge}</Badge>
+          )}
+          <Badge className="bg-slate-950/80 text-white">{urgencyLabel}</Badge>
+        </div>
         <Button
           type="button"
           variant="outline"
@@ -97,16 +110,31 @@ export function ProductCard({
       </div>
 
       <CardContent className="space-y-4 p-4">
-        <div className="space-y-1">
-          <Link
-            to={`/products/${product.slug}`}
-            className="line-clamp-1 text-base font-semibold text-slate-900 transition group-hover:text-slate-700"
-          >
-            {product.name}
-          </Link>
-          <p className="line-clamp-2 text-sm text-slate-500">
-            {product.description}
-          </p>
+        <div className="space-y-2">
+          <div className="flex flex-wrap gap-2">
+            {collectionBadges.map((label) => (
+              <Badge key={label} className="bg-slate-100 text-slate-700">
+                {label}
+              </Badge>
+            ))}
+          </div>
+          <div className="space-y-1">
+            <Link
+              to={`/products/${product.slug}`}
+              className="line-clamp-1 text-base font-semibold text-slate-900 transition group-hover:text-slate-700"
+            >
+              {product.name}
+            </Link>
+            <p className="line-clamp-2 text-sm text-slate-500">
+              {product.description}
+            </p>
+          </div>
+        </div>
+
+        <div className="rounded-2xl bg-slate-50 p-3 text-xs text-slate-600">
+          {product.stock <= 5
+            ? `Quedan ${product.stock} unidades. Si te gusta, no cuelgues.`
+            : "Ideal para sumar al look diario o resolver un regalo con estilo."}
         </div>
 
         <div className="flex items-center justify-between gap-3">
@@ -164,6 +192,17 @@ export function ProductCard({
               {quantityInCart > 0 ? `Agregar (${quantityInCart})` : "Agregar"}
             </Button>
           )}
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          <ProductQuickShop
+            product={product}
+            isFavorite={isFavorite}
+            onToggleFavorite={onToggleFavorite}
+          />
+          <Button asChild variant="ghost" size="sm" className="px-0 text-slate-600">
+            <Link to={`/products/${product.slug}`}>Ver detalle</Link>
+          </Button>
         </div>
       </CardContent>
     </Card>

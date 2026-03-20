@@ -9,9 +9,9 @@ import {
   ArrowRight,
   Clock3,
   CreditCard,
+  Gift,
   ShieldCheck,
   Sparkles,
-  Star,
   Truck,
 } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -21,6 +21,7 @@ import { useProducts } from "@/hooks/use-products";
 import { useFavorites } from "@/hooks/use-favorites";
 import { useStoreSettings } from "@/hooks/use-store-settings";
 import { categories } from "@/data/products";
+import { getCollectionById, productCollections, productMatchesCollection } from "@/lib/collections";
 
 const heroFallbackImages = [
   "https://firebasestorage.googleapis.com/v0/b/madd-tienda.firebasestorage.app/o/store-settings%2Fhero-1773631266344-ChatGPT%20Image%2015%20mar%202026%2C%2011_36_25%20p.m..png?alt=media&token=5ad1a120-5517-42e0-a72c-d209beb39ba3",
@@ -33,6 +34,7 @@ export function HomePage() {
   const { isFavorite, toggleFavorite } = useFavorites();
 
   const latest = products.slice(0, 4);
+  const trending = products.filter((product) => productMatchesCollection(product, "trending")).slice(0, 4);
 
   const categoryTiles = useMemo(() => {
     return categories
@@ -64,6 +66,17 @@ export function HomePage() {
         } => item !== null,
       );
   }, [products]);
+
+  const occasionCards = useMemo(
+    () =>
+      productCollections.slice(0, 4).map((collection) => ({
+        ...collection,
+        coverImage:
+          products.find((product) => productMatchesCollection(product, collection.id))?.images[0]?.url ??
+          heroFallbackImages[0],
+      })),
+    [products],
+  );
 
   const heroImages = useMemo(() => {
     const configured = settings.heroImages
@@ -115,11 +128,11 @@ export function HomePage() {
               {settings.title}
             </p>
             <h1 className="max-w-2xl text-4xl font-semibold tracking-tight text-white md:text-6xl">
-              Descubrí prendas elegidas para elevar tu estilo todos los días.
+              Una tienda que te ayuda a elegir, comprar rápido y volver.
             </h1>
             <p className="max-w-xl text-base text-white/80 md:text-lg">
-              Novedades semanales, stock actualizado y una compra simple de
-              principio a fin.
+              Colecciones por ocasión, stock actualizado, quick shop y una compra
+              simple de principio a fin.
             </p>
             <div className="flex flex-wrap gap-3">
               <Button
@@ -135,8 +148,8 @@ export function HomePage() {
                 size="lg"
                 className="border-white/30 bg-white/10 text-white hover:bg-white/20"
               >
-                <Link to="/track" className="inline-flex items-center gap-2">
-                  Seguir pedido <ArrowRight className="h-4 w-4" />
+                <Link to="/products?collection=gift" className="inline-flex items-center gap-2">
+                  Comprar por ocasión <ArrowRight className="h-4 w-4" />
                 </Link>
               </Button>
             </div>
@@ -147,6 +160,9 @@ export function HomePage() {
               </span>
               <span className="rounded-full border border-white/20 bg-white/10 px-3 py-1">
                 {categoryTiles.length} categorías para explorar
+              </span>
+              <span className="rounded-full border border-white/20 bg-white/10 px-3 py-1">
+                10% OFF pagando por transferencia
               </span>
             </div>
 
@@ -174,23 +190,42 @@ export function HomePage() {
       </section>
 
       <section className="mx-auto grid max-w-9xl gap-4 px-4 md:grid-cols-3">
-        <HighlightCard icon={Star} title="Selección destacada">
-          Productos protagonistas con stock actualizado en tiempo real.
+        <HighlightCard icon={Gift} title="Comprar por ocasión">
+          Curaduría para regalos, básicos diarios, looks con presencia y últimas unidades.
         </HighlightCard>
-        <HighlightCard icon={Clock3} title="Checkout más ágil">
-          Menos pasos para cerrar la compra y confirmar el pedido.
+        <HighlightCard icon={Clock3} title="Checkout más claro">
+          Resumen visible de ahorro, puntos y beneficios antes de confirmar tu compra.
         </HighlightCard>
-        <HighlightCard icon={Sparkles} title="Experiencia renovada">
-          Estética moderna con foco en contenido, navegación y conversión.
+        <HighlightCard icon={Sparkles} title="Postcompra cuidada">
+          Seguimiento visual y club de puntos para que volver tenga sentido.
         </HighlightCard>
       </section>
 
+      <CollectionSection occasionCards={occasionCards} />
+
       <CategorySection categoryTiles={categoryTiles} loading={loading} />
+
+      <Section
+        title="En tendencia"
+        description="Una selección editorial con productos protagonistas, regalos e ideas rápidas para decidir mejor."
+        loading={loading}
+        ctaHref="/products?collection=trending"
+      >
+        {trending.map((product) => (
+          <ProductCard
+            key={product.id}
+            product={product}
+            isFavorite={isFavorite(product.id)}
+            onToggleFavorite={(productId) => void toggleFavorite(productId)}
+          />
+        ))}
+      </Section>
 
       <Section
         title="Novedades"
         description="Ingresos recientes sincronizados desde la base de datos."
         loading={loading}
+        ctaHref="/products"
       >
         {latest.map((product) => (
           <ProductCard
@@ -218,8 +253,8 @@ function HeroDetails() {
         <HeroFeature icon={ShieldCheck} title="Pago seguro">
           Checkout protegido y confirmación inmediata.
         </HeroFeature>
-        <HeroFeature icon={CreditCard} title="Múltiples medios de pago">
-          Tarjeta, transferencia y opciones en cuotas.
+        <HeroFeature icon={CreditCard} title="Ahorro visible">
+          Transferencia con 10% OFF y programa de puntos desde el carrito.
         </HeroFeature>
       </ul>
     </aside>
@@ -266,6 +301,60 @@ function HighlightCard({
   );
 }
 
+function CollectionSection({
+  occasionCards,
+}: {
+  occasionCards: Array<{
+    id: string;
+    label: string;
+    description: string;
+    heroDescription: string;
+    coverImage: string;
+  }>;
+}) {
+  return (
+    <section className="mx-auto max-w-9xl px-4">
+      <div className="mb-6 flex items-end justify-between gap-3">
+        <div>
+          <h2 className="text-2xl font-semibold text-slate-900">Comprar por ocasión</h2>
+          <p className="text-sm text-slate-500">
+            Una capa editorial sobre el catálogo para decidir más rápido sin tener que saber exactamente qué buscar.
+          </p>
+        </div>
+        <Button variant="ghost" asChild>
+          <Link to="/products">Ver catálogo completo</Link>
+        </Button>
+      </div>
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        {occasionCards.map((collection) => (
+          <Link
+            key={collection.id}
+            to={`/products?collection=${collection.id}`}
+            className="group relative isolate overflow-hidden rounded-3xl border border-slate-200 bg-slate-950 text-white"
+          >
+            <img
+              src={collection.coverImage}
+              alt={collection.label}
+              className="absolute inset-0 h-full w-full object-cover opacity-80 transition duration-500 group-hover:scale-105"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/50 to-slate-950/10" />
+            <div className="relative flex min-h-72 flex-col justify-end p-6">
+              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-white/75">
+                {getCollectionById(collection.id)?.shortLabel}
+              </p>
+              <h3 className="mt-2 text-xl font-semibold">{collection.label}</h3>
+              <p className="mt-2 text-sm text-white/75">{collection.description}</p>
+              <span className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-white">
+                Explorar ahora <ArrowRight className="h-4 w-4" />
+              </span>
+            </div>
+          </Link>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 function CategorySection({
   categoryTiles,
   loading,
@@ -297,7 +386,7 @@ function CategorySection({
           {categoryTiles.map((category) => (
             <Link
               key={category.id}
-              to="/products"
+              to={`/products?category=${category.id}`}
               className="group relative block h-56 overflow-hidden rounded-2xl md:h-64"
             >
               <img
@@ -344,11 +433,13 @@ function Section({
   description,
   children,
   loading,
+  ctaHref,
 }: {
   title: string;
   description: string;
   children: ReactNode;
   loading: boolean;
+  ctaHref: string;
 }) {
   return (
     <section className="mx-auto max-w-9xl px-4">
@@ -358,7 +449,7 @@ function Section({
           <p className="text-sm text-slate-500">{description}</p>
         </div>
         <Button variant="ghost" asChild>
-          <Link to="/products">Ver todo</Link>
+          <Link to={ctaHref}>Ver todo</Link>
         </Button>
       </div>
       {loading ? (
@@ -368,9 +459,7 @@ function Section({
           ))}
         </div>
       ) : (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-          {children}
-        </div>
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">{children}</div>
       )}
     </section>
   );

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
+import { Gift, ShieldCheck, Wallet } from "lucide-react";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
@@ -14,7 +15,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { formatPrice } from "@/lib/format";
-import { calculateLoyaltyPoints, formatLoyaltyPoints } from "@/lib/loyalty";
+import {
+  calculateLoyaltyPoints,
+  formatLoyaltyPoints,
+  getLoyaltyProgress,
+} from "@/lib/loyalty";
 import { useCartStore } from "@/store/cartStore";
 import { doc, getDoc } from "firebase/firestore";
 import { confirmOrderTransfer, createOrder } from "@/lib/checkout";
@@ -159,6 +164,7 @@ export function CheckoutPage() {
     () => calculateLoyaltyPoints(totalPreview),
     [totalPreview],
   );
+  const loyaltyProgress = getLoyaltyProgress(loyaltyPoints + estimatedPoints);
 
   useEffect(() => {
     if (appliedPoints !== redeemedPoints) {
@@ -236,8 +242,11 @@ export function CheckoutPage() {
   };
 
   return (
-    <section className="mx-auto max-w-5xl px-4 py-12">
+    <section className="mx-auto max-w-6xl px-4 py-12">
       <h1 className="text-3xl font-semibold">Checkout</h1>
+      <p className="mt-2 text-sm text-slate-500">
+        Hicimos el cierre de compra más claro: beneficios visibles, ahorro comparado y fidelización sin sorpresas.
+      </p>
       <div className="mt-8 grid gap-8 lg:grid-cols-[1.2fr_0.8fr]">
         <form
           className="space-y-6 rounded-2xl border border-slate-200 p-6"
@@ -351,12 +360,9 @@ export function CheckoutPage() {
                         })
                       }
                     >
-                      <p className="font-semibold">
-                        Link de pago (Mercado Pago)
-                      </p>
+                      <p className="font-semibold">Link de pago (Mercado Pago)</p>
                       <p className="text-slate-600">
-                        En las proximas horas te enviaremos un link de pago por
-                        whatsapp
+                        Te enviaremos un link de pago por WhatsApp en las próximas horas.
                       </p>
                     </button>
                     <button
@@ -376,18 +382,12 @@ export function CheckoutPage() {
                         Transferencia bancaria (10% de descuento)
                       </p>
                       <p className="text-slate-600">
-                        Confirmá tu pago para que podamos revisar y aprobar la
-                        orden.
+                        Confirmá el pago y activamos revisión y aprobación de la orden.
                       </p>
                     </button>
                   </div>
                   <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-                    Esta compra suma{" "}
-                    <strong>
-                      {formatLoyaltyPoints(estimatedPoints)} puntos
-                    </strong>
-                    . Tus puntos se acreditarán una vez que comencemos a
-                    preparar el pedido.
+                    Esta compra suma <strong>{formatLoyaltyPoints(estimatedPoints)} puntos</strong>. Tus puntos se acreditarán una vez que comencemos a preparar el pedido.
                   </div>
                   <Button
                     type="submit"
@@ -416,13 +416,7 @@ export function CheckoutPage() {
                     </p>
                   ) : null}
                   <p className="text-slate-700">
-                    En las proximas horas te enviaremos un link de pago por
-                    whatsapp. Cuando el pago quede acreditado, se reservarán{" "}
-                    <strong>
-                      {formatLoyaltyPoints(createdOrder.loyaltyPoints)} puntos
-                    </strong>
-                    para tu cuenta y se acreditarán cuando comencemos a preparar
-                    tu pedido.
+                    En las próximas horas te enviaremos un link de pago por WhatsApp. Cuando el pago quede acreditado, se reservarán <strong>{formatLoyaltyPoints(createdOrder.loyaltyPoints)} puntos</strong> para tu cuenta y se acreditarán cuando comencemos a preparar tu pedido.
                   </p>
                 </div>
               ) : (
@@ -462,54 +456,116 @@ export function CheckoutPage() {
                     </Button>
                   </div>
                   <p className="text-xs text-slate-600">
-                    Cuando confirmes, la orden pasará a <strong>PAGADA</strong>{" "}
-                    y sumará{" "}
-                    <strong>
-                      {formatLoyaltyPoints(createdOrder.loyaltyPoints)} puntos
-                    </strong>{" "}
-                    pendientes. Los acreditaremos cuando comencemos a preparar
-                    tu pedido.
+                    Cuando confirmes, la orden pasará a <strong>PAGADA</strong> y sumará <strong>{formatLoyaltyPoints(createdOrder.loyaltyPoints)} puntos</strong> pendientes. Los acreditaremos cuando comencemos a preparar tu pedido.
                   </p>
                 </div>
               )}
             </div>
           )}
         </form>
-        <div className="space-y-4 rounded-2xl border border-slate-200 bg-slate-50 p-6">
-          <h2 className="text-xl font-semibold">Resumen</h2>
-          {(createdOrder ? [] : items).map((item) => (
-            <div
-              key={item.productId}
-              className="flex items-center justify-between text-sm"
-            >
-              <span>
-                {item.name} x {item.qty}
-              </span>
-              <span>{formatPrice(item.price * item.qty)}</span>
+        <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start">
+          <div className="space-y-4 rounded-2xl border border-slate-200 bg-slate-50 p-6">
+            <h2 className="text-xl font-semibold">Resumen</h2>
+            <div className="grid gap-3">
+              <ValueCard label="Subtotal" value={formatPrice(subtotal)} />
+              <ValueCard
+                label="Ahorro por transferencia"
+                value={`-${formatPrice(transferDiscount)}`}
+                highlight={paymentMethod === "bank_transfer" && transferDiscount > 0}
+              />
+              <ValueCard
+                label="Puntos usados"
+                value={`-${formatPrice(redeemedPoints)}`}
+                highlight={redeemedPoints > 0}
+              />
+              <ValueCard
+                label="Total estimado"
+                value={formatPrice(createdOrder?.total ?? totalPreview)}
+                emphasis
+              />
             </div>
-          ))}
-          <div className="flex items-center justify-between text-sm">
-            <span>Envío</span>
-            <span>Gratis a Necochea y Quequén</span>
+
+            {(createdOrder ? [] : items).map((item) => (
+              <div
+                key={item.productId}
+                className="flex items-center justify-between text-sm"
+              >
+                <span>
+                  {item.name} x {item.qty}
+                </span>
+                <span>{formatPrice(item.price * item.qty)}</span>
+              </div>
+            ))}
+
+            <div className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-600">
+              <div className="flex items-start gap-3">
+                <Wallet className="mt-0.5 h-4 w-4 text-slate-700" />
+                <div>
+                  <p className="font-medium text-slate-900">Lo que conviene ahora</p>
+                  <p>
+                    {paymentMethod === "bank_transfer"
+                      ? `Ya estás viendo el ahorro del 10%: ${formatPrice(transferDiscount)} menos sobre el subtotal.`
+                      : "Si elegís transferencia, el resumen te muestra el 10% de descuento en tiempo real."}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+              <div className="flex items-start gap-3">
+                <Gift className="mt-0.5 h-4 w-4" />
+                <div>
+                  <p className="font-medium">Club de puntos</p>
+                  <p>
+                    Esta compra te deja con <strong>{formatLoyaltyPoints(loyaltyPoints + estimatedPoints)} puntos</strong>. {loyaltyProgress.nextTier
+                      ? `Te faltarían ${formatLoyaltyPoints(loyaltyProgress.missingPoints)} para subir a ${loyaltyProgress.nextTier.label}.`
+                      : "Ya estás en el nivel más alto."}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-600">
+              <div className="flex items-start gap-3">
+                <ShieldCheck className="mt-0.5 h-4 w-4 text-emerald-600" />
+                <div>
+                  <p className="font-medium text-slate-900">Envío y seguridad</p>
+                  <p>
+                    Envío gratis a Necochea y Quequén, retiro en tienda y confirmación clara del estado de tu orden.
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
-          {!createdOrder && paymentMethod === "bank_transfer" && (
-            <div className="flex items-center justify-between text-sm text-emerald-700">
-              <span>Descuento transferencia (10%)</span>
-              <span>-{formatPrice(transferDiscount)}</span>
-            </div>
-          )}
-          {redeemedPoints > 0 ? (
-            <div className="flex items-center justify-between text-sm text-emerald-700">
-              <span>Puntos usados</span>
-              <span>-{formatPrice(redeemedPoints)}</span>
-            </div>
-          ) : null}
-          <div className="flex items-center justify-between text-base font-semibold">
-            <span>Total</span>
-            <span>{formatPrice(createdOrder?.total ?? totalPreview)}</span>
-          </div>
-        </div>
+        </aside>
       </div>
     </section>
+  );
+}
+
+function ValueCard({
+  label,
+  value,
+  highlight = false,
+  emphasis = false,
+}: {
+  label: string;
+  value: string;
+  highlight?: boolean;
+  emphasis?: boolean;
+}) {
+  return (
+    <div
+      className={`rounded-2xl border p-4 ${
+        emphasis
+          ? "border-slate-900 bg-slate-900 text-white"
+          : highlight
+            ? "border-emerald-200 bg-emerald-50 text-emerald-900"
+            : "border-slate-200 bg-white text-slate-900"
+      }`}
+    >
+      <p className="text-xs uppercase tracking-[0.18em] opacity-70">{label}</p>
+      <p className="mt-2 text-xl font-semibold">{value}</p>
+    </div>
   );
 }

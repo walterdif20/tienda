@@ -36,6 +36,9 @@ export const fetchProducts = async (): Promise<Product[]> => {
       return {
         id: docSnap.id,
         ...data,
+        collectionIds: Array.isArray(data.collectionIds)
+          ? data.collectionIds
+          : undefined,
         images,
         stock,
       };
@@ -68,6 +71,9 @@ export const fetchProductBySlug = async (
   return {
     id: productDoc.id,
     ...productData,
+    collectionIds: Array.isArray(productData.collectionIds)
+      ? productData.collectionIds
+      : undefined,
     images,
     stock,
   };
@@ -84,6 +90,7 @@ export const createProduct = async (input: ProductInput) => {
     categoryId: input.categoryId,
     featured: input.featured ?? false,
     isActive: input.isActive,
+    collectionIds: input.collectionIds ?? [],
     badge: input.badge ?? null,
     createdAt: Timestamp.now(),
   });
@@ -128,6 +135,7 @@ export const updateProduct = async (
   if (input.categoryId !== undefined) productUpdate.categoryId = input.categoryId;
   if (input.featured !== undefined) productUpdate.featured = input.featured;
   if (input.isActive !== undefined) productUpdate.isActive = input.isActive;
+  if (input.collectionIds !== undefined) productUpdate.collectionIds = input.collectionIds;
   if ("badge" in input) productUpdate.badge = input.badge ?? null;
 
   if (Object.keys(productUpdate).length > 0) {

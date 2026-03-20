@@ -4,6 +4,14 @@ export type Category = {
   slug: string;
 };
 
+export type ProductCollectionId =
+  | "gift"
+  | "daily"
+  | "premium"
+  | "last-units"
+  | "layering"
+  | "trending";
+
 export type ProductImage = {
   id: string;
   url: string;
@@ -21,6 +29,7 @@ export type Product = {
   categoryId: string;
   featured?: boolean;
   isActive: boolean;
+  collectionIds?: ProductCollectionId[];
   images: ProductImage[];
   stock: number;
   badge?: string;
@@ -35,6 +44,7 @@ export type ProductInput = {
   categoryId: string;
   featured?: boolean;
   isActive: boolean;
+  collectionIds?: ProductCollectionId[];
   badge?: string;
   stock: number;
   images?: Array<{

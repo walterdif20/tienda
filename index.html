@@ -5,8 +5,204 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Tienda Madd - Accesorios</title>
+    <style>
+      :root {
+        color-scheme: light;
+        font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      html,
+      body {
+        margin: 0;
+        min-height: 100%;
+        background:
+          radial-gradient(circle at top, rgba(59, 130, 246, 0.14), transparent 38%),
+          linear-gradient(135deg, #020617 0%, #0f172a 45%, #1e293b 100%);
+      }
+
+      body {
+        color: #e2e8f0;
+      }
+
+      #app-loader {
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        display: grid;
+        place-items: center;
+        overflow: hidden;
+        transition:
+          opacity 0.45s ease,
+          visibility 0.45s ease,
+          transform 0.45s ease;
+      }
+
+      #app-loader::before,
+      #app-loader::after {
+        position: absolute;
+        width: 28rem;
+        height: 28rem;
+        border-radius: 9999px;
+        content: "";
+        filter: blur(18px);
+        opacity: 0.35;
+      }
+
+      #app-loader::before {
+        top: -10rem;
+        left: -7rem;
+        background: rgba(96, 165, 250, 0.28);
+        animation: loader-float 10s ease-in-out infinite;
+      }
+
+      #app-loader::after {
+        right: -8rem;
+        bottom: -11rem;
+        background: rgba(236, 72, 153, 0.22);
+        animation: loader-float 12s ease-in-out infinite reverse;
+      }
+
+      #app-loader.app-loader--hidden {
+        opacity: 0;
+        visibility: hidden;
+        transform: scale(1.02);
+        pointer-events: none;
+      }
+
+      .app-loader__backdrop {
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.09) 1px, transparent 0);
+        background-size: 22px 22px;
+        mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.95), transparent 92%);
+      }
+
+      .app-loader__panel {
+        position: relative;
+        display: flex;
+        width: min(90vw, 26rem);
+        flex-direction: column;
+        align-items: center;
+        gap: 1.5rem;
+        padding: 2.25rem 2rem;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 1.75rem;
+        background: rgba(15, 23, 42, 0.72);
+        box-shadow:
+          0 30px 80px rgba(15, 23, 42, 0.45),
+          inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(18px);
+      }
+
+      .app-loader__badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.45rem 0.9rem;
+        border: 1px solid rgba(148, 163, 184, 0.32);
+        border-radius: 9999px;
+        color: rgba(226, 232, 240, 0.92);
+        font-size: 0.78rem;
+        font-weight: 600;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+      }
+
+      .app-loader__ring {
+        position: relative;
+        width: 6.5rem;
+        height: 6.5rem;
+      }
+
+      .app-loader__ring span {
+        position: absolute;
+        inset: 0;
+        border: 2px solid transparent;
+        border-top-color: rgba(255, 255, 255, 0.92);
+        border-radius: 9999px;
+        animation: loader-spin 1.7s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+      }
+
+      .app-loader__ring span:nth-child(2) {
+        inset: 0.6rem;
+        border-top-color: rgba(96, 165, 250, 0.86);
+        animation-duration: 2.2s;
+        animation-direction: reverse;
+      }
+
+      .app-loader__ring span:nth-child(3) {
+        inset: 1.2rem;
+        border-top-color: rgba(244, 114, 182, 0.78);
+        animation-duration: 2.8s;
+      }
+
+      .app-loader__copy {
+        text-align: center;
+      }
+
+      .app-loader__copy strong {
+        display: block;
+        margin-bottom: 0.55rem;
+        font-size: 1.1rem;
+        font-weight: 600;
+        line-height: 1.4;
+      }
+
+      .app-loader__copy p {
+        margin: 0;
+        color: rgba(226, 232, 240, 0.72);
+        font-size: 0.95rem;
+        line-height: 1.7;
+      }
+
+      @keyframes loader-spin {
+        from {
+          transform: rotate(0deg);
+        }
+
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      @keyframes loader-float {
+        0%,
+        100% {
+          transform: translate3d(0, 0, 0) scale(1);
+        }
+
+        50% {
+          transform: translate3d(1.25rem, 1.5rem, 0) scale(1.08);
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        #app-loader,
+        .app-loader__ring span,
+        #app-loader::before,
+        #app-loader::after {
+          animation: none !important;
+          transition: none !important;
+        }
+      }
+    </style>
   </head>
-  <body class="bg-white text-slate-900">
+  <body>
+    <div id="app-loader" aria-live="polite" aria-busy="true">
+      <div class="app-loader__backdrop"></div>
+      <div class="app-loader__panel">
+        <span class="app-loader__badge">Tienda Madd</span>
+        <div class="app-loader__ring" aria-hidden="true">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+        <div class="app-loader__copy">
+          <strong>Preparando una experiencia elegante para ti</strong>
+          <p>Cargando productos, estilos y recursos esenciales…</p>
+        </div>
+      </div>
+    </div>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

@@ -7,6 +7,7 @@ export type StoreFontFamily = "inter" | "poppins" | "montserrat" | "lora";
 export type StoreSettings = {
   title: string;
   logoUrl: string;
+  faviconUrl: string;
   heroImages: string[];
   primaryColor: string;
   secondaryColor: string;
@@ -19,6 +20,7 @@ const SETTINGS_DOC = doc(db, "storeSettings", "main");
 export const defaultStoreSettings: StoreSettings = {
   title: "Tienda Minimal",
   logoUrl: "",
+  faviconUrl: "",
   heroImages: [],
   primaryColor: "#0f172a",
   secondaryColor: "#e2e8f0",
@@ -53,6 +55,7 @@ export const normalizeStoreSettings = (
 ): StoreSettings => ({
   title: value?.title?.trim() || defaultStoreSettings.title,
   logoUrl: value?.logoUrl?.trim() || "",
+  faviconUrl: value?.faviconUrl?.trim() || "",
   heroImages: sanitizeHeroImages(value?.heroImages),
   primaryColor: sanitizeHexColor(
     value?.primaryColor ?? "",
@@ -102,6 +105,9 @@ const uploadStoreImage = async (folder: string, file: File) => {
 
 export const uploadStoreLogo = async (file: File) =>
   uploadStoreImage("logo", file);
+
+export const uploadStoreFavicon = async (file: File) =>
+  uploadStoreImage("favicon", file);
 
 export const uploadStoreHeroImage = async (file: File) =>
   uploadStoreImage("hero", file);

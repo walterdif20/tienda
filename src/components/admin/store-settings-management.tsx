@@ -12,6 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+  uploadStoreFavicon,
   uploadStoreHeroImage,
   uploadStoreLogo,
   type StoreSettings,
@@ -33,6 +34,7 @@ export function StoreSettingsManagementSection() {
   const [form, setForm] = useState(settings);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [uploadingFavicon, setUploadingFavicon] = useState(false);
   const [uploadingHero, setUploadingHero] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
 
@@ -76,6 +78,31 @@ export function StoreSettingsManagementSection() {
       setFeedback("No se pudo subir el logo.");
     } finally {
       setUploading(false);
+    }
+  };
+
+  const onUploadFavicon = async (file?: File) => {
+    if (!file) {
+      return;
+    }
+
+    if (!file.type.startsWith("image/")) {
+      setFeedback("Seleccioná una imagen válida para el favicon.");
+      return;
+    }
+
+    setUploadingFavicon(true);
+    setFeedback(null);
+
+    try {
+      const faviconUrl = await uploadStoreFavicon(file);
+      setForm((current) => ({ ...current, faviconUrl }));
+      setFeedback("Favicon cargado. Recordá guardar los cambios.");
+    } catch (error) {
+      console.error(error);
+      setFeedback("No se pudo subir el favicon.");
+    } finally {
+      setUploadingFavicon(false);
     }
   };
 
@@ -138,32 +165,68 @@ export function StoreSettingsManagementSection() {
             />
           </div>
 
-          <div className="space-y-2 md:col-span-2">
-            <Label htmlFor="store-logo">Logo</Label>
-            <div className="flex flex-wrap items-center gap-3">
-              <label className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
-                <Upload className="h-4 w-4" />
-                {uploading ? "Subiendo..." : "Subir logo"}
-                <input
-                  id="store-logo"
-                  type="file"
-                  accept="image/*"
-                  className="sr-only"
-                  disabled={uploading}
-                  onChange={(event) => onUploadLogo(event.target.files?.[0])}
-                />
-              </label>
-              {form.logoUrl ? (
-                <img
-                  src={form.logoUrl}
-                  alt="Preview logo"
-                  className="h-16 max-w-[180px] rounded-lg border border-slate-200 bg-white object-contain p-2"
-                />
-              ) : (
-                <span className="text-sm text-slate-500">
-                  Sin logo cargado.
-                </span>
-              )}
+          <div className="space-y-4 md:col-span-2">
+            <div className="space-y-2">
+              <Label htmlFor="store-logo">Logo</Label>
+              <div className="flex flex-wrap items-center gap-3">
+                <label className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
+                  <Upload className="h-4 w-4" />
+                  {uploading ? "Subiendo..." : "Subir logo"}
+                  <input
+                    id="store-logo"
+                    type="file"
+                    accept="image/*"
+                    className="sr-only"
+                    disabled={uploading}
+                    onChange={(event) => onUploadLogo(event.target.files?.[0])}
+                  />
+                </label>
+                {form.logoUrl ? (
+                  <img
+                    src={form.logoUrl}
+                    alt="Preview logo"
+                    className="h-16 max-w-[180px] rounded-lg border border-slate-200 bg-white object-contain p-2"
+                  />
+                ) : (
+                  <span className="text-sm text-slate-500">
+                    Sin logo cargado.
+                  </span>
+                )}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="store-favicon">Favicon</Label>
+              <div className="flex flex-wrap items-center gap-3">
+                <label className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
+                  <Upload className="h-4 w-4" />
+                  {uploadingFavicon ? "Subiendo..." : "Subir favicon"}
+                  <input
+                    id="store-favicon"
+                    type="file"
+                    accept="image/*"
+                    className="sr-only"
+                    disabled={uploadingFavicon}
+                    onChange={(event) =>
+                      onUploadFavicon(event.target.files?.[0])
+                    }
+                  />
+                </label>
+                {form.faviconUrl ? (
+                  <img
+                    src={form.faviconUrl}
+                    alt="Preview favicon"
+                    className="h-12 w-12 rounded-lg border border-slate-200 bg-white object-contain p-2"
+                  />
+                ) : (
+                  <span className="text-sm text-slate-500">
+                    Se usa el favicon por defecto.
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-slate-500">
+                Recomendado: imagen cuadrada, idealmente de al menos 64x64 px.
+              </p>
             </div>
           </div>
 
@@ -302,7 +365,7 @@ export function StoreSettingsManagementSection() {
           </p>
           <Button
             onClick={onSave}
-            disabled={saving || uploading || uploadingHero}
+            disabled={saving || uploading || uploadingFavicon || uploadingHero}
           >
             {saving ? "Guardando..." : "Guardar configuración"}
           </Button>

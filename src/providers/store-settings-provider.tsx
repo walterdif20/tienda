@@ -14,11 +14,30 @@ const fontMap: Record<StoreSettings["fontFamily"], string> = {
   lora: '"Lora", Georgia, serif',
 };
 
+const FAVICON_SELECTOR = "link[rel~='icon']";
+const DEFAULT_FAVICON = "/vite.svg";
+
 const applySettingsToDocument = (settings: StoreSettings) => {
   const root = document.documentElement;
   root.style.setProperty("--store-primary", settings.primaryColor);
   root.style.setProperty("--store-secondary", settings.secondaryColor);
   root.style.setProperty("--store-font", fontMap[settings.fontFamily]);
+
+  let favicon = document.head.querySelector<HTMLLinkElement>(FAVICON_SELECTOR);
+
+  if (!favicon) {
+    favicon = document.createElement("link");
+    favicon.rel = "icon";
+    document.head.appendChild(favicon);
+  }
+
+  favicon.href = settings.faviconUrl || DEFAULT_FAVICON;
+
+  if (settings.faviconUrl) {
+    favicon.removeAttribute("type");
+  } else {
+    favicon.type = "image/svg+xml";
+  }
 };
 
 export function StoreSettingsProvider({ children }: { children: ReactNode }) {

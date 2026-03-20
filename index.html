@@ -7,6 +7,21 @@
     <title>Tienda Madd - Accesorios</title>
   </head>
   <body class="bg-white text-slate-900">
+    <div id="app-loader" aria-live="polite" aria-busy="true">
+      <div class="app-loader__backdrop"></div>
+      <div class="app-loader__panel">
+        <span class="app-loader__badge">Tienda Madd</span>
+        <div class="app-loader__ring" aria-hidden="true">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+        <div class="app-loader__copy">
+          <strong>Preparando una experiencia elegante para ti</strong>
+          <p>Cargando productos, estilos y recursos esenciales…</p>
+        </div>
+      </div>
+    </div>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

@@ -24,6 +24,7 @@ export function ProductDetailPage() {
   const { settings } = useStoreSettings();
   const { isFavorite, toggleFavorite } = useFavorites();
   const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const [cartFeedback, setCartFeedback] = useState("");
 
   const images = useMemo(() => product?.images ?? [], [product?.images]);
 
@@ -36,6 +37,18 @@ export function ProductDetailPage() {
       console.error(error);
     });
   }, [product?.slug, user?.uid]);
+
+  useEffect(() => {
+    if (!cartFeedback) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setCartFeedback("");
+    }, 2500);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [cartFeedback]);
 
   if (loading) {
     return (
@@ -90,6 +103,11 @@ export function ProductDetailPage() {
     setActiveImageIndex((current) =>
       current === images.length - 1 ? 0 : current + 1,
     );
+  };
+
+  const handleAddToCart = () => {
+    addItem(product, 1);
+    setCartFeedback("Producto agregado al carrito.");
   };
 
   return (
@@ -236,7 +254,7 @@ export function ProductDetailPage() {
                   </a>
                 </Button>
               ) : (
-                <Button size="lg" onClick={() => addItem(product, 1)}>
+                <Button size="lg" onClick={handleAddToCart}>
                   Agregar al carrito
                 </Button>
               )}
@@ -244,6 +262,15 @@ export function ProductDetailPage() {
                 <Link to="/cart">Ir al carrito</Link>
               </Button>
             </div>
+            {cartFeedback ? (
+              <p
+                role="status"
+                aria-live="polite"
+                className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800"
+              >
+                {cartFeedback}
+              </p>
+            ) : null}
           </div>
         </div>
       </section>

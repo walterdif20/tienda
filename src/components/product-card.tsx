@@ -67,11 +67,17 @@ export function ProductCard({
   return (
     <Card className="group overflow-hidden rounded-2xl border-slate-200 shadow-sm shadow-slate-900/5 transition duration-300 hover:-translate-y-1 hover:border-slate-300 hover:shadow-lg hover:shadow-slate-900/10">
       <div className="relative overflow-hidden">
-        <img
-          src={activeImage?.url}
-          alt={activeImage?.alt ?? product.name}
-          className="h-72 w-full object-cover transition duration-700 group-hover:scale-105"
-        />
+        <Link
+          to={`/products/${product.slug}`}
+          aria-label={`Ver detalle de ${product.name}`}
+          className="block"
+        >
+          <img
+            src={activeImage?.url}
+            alt={activeImage?.alt ?? product.name}
+            className="h-72 w-full object-cover transition duration-700 group-hover:scale-105"
+          />
+        </Link>
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-slate-950/20 via-transparent to-transparent opacity-0 transition duration-500 group-hover:opacity-100" />
         {images.length > 1 && (
           <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 gap-1 rounded-full bg-white/80 px-2 py-1">

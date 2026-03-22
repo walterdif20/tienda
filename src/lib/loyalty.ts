@@ -7,22 +7,45 @@ export const formatLoyaltyPoints = (points: number) =>
   new Intl.NumberFormat("es-AR").format(points);
 
 export type LoyaltyTier = {
-  id: "bronce" | "plata" | "oro";
+  id: "inicial" | "bronce" | "plata" | "oro";
   label: string;
   minPoints: number;
   accent: string;
 };
 
 export const loyaltyTiers: LoyaltyTier[] = [
-  { id: "inicial", label: "Inicial", minPoints: 0, accent: "from-amber-500 to-orange-500" },
-  { id: "bronce", label: "Bronce", minPoints: 3000, accent: "from-amber-500 to-orange-500" },
-  { id: "plata", label: "Plata", minPoints: 6000, accent: "from-slate-400 to-slate-600" },
-  { id: "oro", label: "Oro", minPoints: 10000, accent: "from-yellow-400 to-amber-500" },
+  {
+    id: "inicial",
+    label: "Inicial",
+    minPoints: 0,
+    accent: "from-amber-500 to-orange-500",
+  },
+  {
+    id: "bronce",
+    label: "Bronce",
+    minPoints: 3000,
+    accent: "from-amber-500 to-orange-500",
+  },
+  {
+    id: "plata",
+    label: "Plata",
+    minPoints: 6000,
+    accent: "from-slate-400 to-slate-600",
+  },
+  {
+    id: "oro",
+    label: "Oro",
+    minPoints: 10000,
+    accent: "from-yellow-400 to-amber-500",
+  },
 ];
 
 export const getLoyaltyTier = (points: number) => {
   const normalized = Math.max(0, points);
-  return [...loyaltyTiers].reverse().find((tier) => normalized >= tier.minPoints) ?? loyaltyTiers[0];
+  return (
+    [...loyaltyTiers].reverse().find((tier) => normalized >= tier.minPoints) ??
+    loyaltyTiers[0]
+  );
 };
 
 export const getNextLoyaltyTier = (points: number) => {
@@ -43,6 +66,8 @@ export const getLoyaltyProgress = (points: number) => {
     currentTier,
     nextTier,
     missingPoints: nextTier ? Math.max(0, nextTier.minPoints - normalized) : 0,
-    percentage: nextTier ? Math.min(100, Math.round((current / total) * 100)) : 100,
+    percentage: nextTier
+      ? Math.min(100, Math.round((current / total) * 100))
+      : 100,
   };
 };

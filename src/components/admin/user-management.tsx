@@ -1,5 +1,13 @@
 import { useMemo, useState } from "react";
-import { ChevronDown, ChevronUp, Crown, MessageCircle, RefreshCw } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronUp,
+  Crown,
+  MessageCircle,
+  RefreshCw,
+} from "lucide-react";
+import { formatPrice } from "@/lib/format";
+import { formatLoyaltyPoints, getLoyaltyTier } from "@/lib/loyalty";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { AdminUser } from "@/lib/admin-users";
@@ -14,6 +22,9 @@ interface UserManagementSectionProps {
   onMakeAdmin: (uid: string) => Promise<void>;
   onToggleBlocked: (uid: string, blocked: boolean) => Promise<void>;
 }
+
+const formatDate = (valueMs: number) =>
+  valueMs ? new Date(valueMs).toLocaleString("es-AR") : "Sin fecha";
 
 export function UserManagementSection({
   users,
@@ -30,7 +41,11 @@ export function UserManagementSection({
   const stats = useMemo(() => {
     const admins = users.filter((user) => user.role === "admin").length;
     const blocked = users.filter((user) => user.isBlocked).length;
-    return { total: users.length, admins, blocked };
+    const totalPoints = users.reduce(
+      (sum, user) => sum + user.loyaltyPoints,
+      0,
+    );
+    return { total: users.length, admins, blocked, totalPoints };
   }, [users]);
 
   const productsById = useMemo(
@@ -86,7 +101,9 @@ export function UserManagementSection({
           </Button>
         </CardTitle>
         <p className="text-sm text-slate-500">
-          Total: {stats.total} · Admins: {stats.admins} · Bloqueados: {stats.blocked}
+          Total: {stats.total} · Admins: {stats.admins} · Bloqueados:{" "}
+          {stats.blocked} · Puntos acumulados:{" "}
+          {formatLoyaltyPoints(stats.totalPoints)}
         </p>
       </CardHeader>
 
@@ -97,6 +114,7 @@ export function UserManagementSection({
             const favoriteProducts = user.favoriteProductIds
               .map((favoriteId) => productsById.get(favoriteId))
               .filter((item): item is Product => Boolean(item));
+            const loyaltyTier = getLoyaltyTier(user.loyaltyPoints);
 
             return (
               <div
@@ -105,13 +123,21 @@ export function UserManagementSection({
               >
                 <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                   <div>
-                    <p className="font-medium text-slate-900">{user.displayName}</p>
+                    <p className="font-medium text-slate-900">
+                      {user.displayName}
+                    </p>
                     <p className="text-sm text-slate-500">{user.email}</p>
                     <p className="text-sm text-slate-500">
                       {user.whatsappNumber || "Sin WhatsApp cargado"}
                     </p>
+                    <p className="text-sm text-slate-600">
+                      {formatLoyaltyPoints(user.loyaltyPoints)} puntos · Nivel{" "}
+                      {loyaltyTier.label}
+                    </p>
                     {user.isBlocked ? (
-                      <p className="text-sm font-medium text-rose-600">Cuenta bloqueada</p>
+                      <p className="text-sm font-medium text-rose-600">
+                        Cuenta bloqueada
+                      </p>
                     ) : null}
                   </div>
 
@@ -195,11 +221,104 @@ export function UserManagementSection({
                         </p>
                         <p>
                           <span className="font-medium">Alta:</span>{" "}
-                          {user.createdAtMs
-                            ? new Date(user.createdAtMs).toLocaleString("es-AR")
-                            : "Sin fecha"}
+                          {formatDate(user.createdAtMs)}
                         </p>
                       </div>
+                    </div>
+
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        Programa de puntos
+                      </p>
+                      <div className="mt-2 grid gap-3 md:grid-cols-3">
+                        <div className="rounded-md border border-slate-200 bg-white p-3 text-sm text-slate-700">
+                          <p className="text-xs uppercase tracking-wide text-slate-500">
+                            Saldo actual
+                          </p>
+                          <p className="mt-1 text-lg font-semibold text-slate-900">
+                            {formatLoyaltyPoints(user.loyaltyPoints)}
+                          </p>
+                        </div>
+                        <div className="rounded-md border border-slate-200 bg-white p-3 text-sm text-slate-700">
+                          <p className="text-xs uppercase tracking-wide text-slate-500">
+                            Nivel
+                          </p>
+                          <p className="mt-1 text-lg font-semibold text-slate-900">
+                            {loyaltyTier.label}
+                          </p>
+                        </div>
+                        <div className="rounded-md border border-slate-200 bg-white p-3 text-sm text-slate-700">
+                          <p className="text-xs uppercase tracking-wide text-slate-500">
+                            Movimientos
+                          </p>
+                          <p className="mt-1 text-lg font-semibold text-slate-900">
+                            {user.loyaltyHistory.length}
+                          </p>
+                        </div>
+                      </div>
+
+                      {user.loyaltyHistory.length === 0 ? (
+                        <p className="mt-2 text-sm text-slate-500">
+                          Este usuario todavía no tiene historial de puntos.
+                        </p>
+                      ) : (
+                        <div className="mt-3 space-y-2">
+                          {user.loyaltyHistory.map((entry) => (
+                            <div
+                              key={entry.orderId}
+                              className="rounded-md border border-slate-200 bg-white px-3 py-3 text-sm text-slate-700"
+                            >
+                              <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+                                <div>
+                                  <p className="font-medium text-slate-900">
+                                    Orden #{entry.orderNumber}
+                                  </p>
+                                  <p className="text-xs text-slate-500">
+                                    Creada: {formatDate(entry.createdAtMs)}
+                                  </p>
+                                  {entry.creditedAtMs ? (
+                                    <p className="text-xs text-slate-500">
+                                      Acreditada:{" "}
+                                      {formatDate(entry.creditedAtMs)}
+                                    </p>
+                                  ) : null}
+                                </div>
+                                <div className="text-left md:text-right">
+                                  <p className="text-xs text-slate-500">
+                                    Total pedido: {formatPrice(entry.total)}
+                                  </p>
+                                  <span
+                                    className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${
+                                      entry.status === "credited"
+                                        ? "bg-emerald-100 text-emerald-800"
+                                        : "bg-amber-100 text-amber-800"
+                                    }`}
+                                  >
+                                    {entry.status === "credited"
+                                      ? "Acreditado"
+                                      : "Pendiente"}
+                                  </span>
+                                </div>
+                              </div>
+
+                              <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                                <p>
+                                  <span className="font-medium text-emerald-700">
+                                    + Ganados:
+                                  </span>{" "}
+                                  {formatLoyaltyPoints(entry.pointsEarned)}
+                                </p>
+                                <p>
+                                  <span className="font-medium text-rose-700">
+                                    - Canjeados:
+                                  </span>{" "}
+                                  {formatLoyaltyPoints(entry.redeemedPoints)}
+                                </p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
 
                     <div>
@@ -226,11 +345,14 @@ export function UserManagementSection({
                               >
                                 {product.name}
                               </a>
-                              <p className="text-xs text-slate-500">ID: {product.id}</p>
+                              <p className="text-xs text-slate-500">
+                                ID: {product.id}
+                              </p>
                             </li>
                           ))}
 
-                          {favoriteProducts.length !== user.favoriteProductIds.length ? (
+                          {favoriteProducts.length !==
+                          user.favoriteProductIds.length ? (
                             <li className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">
                               Algunos favoritos no están en el catálogo activo.
                             </li>
@@ -266,8 +388,12 @@ export function UserManagementSection({
                                 >
                                   {productBySlug?.name ?? view.slug}
                                 </a>
-                                <p className="text-xs text-slate-500">slug: {view.slug}</p>
-                                <p className="text-xs text-slate-500">Vistas: {view.count}</p>
+                                <p className="text-xs text-slate-500">
+                                  slug: {view.slug}
+                                </p>
+                                <p className="text-xs text-slate-500">
+                                  Vistas: {view.count}
+                                </p>
                               </li>
                             );
                           })}

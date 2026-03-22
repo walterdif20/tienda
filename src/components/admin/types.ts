@@ -1,4 +1,4 @@
-import type { Product, ProductCollectionId } from "@/types";
+import type { Category, Product, ProductCollectionId } from "@/types";
 
 export type AdminOrderStatus =
   | "pending"
@@ -47,12 +47,27 @@ export type ProductFormValues = {
   isActive: boolean;
 };
 
+export type CategoryFormValues = {
+  name: string;
+  slug: string;
+};
+
 export type SaveProductInput = {
   id?: string;
   values: ProductFormValues;
 };
 
+export type SaveCategoryInput = {
+  id?: string;
+  values: CategoryFormValues;
+};
+
 export type SaveProductResult = Promise<{
+  ok: boolean;
+  message?: string;
+}>;
+
+export type SaveCategoryResult = Promise<{
   ok: boolean;
   message?: string;
 }>;
@@ -65,6 +80,11 @@ export type UploadProductImageResult = Promise<{
 }>;
 
 export type DeleteProductResult = Promise<{
+  ok: boolean;
+  message?: string;
+}>;
+
+export type DeleteCategoryResult = Promise<{
   ok: boolean;
   message?: string;
 }>;
@@ -87,3 +107,4 @@ export type ManualSaleResult = Promise<{
 }>;
 
 export type AdminProduct = Product;
+export type AdminCategory = Category;

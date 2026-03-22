@@ -3,10 +3,14 @@ import { Search, Sparkles } from "lucide-react";
 import { ProductCard } from "@/components/product-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { categories } from "@/data/products";
+import { useCategories } from "@/hooks/use-categories";
 import { useProducts } from "@/hooks/use-products";
 import { useFavorites } from "@/hooks/use-favorites";
-import { getCollectionById, productCollections, productMatchesCollection } from "@/lib/collections";
+import {
+  getCollectionById,
+  productCollections,
+  productMatchesCollection,
+} from "@/lib/collections";
 import { useSearchParams } from "react-router-dom";
 
 export function ProductsPage() {
@@ -14,6 +18,7 @@ export function ProductsPage() {
   const [activeCollection, setActiveCollection] = useState("all");
   const [query, setQuery] = useState("");
   const { products, loading } = useProducts();
+  const { categories } = useCategories();
   const { isFavorite, toggleFavorite } = useFavorites();
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -33,7 +38,7 @@ export function ProductsPage() {
       isValidCollection ? (collectionFromUrl ?? "all") : "all",
     );
     setQuery(queryFromUrl);
-  }, [searchParams]);
+  }, [categories, searchParams]);
 
   const filteredProducts = useMemo(() => {
     return products.filter((product) => {
@@ -88,12 +93,14 @@ export function ProductsPage() {
           <div>
             <h1 className="text-3xl font-semibold tracking-tight">Productos</h1>
             <p className="mt-2 max-w-2xl text-sm text-slate-500">
-              Explorá por categoría o comprá por ocasión para encontrar ideas de regalo,
-              básicos diarios o piezas protagonistas más rápido.
+              Explorá por categoría o comprá por ocasión para encontrar ideas de
+              regalo, básicos diarios o piezas protagonistas más rápido.
             </p>
           </div>
           <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
-            <p className="font-medium text-slate-900">{filteredProducts.length} resultados</p>
+            <p className="font-medium text-slate-900">
+              {filteredProducts.length} resultados
+            </p>
             <p>
               {activeCollectionData
                 ? activeCollectionData.heroDescription
@@ -191,8 +198,8 @@ export function ProductsPage() {
         </div>
       ) : filteredProducts.length === 0 ? (
         <div className="rounded-2xl border border-slate-200 p-8 text-center text-sm text-slate-500">
-          No encontramos productos con ese filtro. Probá cambiar la ocasión,
-          la categoría o la búsqueda.
+          No encontramos productos con ese filtro. Probá cambiar la ocasión, la
+          categoría o la búsqueda.
         </div>
       ) : (
         <div className="grid gap-6 md:grid-cols-4 lg:grid-cols-3">

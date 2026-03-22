@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
-import { categories } from "@/data/products";
+import { useCategories } from "@/hooks/use-categories";
 import { useStoreSettings } from "@/hooks/use-store-settings";
 import { useAuth } from "@/providers/auth-provider";
 import { useCartStore } from "@/store/cartStore";
@@ -30,6 +30,7 @@ export function SiteHeader() {
   const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
   const { settings } = useStoreSettings();
+  const { categories } = useCategories();
   const { isAdmin, loyaltyPoints, user, signOutUser } = useAuth();
   const displayName =
     user?.displayName?.trim() || user?.email?.split("@")[0] || "Cliente";
@@ -86,7 +87,11 @@ export function SiteHeader() {
   const handleSearchSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const sanitized = searchQuery.trim();
-    navigate(sanitized ? `/products?query=${encodeURIComponent(sanitized)}` : "/products");
+    navigate(
+      sanitized
+        ? `/products?query=${encodeURIComponent(sanitized)}`
+        : "/products",
+    );
     closeMobileMenu();
   };
 
@@ -225,7 +230,9 @@ export function SiteHeader() {
                   <div className="mt-3 space-y-2 text-sm text-slate-600">
                     <div>
                       <p className="text-xs text-slate-400">Nombre</p>
-                      <p className="font-medium text-slate-900">{displayName}</p>
+                      <p className="font-medium text-slate-900">
+                        {displayName}
+                      </p>
                     </div>
                     <div>
                       <p className="text-xs text-slate-400">Email</p>
@@ -236,7 +243,8 @@ export function SiteHeader() {
                     <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
                       <p className="text-xs text-slate-400">Club</p>
                       <p className="font-medium text-slate-900">
-                        {formatLoyaltyPoints(loyaltyPoints)} puntos · Nivel {loyaltyProgress.currentTier.label}
+                        {formatLoyaltyPoints(loyaltyPoints)} puntos · Nivel{" "}
+                        {loyaltyProgress.currentTier.label}
                       </p>
                       <div className="mt-3 h-2 rounded-full bg-slate-200">
                         <div

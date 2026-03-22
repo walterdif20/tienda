@@ -1,13 +1,12 @@
-import { type ChangeEvent, useMemo, useRef, useState } from "react";
-import { categories } from "@/data/products";
+import { type ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
 import { productCollections } from "@/lib/collections";
 import { formatPrice } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import type {
+  AdminCategory,
   AdminProduct,
-  ProductFormValues,
   DeleteProductResult,
   SaveProductInput,
   SaveProductResult,
@@ -15,6 +14,7 @@ import type {
 } from "@/components/admin/types";
 
 type ProductManagementProps = {
+  categories: AdminCategory[];
   products: AdminProduct[];
   loading: boolean;
   onSaveProduct: (input: SaveProductInput) => SaveProductResult;
@@ -22,7 +22,7 @@ type ProductManagementProps = {
   onUploadProductImage: (file: File) => UploadProductImageResult;
 };
 
-const emptyProductForm = (): ProductFormValues => ({
+const emptyProductForm = (categories: AdminCategory[]): ProductFormValues => ({
   name: "",
   slug: "",
   description: "",
@@ -35,16 +35,19 @@ const emptyProductForm = (): ProductFormValues => ({
   isActive: true,
 });
 
+type ProductFormValues = SaveProductInput["values"];
+
 const slugify = (value: string) =>
   value
     .toLowerCase()
     .trim()
     .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[̀-ͯ]/g, "")
     .replace(/[^a-z0-9\s-]/g, "")
     .replace(/\s+/g, "-");
 
 export function ProductManagementSection({
+  categories,
   products,
   loading,
   onSaveProduct,
@@ -53,14 +56,32 @@ export function ProductManagementSection({
 }: ProductManagementProps) {
   const [view, setView] = useState<"list" | "form">("list");
   const [editingProductId, setEditingProductId] = useState<string | null>(null);
-  const [productForm, setProductForm] =
-    useState<ProductFormValues>(emptyProductForm());
+  const [productForm, setProductForm] = useState<ProductFormValues>(
+    emptyProductForm(categories),
+  );
   const [searchTerm, setSearchTerm] = useState("");
   const [feedback, setFeedback] = useState<string | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [savingProduct, setSavingProduct] = useState(false);
-  const [deletingProductId, setDeletingProductId] = useState<string | null>(null);
+  const [deletingProductId, setDeletingProductId] = useState<string | null>(
+    null,
+  );
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    setProductForm((current) => {
+      if (current.categoryId || categories.length === 0) {
+        return current;
+      }
+
+      return { ...current, categoryId: categories[0]?.id ?? "" };
+    });
+  }, [categories]);
+
+  const categoriesById = useMemo(
+    () => new Map(categories.map((category) => [category.id, category])),
+    [categories],
+  );
 
   const visibleProducts = useMemo(() => {
     const needle = searchTerm.toLowerCase().trim();
@@ -130,7 +151,7 @@ export function ProductManagementSection({
 
   const resetProductForm = () => {
     setEditingProductId(null);
-    setProductForm(emptyProductForm());
+    setProductForm(emptyProductForm(categories));
   };
 
   const startCreatingProduct = () => {
@@ -245,6 +266,9 @@ export function ProductManagementSection({
   };
 
   const lowStockCount = products.filter((product) => product.stock <= 3).length;
+  const hasCurrentCategory = categories.some(
+    (category) => category.id === productForm.categoryId,
+  );
 
   return (
     <div>
@@ -301,24 +325,32 @@ export function ProductManagementSection({
           <CardContent className="grid gap-3 md:grid-cols-2">
             <Input
               value={productForm.name}
-              onChange={(event) => handleProductField("name", event.target.value)}
+              onChange={(event) =>
+                handleProductField("name", event.target.value)
+              }
               placeholder="Nombre"
             />
             <Input
               value={productForm.slug}
-              onChange={(event) => handleProductField("slug", event.target.value)}
+              onChange={(event) =>
+                handleProductField("slug", event.target.value)
+              }
               placeholder="Slug (opcional)"
             />
             <Input
               value={productForm.price}
-              onChange={(event) => handleProductField("price", event.target.value)}
+              onChange={(event) =>
+                handleProductField("price", event.target.value)
+              }
               placeholder="Precio"
               type="number"
               min="0"
             />
             <Input
               value={productForm.stock}
-              onChange={(event) => handleProductField("stock", event.target.value)}
+              onChange={(event) =>
+                handleProductField("stock", event.target.value)
+              }
               placeholder="Stock"
               type="number"
               min="0"
@@ -329,8 +361,15 @@ export function ProductManagementSection({
               <select
                 className="h-10 w-full rounded-md border border-slate-200 px-3 text-sm"
                 value={productForm.categoryId}
-                onChange={(event) => handleProductField("categoryId", event.target.value)}
+                onChange={(event) =>
+                  handleProductField("categoryId", event.target.value)
+                }
               >
+                {!hasCurrentCategory && productForm.categoryId ? (
+                  <option value={productForm.categoryId}>
+                    {productForm.categoryId} (sin categoría activa)
+                  </option>
+                ) : null}
                 {categories.map((category) => (
                   <option key={category.id} value={category.id}>
                     {category.name}
@@ -341,7 +380,9 @@ export function ProductManagementSection({
 
             <Input
               value={productForm.badge}
-              onChange={(event) => handleProductField("badge", event.target.value)}
+              onChange={(event) =>
+                handleProductField("badge", event.target.value)
+              }
               placeholder="Badge (opcional)"
             />
 
@@ -360,7 +401,9 @@ export function ProductManagementSection({
                   >
                     <input
                       type="checkbox"
-                      checked={productForm.collectionIds.includes(collection.id)}
+                      checked={productForm.collectionIds.includes(
+                        collection.id,
+                      )}
                       onChange={() => toggleCollection(collection.id)}
                       className="mt-1"
                     />
@@ -412,7 +455,9 @@ export function ProductManagementSection({
                           loading="lazy"
                         />
                         <div className="w-full space-y-2">
-                          <p className="truncate text-xs text-slate-500">{image.url}</p>
+                          <p className="truncate text-xs text-slate-500">
+                            {image.url}
+                          </p>
                           <Input
                             value={image.alt}
                             onChange={(event) =>
@@ -442,7 +487,9 @@ export function ProductManagementSection({
             <div className="md:col-span-2">
               <Input
                 value={productForm.description}
-                onChange={(event) => handleProductField("description", event.target.value)}
+                onChange={(event) =>
+                  handleProductField("description", event.target.value)
+                }
                 placeholder="Descripción"
               />
             </div>
@@ -462,7 +509,10 @@ export function ProductManagementSection({
             </label>
 
             <div className="md:col-span-2 flex flex-wrap gap-2">
-              <Button onClick={saveProduct} disabled={uploadingImage || savingProduct}>
+              <Button
+                onClick={saveProduct}
+                disabled={uploadingImage || savingProduct}
+              >
                 {savingProduct
                   ? "Guardando..."
                   : editingProductId
@@ -474,7 +524,9 @@ export function ProductManagementSection({
               </Button>
             </div>
 
-            {feedback && <p className="md:col-span-2 text-sm text-slate-600">{feedback}</p>}
+            {feedback && (
+              <p className="md:col-span-2 text-sm text-slate-600">{feedback}</p>
+            )}
           </CardContent>
         </Card>
       ) : (
@@ -498,9 +550,11 @@ export function ProductManagementSection({
                   <div>
                     <p className="font-medium text-slate-900">{product.name}</p>
                     <p className="text-sm text-slate-500">
-                      {formatPrice(product.price)} · Stock: {product.stock} · Cat:{" "}
-                      {product.categoryId} · {" "}
-                      {product.isActive ? "Activo" : "Inactivo"}
+                      {formatPrice(product.price)} · Stock: {product.stock} ·
+                      Cat:{" "}
+                      {categoriesById.get(product.categoryId)?.name ??
+                        product.categoryId}{" "}
+                      · {product.isActive ? "Activo" : "Inactivo"}
                     </p>
                     <p className="mt-1 text-sm text-slate-500">
                       Ocasiones:{" "}
@@ -509,7 +563,8 @@ export function ProductManagementSection({
                             .map(
                               (collectionId) =>
                                 productCollections.find(
-                                  (collection) => collection.id === collectionId,
+                                  (collection) =>
+                                    collection.id === collectionId,
                                 )?.shortLabel ?? collectionId,
                             )
                             .join(", ")
@@ -529,7 +584,7 @@ export function ProductManagementSection({
                       size="sm"
                       variant="secondary"
                       onClick={() => {
-                        handleDeleteProduct(product).catch((error) => {
+                        void handleDeleteProduct(product).catch((error) => {
                           console.error(error);
                           setFeedback("No se pudo eliminar el producto.");
                           setDeletingProductId(null);
@@ -537,7 +592,9 @@ export function ProductManagementSection({
                       }}
                       disabled={deletingProductId !== null}
                     >
-                      {deletingProductId === product.id ? "Eliminando..." : "Eliminar"}
+                      {deletingProductId === product.id
+                        ? "Eliminando..."
+                        : "Eliminar"}
                     </Button>
                   </div>
                 </CardContent>

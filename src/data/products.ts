@@ -1,15 +1,17 @@
-import type { Product } from "@/types";
+import type { Category, Product } from "@/types";
 
-export const categories = [
+export const defaultCategories: Category[] = [
   { id: "new", name: "Nuevos", slug: "nuevos" },
   { id: "featured", name: "Destacados", slug: "destacados" },
   { id: "bracelets", name: "Pulseras", slug: "pulseras" },
   { id: "necklaces", name: "Cadenitas", slug: "cadenitas" },
   { id: "rings", name: "Anillos", slug: "anillos" },
   { id: "gorros", name: "Gorros", slug: "gorros" },
-  { id: "bufandas", name: "Bufandas", slug: "Bufandas" },
-  { id: "carteras", name: "Carteras", slug: "Carteras" },
+  { id: "bufandas", name: "Bufandas", slug: "bufandas" },
+  { id: "carteras", name: "Carteras", slug: "carteras" },
 ];
+
+export const categories = defaultCategories;
 
 export const seedProducts: Product[] = [
   {

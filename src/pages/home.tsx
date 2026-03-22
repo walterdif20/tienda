@@ -20,8 +20,12 @@ import { Button } from "@/components/ui/button";
 import { useProducts } from "@/hooks/use-products";
 import { useFavorites } from "@/hooks/use-favorites";
 import { useStoreSettings } from "@/hooks/use-store-settings";
-import { categories } from "@/data/products";
-import { getCollectionById, productCollections, productMatchesCollection } from "@/lib/collections";
+import { useCategories } from "@/hooks/use-categories";
+import {
+  getCollectionById,
+  productCollections,
+  productMatchesCollection,
+} from "@/lib/collections";
 
 const heroFallbackImages = [
   "https://firebasestorage.googleapis.com/v0/b/madd-tienda.firebasestorage.app/o/store-settings%2Fhero-1773631266344-ChatGPT%20Image%2015%20mar%202026%2C%2011_36_25%20p.m..png?alt=media&token=5ad1a120-5517-42e0-a72c-d209beb39ba3",
@@ -30,11 +34,14 @@ const heroFallbackImages = [
 
 export function HomePage() {
   const { products, loading } = useProducts();
+  const { categories } = useCategories();
   const { settings } = useStoreSettings();
   const { isFavorite, toggleFavorite } = useFavorites();
 
   const latest = products.slice(0, 4);
-  const trending = products.filter((product) => productMatchesCollection(product, "trending")).slice(0, 4);
+  const trending = products
+    .filter((product) => productMatchesCollection(product, "trending"))
+    .slice(0, 4);
 
   const categoryTiles = useMemo(() => {
     return categories
@@ -65,15 +72,16 @@ export function HomePage() {
           imageAlt: string;
         } => item !== null,
       );
-  }, [products]);
+  }, [categories, products]);
 
   const occasionCards = useMemo(
     () =>
       productCollections.slice(0, 4).map((collection) => ({
         ...collection,
         coverImage:
-          products.find((product) => productMatchesCollection(product, collection.id))?.images[0]?.url ??
-          heroFallbackImages[0],
+          products.find((product) =>
+            productMatchesCollection(product, collection.id),
+          )?.images[0]?.url ?? heroFallbackImages[0],
       })),
     [products],
   );
@@ -131,8 +139,8 @@ export function HomePage() {
               Una tienda que te ayuda a elegir, comprar rápido y volver.
             </h1>
             <p className="max-w-xl text-base text-white/80 md:text-lg">
-              Colecciones por ocasión, stock actualizado, quick shop y una compra
-              simple de principio a fin.
+              Colecciones por ocasión, stock actualizado, quick shop y una
+              compra simple de principio a fin.
             </p>
             <div className="flex flex-wrap gap-3">
               <Button
@@ -148,7 +156,10 @@ export function HomePage() {
                 size="lg"
                 className="border-white/30 bg-white/10 text-white hover:bg-white/20"
               >
-                <Link to="/products?collection=gift" className="inline-flex items-center gap-2">
+                <Link
+                  to="/products?collection=gift"
+                  className="inline-flex items-center gap-2"
+                >
                   Comprar por ocasión <ArrowRight className="h-4 w-4" />
                 </Link>
               </Button>
@@ -191,10 +202,12 @@ export function HomePage() {
 
       <section className="mx-auto grid max-w-9xl gap-4 px-4 md:grid-cols-3">
         <HighlightCard icon={Gift} title="Comprar por ocasión">
-          Curaduría para regalos, básicos diarios, looks con presencia y últimas unidades.
+          Curaduría para regalos, básicos diarios, looks con presencia y últimas
+          unidades.
         </HighlightCard>
         <HighlightCard icon={Clock3} title="Checkout más claro">
-          Resumen visible de ahorro, puntos y beneficios antes de confirmar tu compra.
+          Resumen visible de ahorro, puntos y beneficios antes de confirmar tu
+          compra.
         </HighlightCard>
         <HighlightCard icon={Sparkles} title="Postcompra cuidada">
           Seguimiento visual y club de puntos para que volver tenga sentido.
@@ -316,9 +329,12 @@ function CollectionSection({
     <section className="mx-auto max-w-9xl px-4">
       <div className="mb-6 flex items-end justify-between gap-3">
         <div>
-          <h2 className="text-2xl font-semibold text-slate-900">Comprar por ocasión</h2>
+          <h2 className="text-2xl font-semibold text-slate-900">
+            Comprar por ocasión
+          </h2>
           <p className="text-sm text-slate-500">
-            Una capa editorial sobre el catálogo para decidir más rápido sin tener que saber exactamente qué buscar.
+            Una capa editorial sobre el catálogo para decidir más rápido sin
+            tener que saber exactamente qué buscar.
           </p>
         </div>
         <Button variant="ghost" asChild>
@@ -343,7 +359,9 @@ function CollectionSection({
                 {getCollectionById(collection.id)?.shortLabel}
               </p>
               <h3 className="mt-2 text-xl font-semibold">{collection.label}</h3>
-              <p className="mt-2 text-sm text-white/75">{collection.description}</p>
+              <p className="mt-2 text-sm text-white/75">
+                {collection.description}
+              </p>
               <span className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-white">
                 Explorar ahora <ArrowRight className="h-4 w-4" />
               </span>
@@ -459,7 +477,9 @@ function Section({
           ))}
         </div>
       ) : (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">{children}</div>
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+          {children}
+        </div>
       )}
     </section>
   );

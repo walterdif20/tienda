@@ -1,22 +1,33 @@
 import { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
+import { CategoryManagementSection } from "@/components/admin/category-management";
 import { OrderManagementSection } from "@/components/admin/order-management";
 import { ProductManagementSection } from "@/components/admin/product-management";
-import { StoreSettingsManagementSection } from "@/components/admin/store-settings-management";
 import { ReportsManagementSection } from "@/components/admin/reports-management";
+import { StoreSettingsManagementSection } from "@/components/admin/store-settings-management";
 import { UserManagementSection } from "@/components/admin/user-management";
 import type {
   AdminOrder,
   AdminOrderStatus,
+  DeleteCategoryResult,
+  DeleteProductResult,
   ManualSaleInput,
   ManualSaleResult,
+  SaveCategoryInput,
+  SaveCategoryResult,
   SaveProductInput,
-  DeleteProductResult,
   SaveProductResult,
   StatusChangeResult,
   UploadProductImageResult,
 } from "@/components/admin/types";
+import { useCategories } from "@/hooks/use-categories";
 import { useProducts } from "@/hooks/use-products";
+import {
+  createCategory,
+  deleteCategory,
+  slugifyCategory,
+  updateCategory,
+} from "@/lib/categories";
 import {
   fetchAdminUsers,
   makeUserAdmin,
@@ -42,13 +53,18 @@ const slugify = (value: string) =>
     .toLowerCase()
     .trim()
     .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[̀-ͯ]/g, "")
     .replace(/[^a-z0-9\s-]/g, "")
     .replace(/\s+/g, "-");
 
 export function AdminPage() {
   const { isAdmin, loading: authLoading } = useAuth();
   const { products: adminProducts, loading, reload } = useProducts();
+  const {
+    categories,
+    loading: categoriesLoading,
+    reload: reloadCategories,
+  } = useCategories();
   const [orders, setOrders] = useState<AdminOrder[]>([]);
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
@@ -64,7 +80,7 @@ export function AdminPage() {
     {
       id: "products",
       label: "Productos",
-      description: "Stock, altas y edición de catálogo",
+      description: "Stock, altas, categorías y edición de catálogo",
     },
     {
       id: "sales",
@@ -84,7 +100,7 @@ export function AdminPage() {
     {
       id: "users",
       label: "Cuentas",
-      description: "Administradores y bloqueos",
+      description: "Administradores, bloqueos y puntos",
     },
   ];
 
@@ -108,11 +124,11 @@ export function AdminPage() {
       return;
     }
 
-    reloadOrders().catch((error) => {
+    void reloadOrders().catch((error) => {
       console.error(error);
     });
 
-    reloadUsers().catch((error) => {
+    void reloadUsers().catch((error) => {
       console.error(error);
     });
   }, [isAdmin]);
@@ -129,7 +145,6 @@ export function AdminPage() {
     return <Navigate to="/" replace />;
   }
 
-
   const visibleOrders = orders.filter(
     (order) => order.status !== "completed" && order.status !== "cancelled",
   );
@@ -139,6 +154,10 @@ export function AdminPage() {
   }: SaveProductInput): SaveProductResult => {
     if (!values.name.trim()) {
       return { ok: false, message: "El nombre es obligatorio." };
+    }
+
+    if (!values.categoryId.trim()) {
+      return { ok: false, message: "Seleccioná una categoría." };
     }
 
     const price = Number(values.price);
@@ -207,6 +226,75 @@ export function AdminPage() {
     }
   };
 
+  const onSaveCategory = async ({
+    id,
+    values,
+  }: SaveCategoryInput): SaveCategoryResult => {
+    if (!values.name.trim()) {
+      return { ok: false, message: "El nombre es obligatorio." };
+    }
+
+    const normalizedSlug = slugifyCategory(values.slug || values.name);
+
+    if (!normalizedSlug) {
+      return { ok: false, message: "El slug es inválido." };
+    }
+
+    const duplicated = categories.find(
+      (category) =>
+        (category.slug === normalizedSlug || category.id === normalizedSlug) &&
+        category.id !== id,
+    );
+
+    if (duplicated) {
+      return { ok: false, message: "Ya existe una categoría con ese slug." };
+    }
+
+    try {
+      if (id) {
+        await updateCategory(id, {
+          name: values.name,
+          slug: normalizedSlug,
+        });
+        reloadCategories();
+        return { ok: true, message: "Categoría actualizada." };
+      }
+
+      await createCategory({
+        id: normalizedSlug,
+        name: values.name,
+        slug: normalizedSlug,
+      });
+      reloadCategories();
+      return { ok: true, message: "Categoría creada." };
+    } catch (error) {
+      console.error(error);
+      return { ok: false, message: "No se pudo guardar la categoría." };
+    }
+  };
+
+  const onDeleteCategory = async (categoryId: string): DeleteCategoryResult => {
+    const linkedProducts = adminProducts.filter(
+      (product) => product.categoryId === categoryId,
+    ).length;
+
+    if (linkedProducts > 0) {
+      return {
+        ok: false,
+        message: "No se puede eliminar una categoría con productos asociados.",
+      };
+    }
+
+    try {
+      await deleteCategory(categoryId);
+      reloadCategories();
+      return { ok: true, message: "Categoría eliminada con éxito." };
+    } catch (error) {
+      console.error(error);
+      return { ok: false, message: "No se pudo eliminar la categoría." };
+    }
+  };
+
   const onUploadProductImage = async (file: File): UploadProductImageResult => {
     if (!file.type.startsWith("image/")) {
       return {
@@ -258,6 +346,7 @@ export function AdminPage() {
           order.id === orderId ? { ...order, status } : order,
         ),
       );
+      await reloadUsers();
       return { ok: true, message: `Estado actualizado a ${status}.` };
     } catch (error) {
       console.error(error);
@@ -340,7 +429,7 @@ export function AdminPage() {
           Organización más clara por áreas para acelerar tareas diarias.
         </p>
 
-        <div className="mt-4 grid gap-3 sm:grid-cols-3">
+        <div className="mt-4 grid gap-3 sm:grid-cols-4">
           <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
             <p className="text-xs uppercase tracking-wide text-slate-500">
               Órdenes activas
@@ -355,6 +444,14 @@ export function AdminPage() {
             </p>
             <p className="mt-1 text-2xl font-semibold text-slate-900">
               {adminProducts.length}
+            </p>
+          </div>
+          <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+            <p className="text-xs uppercase tracking-wide text-slate-500">
+              Categorías activas
+            </p>
+            <p className="mt-1 text-2xl font-semibold text-slate-900">
+              {categories.length}
             </p>
           </div>
           <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
@@ -417,13 +514,24 @@ export function AdminPage() {
 
           <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
             {activeSection === "products" ? (
-              <ProductManagementSection
-                products={adminProducts}
-                loading={loading && adminProducts.length === 0}
-                onSaveProduct={onSaveProduct}
-                onDeleteProduct={onDeleteProduct}
-                onUploadProductImage={onUploadProductImage}
-              />
+              <>
+                <ProductManagementSection
+                  categories={categories}
+                  products={adminProducts}
+                  loading={loading && adminProducts.length === 0}
+                  onSaveProduct={onSaveProduct}
+                  onDeleteProduct={onDeleteProduct}
+                  onUploadProductImage={onUploadProductImage}
+                />
+                <CategoryManagementSection
+                  categories={categories}
+                  products={adminProducts}
+                  loading={categoriesLoading}
+                  onReload={reloadCategories}
+                  onSaveCategory={onSaveCategory}
+                  onDeleteCategory={onDeleteCategory}
+                />
+              </>
             ) : activeSection === "sales" ? (
               <OrderManagementSection
                 orders={visibleOrders}
@@ -433,7 +541,10 @@ export function AdminPage() {
                 onCreateManualSale={onCreateManualSale}
               />
             ) : activeSection === "reports" ? (
-              <ReportsManagementSection orders={orders} products={adminProducts} />
+              <ReportsManagementSection
+                orders={orders}
+                products={adminProducts}
+              />
             ) : activeSection === "settings" ? (
               <StoreSettingsManagementSection />
             ) : (

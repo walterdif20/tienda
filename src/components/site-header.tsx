@@ -142,9 +142,9 @@ export function SiteHeader() {
                   <ChevronDown className="h-4 w-4" />
                 </NavLink>
 
-                <div className="invisible absolute inset-x-0 top-full z-50 pt-3 opacity-0 transition duration-200 group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100">
-                  <div className="mx-auto w-full max-w-7xl px-4">
-                    <div className="overflow-hidden rounded-[28px] border border-slate-200 bg-white p-6 text-slate-900 shadow-2xl">
+                <div className="invisible absolute inset-x-0 top-full z-50 opacity-0 transition duration-200 group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100">
+                  <div className="w-full border-b border-slate-200 bg-white text-slate-900 shadow-lg">
+                    <div className="mx-auto w-full max-w-7xl px-4 py-6">
                       <div className="flex items-center justify-between gap-4 border-b border-slate-200 pb-4">
                         <div>
                           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">

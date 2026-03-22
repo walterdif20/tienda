@@ -25,6 +25,7 @@ import { useProducts } from "@/hooks/use-products";
 import {
   createCategory,
   deleteCategory,
+  getCategoryChildren,
   slugifyCategory,
   updateCategory,
 } from "@/lib/categories";
@@ -235,9 +236,17 @@ export function AdminPage() {
     }
 
     const normalizedSlug = slugifyCategory(values.slug || values.name);
+    const normalizedParentId = values.parentId.trim() || null;
 
     if (!normalizedSlug) {
       return { ok: false, message: "El slug es inválido." };
+    }
+
+    if (normalizedParentId && normalizedParentId === id) {
+      return {
+        ok: false,
+        message: "Una categoría no puede ser subcategoría de sí misma.",
+      };
     }
 
     const duplicated = categories.find(
@@ -250,11 +259,41 @@ export function AdminPage() {
       return { ok: false, message: "Ya existe una categoría con ese slug." };
     }
 
+    if (normalizedParentId) {
+      const parentCategory = categories.find(
+        (category) => category.id === normalizedParentId,
+      );
+
+      if (!parentCategory) {
+        return { ok: false, message: "La categoría padre no existe." };
+      }
+
+      if (parentCategory.parentId) {
+        return {
+          ok: false,
+          message: "Solo se permite un nivel de subcategorías.",
+        };
+      }
+    }
+
+    if (
+      id &&
+      normalizedParentId &&
+      getCategoryChildren(categories, id).length > 0
+    ) {
+      return {
+        ok: false,
+        message:
+          "Esta categoría ya tiene subcategorías. Quitalas o mantenela como principal.",
+      };
+    }
+
     try {
       if (id) {
         await updateCategory(id, {
           name: values.name,
           slug: normalizedSlug,
+          parentId: normalizedParentId,
         });
         reloadCategories();
         return { ok: true, message: "Categoría actualizada." };
@@ -264,6 +303,7 @@ export function AdminPage() {
         id: normalizedSlug,
         name: values.name,
         slug: normalizedSlug,
+        parentId: normalizedParentId,
       });
       reloadCategories();
       return { ok: true, message: "Categoría creada." };
@@ -277,11 +317,22 @@ export function AdminPage() {
     const linkedProducts = adminProducts.filter(
       (product) => product.categoryId === categoryId,
     ).length;
+    const linkedSubcategories = categories.filter(
+      (category) => category.parentId === categoryId,
+    ).length;
 
     if (linkedProducts > 0) {
       return {
         ok: false,
         message: "No se puede eliminar una categoría con productos asociados.",
+      };
+    }
+
+    if (linkedSubcategories > 0) {
+      return {
+        ok: false,
+        message:
+          "No se puede eliminar una categoría con subcategorías asociadas.",
       };
     }
 

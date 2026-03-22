@@ -50,6 +50,7 @@ export type ProductFormValues = {
 export type CategoryFormValues = {
   name: string;
   slug: string;
+  parentId: string;
 };
 
 export type SaveProductInput = {

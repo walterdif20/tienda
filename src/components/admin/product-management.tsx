@@ -1,4 +1,9 @@
 import { type ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
+import {
+  getCategoryDisplayName,
+  getCategoryTree,
+  getVisibleCategories,
+} from "@/lib/categories";
 import { productCollections } from "@/lib/collections";
 import { formatPrice } from "@/lib/format";
 import { Button } from "@/components/ui/button";
@@ -22,13 +27,16 @@ type ProductManagementProps = {
   onUploadProductImage: (file: File) => UploadProductImageResult;
 };
 
+const getDefaultCategoryId = (categories: AdminCategory[]) =>
+  getVisibleCategories(categories)[0]?.id ?? "";
+
 const emptyProductForm = (categories: AdminCategory[]): ProductFormValues => ({
   name: "",
   slug: "",
   description: "",
   price: "",
   stock: "",
-  categoryId: categories[0]?.id ?? "",
+  categoryId: getDefaultCategoryId(categories),
   collectionIds: [],
   badge: "",
   images: [],
@@ -74,14 +82,11 @@ export function ProductManagementSection({
         return current;
       }
 
-      return { ...current, categoryId: categories[0]?.id ?? "" };
+      return { ...current, categoryId: getDefaultCategoryId(categories) };
     });
   }, [categories]);
 
-  const categoriesById = useMemo(
-    () => new Map(categories.map((category) => [category.id, category])),
-    [categories],
-  );
+  const categoryTree = useMemo(() => getCategoryTree(categories), [categories]);
 
   const visibleProducts = useMemo(() => {
     const needle = searchTerm.toLowerCase().trim();
@@ -370,11 +375,22 @@ export function ProductManagementSection({
                     {productForm.categoryId} (sin categoría activa)
                   </option>
                 ) : null}
-                {categories.map((category) => (
-                  <option key={category.id} value={category.id}>
-                    {category.name}
-                  </option>
-                ))}
+                {categoryTree.map(({ category, subcategories }) =>
+                  subcategories.length > 0 ? (
+                    <optgroup key={category.id} label={category.name}>
+                      <option value={category.id}>{category.name}</option>
+                      {subcategories.map((subcategory) => (
+                        <option key={subcategory.id} value={subcategory.id}>
+                          {subcategory.name}
+                        </option>
+                      ))}
+                    </optgroup>
+                  ) : (
+                    <option key={category.id} value={category.id}>
+                      {category.name}
+                    </option>
+                  ),
+                )}
               </select>
             </label>
 
@@ -552,9 +568,8 @@ export function ProductManagementSection({
                     <p className="text-sm text-slate-500">
                       {formatPrice(product.price)} · Stock: {product.stock} ·
                       Cat:{" "}
-                      {categoriesById.get(product.categoryId)?.name ??
-                        product.categoryId}{" "}
-                      · {product.isActive ? "Activo" : "Inactivo"}
+                      {getCategoryDisplayName(product.categoryId, categories)} ·{" "}
+                      {product.isActive ? "Activo" : "Inactivo"}
                     </p>
                     <p className="mt-1 text-sm text-slate-500">
                       Ocasiones:{" "}

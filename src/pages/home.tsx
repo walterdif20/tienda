@@ -21,6 +21,7 @@ import { useProducts } from "@/hooks/use-products";
 import { useFavorites } from "@/hooks/use-favorites";
 import { useStoreSettings } from "@/hooks/use-store-settings";
 import { useCategories } from "@/hooks/use-categories";
+import { getCategoryTree } from "@/lib/categories";
 import {
   getCollectionById,
   productCollections,
@@ -44,11 +45,15 @@ export function HomePage() {
     .slice(0, 4);
 
   const categoryTiles = useMemo(() => {
-    return categories
-      .map((category) => {
+    return getCategoryTree(categories)
+      .map(({ category, subcategories }) => {
         const firstProduct = products.find(
           (product) =>
-            product.categoryId === category.id && product.images.length > 0,
+            (product.categoryId === category.id ||
+              subcategories.some(
+                (subcategory) => subcategory.id === product.categoryId,
+              )) &&
+            product.images.length > 0,
         );
 
         if (!firstProduct?.images[0]) {

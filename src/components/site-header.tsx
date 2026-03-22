@@ -10,6 +10,7 @@ import {
 import { useEffect, useRef, useState } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useCategories } from "@/hooks/use-categories";
+import { getCategoryTree } from "@/lib/categories";
 import { useStoreSettings } from "@/hooks/use-store-settings";
 import { useAuth } from "@/providers/auth-provider";
 import { useCartStore } from "@/store/cartStore";
@@ -63,9 +64,7 @@ export function SiteHeader() {
     ...(isAdmin ? [{ to: "/admin", label: "Admin" }] : []),
   ];
 
-  const productCategories = categories.filter(
-    (category) => category.id !== "new" && category.id !== "featured",
-  );
+  const productCategories = getCategoryTree(categories);
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen((open) => {
@@ -155,14 +154,28 @@ export function SiteHeader() {
                     >
                       Ver todos
                     </NavLink>
-                    {productCategories.map((category) => (
-                      <NavLink
-                        key={category.id}
-                        to={`/products?category=${category.id}`}
-                        className="block rounded-md px-3 py-2 text-slate-600 transition hover:bg-slate-50 hover:text-slate-900"
-                      >
-                        {category.name}
-                      </NavLink>
+                    {productCategories.map(({ category, subcategories }) => (
+                      <div key={category.id} className="rounded-lg px-1 py-1">
+                        <NavLink
+                          to={`/products?category=${category.id}`}
+                          className="block rounded-md px-3 py-2 font-medium text-slate-700 transition hover:bg-slate-50 hover:text-slate-900"
+                        >
+                          {category.name}
+                        </NavLink>
+                        {subcategories.length > 0 ? (
+                          <div className="ml-3 border-l border-slate-200 pl-3">
+                            {subcategories.map((subcategory) => (
+                              <NavLink
+                                key={subcategory.id}
+                                to={`/products?category=${category.id}&subcategory=${subcategory.id}`}
+                                className="block rounded-md px-3 py-2 text-slate-600 transition hover:bg-slate-50 hover:text-slate-900"
+                              >
+                                {subcategory.name}
+                              </NavLink>
+                            ))}
+                          </div>
+                        ) : null}
+                      </div>
                     ))}
                   </div>
                 </div>
@@ -348,15 +361,30 @@ export function SiteHeader() {
                       >
                         Ver todos
                       </NavLink>
-                      {productCategories.map((category) => (
-                        <NavLink
-                          key={category.id}
-                          to={`/products?category=${category.id}`}
-                          onClick={closeMobileMenu}
-                          className="text-slate-500 transition hover:text-slate-900"
-                        >
-                          {category.name}
-                        </NavLink>
+                      {productCategories.map(({ category, subcategories }) => (
+                        <div key={category.id} className="space-y-2">
+                          <NavLink
+                            to={`/products?category=${category.id}`}
+                            onClick={closeMobileMenu}
+                            className="font-medium text-slate-700 transition hover:text-slate-900"
+                          >
+                            {category.name}
+                          </NavLink>
+                          {subcategories.length > 0 ? (
+                            <div className="ml-3 flex flex-col gap-2 border-l border-slate-200 pl-3">
+                              {subcategories.map((subcategory) => (
+                                <NavLink
+                                  key={subcategory.id}
+                                  to={`/products?category=${category.id}&subcategory=${subcategory.id}`}
+                                  onClick={closeMobileMenu}
+                                  className="text-slate-500 transition hover:text-slate-900"
+                                >
+                                  {subcategory.name}
+                                </NavLink>
+                              ))}
+                            </div>
+                          ) : null}
+                        </div>
                       ))}
                     </div>
                   ) : null}

@@ -1,6 +1,11 @@
 import { useMemo, useState } from "react";
 import { Pencil, RefreshCw, Trash2 } from "lucide-react";
-import { slugifyCategory } from "@/lib/categories";
+import {
+  getCategoryChildren,
+  getCategoryDisplayName,
+  getCategoryTree,
+  slugifyCategory,
+} from "@/lib/categories";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -12,7 +17,7 @@ import type {
   SaveCategoryResult,
 } from "@/components/admin/types";
 
-const emptyForm = { name: "", slug: "" };
+const emptyForm = { name: "", slug: "", parentId: "" };
 
 type CategoryManagementSectionProps = {
   categories: AdminCategory[];
@@ -46,6 +51,36 @@ export function CategoryManagementSection({
     }, {});
   }, [products]);
 
+  const childrenCountByCategory = useMemo(() => {
+    return categories.reduce<Record<string, number>>((acc, category) => {
+      if (!category.parentId) {
+        return acc;
+      }
+
+      acc[category.parentId] = (acc[category.parentId] ?? 0) + 1;
+      return acc;
+    }, {});
+  }, [categories]);
+
+  const rootCategories = useMemo(
+    () => getCategoryTree(categories).map(({ category }) => category),
+    [categories],
+  );
+
+  const availableParents = useMemo(
+    () =>
+      rootCategories.filter((category) => {
+        if (!editingCategoryId) {
+          return true;
+        }
+
+        return category.id !== editingCategoryId;
+      }),
+    [editingCategoryId, rootCategories],
+  );
+
+  const categoryTree = useMemo(() => getCategoryTree(categories), [categories]);
+
   const startCreate = () => {
     setEditingCategoryId(null);
     setForm(emptyForm);
@@ -54,7 +89,11 @@ export function CategoryManagementSection({
 
   const startEdit = (category: AdminCategory) => {
     setEditingCategoryId(category.id);
-    setForm({ name: category.name, slug: category.slug });
+    setForm({
+      name: category.name,
+      slug: category.slug,
+      parentId: category.parentId ?? "",
+    });
     setFeedback(null);
   };
 
@@ -72,6 +111,7 @@ export function CategoryManagementSection({
         values: {
           name: form.name.trim(),
           slug: slugifyCategory(form.slug.trim() || form.name),
+          parentId: form.parentId,
         },
       });
 
@@ -89,10 +129,18 @@ export function CategoryManagementSection({
 
   const removeCategory = async (category: AdminCategory) => {
     const linkedProducts = productCountByCategory[category.id] ?? 0;
+    const linkedChildren = childrenCountByCategory[category.id] ?? 0;
 
     if (linkedProducts > 0) {
       setFeedback(
         `No podés eliminar ${category.name} porque tiene ${linkedProducts} producto(s) asociados.`,
+      );
+      return;
+    }
+
+    if (linkedChildren > 0) {
+      setFeedback(
+        `No podés eliminar ${category.name} porque tiene ${linkedChildren} subcategoría(s) asociadas.`,
       );
       return;
     }
@@ -135,13 +183,13 @@ export function CategoryManagementSection({
           </Button>
         </CardTitle>
         <p className="text-sm text-slate-500">
-          Creá, editá y limpiá categorías del catálogo. No se pueden borrar si
-          tienen productos asociados.
+          Creá categorías principales o subcategorías. No se pueden borrar si
+          tienen productos o subcategorías asociadas.
         </p>
       </CardHeader>
 
       <CardContent className="space-y-6">
-        <div className="grid gap-3 md:grid-cols-[1fr_1fr_auto]">
+        <div className="grid gap-3 md:grid-cols-[1fr_1fr_1fr_auto]">
           <Input
             value={form.name}
             onChange={(event) =>
@@ -156,7 +204,27 @@ export function CategoryManagementSection({
             }
             placeholder="Slug"
           />
-          <div className="flex gap-2">
+          <label className="text-sm">
+            <span className="mb-1 block text-slate-600">Categoría padre</span>
+            <select
+              className="h-10 w-full rounded-md border border-slate-200 px-3 text-sm"
+              value={form.parentId}
+              onChange={(event) =>
+                setForm((current) => ({
+                  ...current,
+                  parentId: event.target.value,
+                }))
+              }
+            >
+              <option value="">Sin categoría padre</option>
+              {availableParents.map((category) => (
+                <option key={category.id} value={category.id}>
+                  {category.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <div className="flex gap-2 self-end">
             <Button onClick={saveCategory} disabled={saving}>
               {saving
                 ? "Guardando..."
@@ -171,45 +239,109 @@ export function CategoryManagementSection({
         </div>
 
         <div className="grid gap-3">
-          {categories.map((category) => {
+          {categoryTree.map(({ category, subcategories }) => {
             const linkedProducts = productCountByCategory[category.id] ?? 0;
+            const linkedChildren = childrenCountByCategory[category.id] ?? 0;
 
             return (
               <div
                 key={category.id}
-                className="flex flex-col gap-3 rounded-xl border border-slate-200 p-4 md:flex-row md:items-center md:justify-between"
+                className="rounded-xl border border-slate-200 p-4"
               >
-                <div>
-                  <p className="font-medium text-slate-900">{category.name}</p>
-                  <p className="text-sm text-slate-500">
-                    ID: {category.id} · slug: {category.slug}
-                  </p>
-                  <p className="text-sm text-slate-500">
-                    Productos asociados: {linkedProducts}
-                  </p>
+                <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                  <div>
+                    <p className="font-medium text-slate-900">
+                      {category.name}
+                    </p>
+                    <p className="text-sm text-slate-500">
+                      ID: {category.id} · slug: {category.slug}
+                    </p>
+                    <p className="text-sm text-slate-500">
+                      Productos asociados: {linkedProducts} · Subcategorías:{" "}
+                      {linkedChildren}
+                    </p>
+                  </div>
+
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => startEdit(category)}
+                    >
+                      <Pencil className="mr-1 h-4 w-4" />
+                      Editar
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => {
+                        void removeCategory(category);
+                      }}
+                      disabled={deletingId !== null}
+                    >
+                      <Trash2 className="mr-1 h-4 w-4" />
+                      {deletingId === category.id
+                        ? "Eliminando..."
+                        : "Eliminar"}
+                    </Button>
+                  </div>
                 </div>
 
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => startEdit(category)}
-                  >
-                    <Pencil className="mr-1 h-4 w-4" />
-                    Editar
-                  </Button>
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => {
-                      void removeCategory(category);
-                    }}
-                    disabled={deletingId !== null}
-                  >
-                    <Trash2 className="mr-1 h-4 w-4" />
-                    {deletingId === category.id ? "Eliminando..." : "Eliminar"}
-                  </Button>
-                </div>
+                {subcategories.length > 0 ? (
+                  <div className="mt-4 space-y-3 border-l border-slate-200 pl-4">
+                    {subcategories.map((subcategory) => {
+                      const linkedSubcategoryProducts =
+                        productCountByCategory[subcategory.id] ?? 0;
+
+                      return (
+                        <div
+                          key={subcategory.id}
+                          className="flex flex-col gap-3 rounded-lg bg-slate-50 p-3 md:flex-row md:items-center md:justify-between"
+                        >
+                          <div>
+                            <p className="font-medium text-slate-900">
+                              {subcategory.name}
+                            </p>
+                            <p className="text-sm text-slate-500">
+                              {getCategoryDisplayName(
+                                subcategory.id,
+                                categories,
+                              )}
+                            </p>
+                            <p className="text-sm text-slate-500">
+                              ID: {subcategory.id} · slug: {subcategory.slug} ·
+                              Productos asociados: {linkedSubcategoryProducts}
+                            </p>
+                          </div>
+
+                          <div className="flex flex-wrap gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => startEdit(subcategory)}
+                            >
+                              <Pencil className="mr-1 h-4 w-4" />
+                              Editar
+                            </Button>
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              onClick={() => {
+                                void removeCategory(subcategory);
+                              }}
+                              disabled={deletingId !== null}
+                            >
+                              <Trash2 className="mr-1 h-4 w-4" />
+                              {deletingId === subcategory.id
+                                ? "Eliminando..."
+                                : "Eliminar"}
+                            </Button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : null}
               </div>
             );
           })}
@@ -220,6 +352,21 @@ export function CategoryManagementSection({
             </p>
           ) : null}
         </div>
+
+        {editingCategoryId ? (
+          <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
+            <p className="font-medium text-slate-900">Editando categoría</p>
+            <p className="mt-1">
+              {getCategoryDisplayName(editingCategoryId, categories)}
+            </p>
+            {getCategoryChildren(categories, editingCategoryId).length > 0 ? (
+              <p className="mt-2 text-xs text-amber-700">
+                Esta categoría ya tiene subcategorías; mantenela como principal
+                para evitar más de un nivel jerárquico.
+              </p>
+            ) : null}
+          </div>
+        ) : null}
 
         {feedback ? <p className="text-sm text-slate-600">{feedback}</p> : null}
       </CardContent>

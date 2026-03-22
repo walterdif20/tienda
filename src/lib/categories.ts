@@ -33,6 +33,7 @@ const normalizeCategory = (
 ): Category => ({
   id,
   name: String(data.name ?? id),
+  label: String(data.label ?? data.name ?? id),
   slug: String(data.slug ?? id),
   parentId:
     typeof data.parentId === "string" && data.parentId.trim().length > 0
@@ -45,6 +46,9 @@ export const isSpecialCategory = (categoryId: string) =>
 
 export const getVisibleCategories = (categories: Category[]) =>
   categories.filter((category) => !isSpecialCategory(category.id));
+
+export const getCategoryLabel = (category: Category) =>
+  category.label.trim() || category.name;
 
 export const getCategoryChildren = (categories: Category[], parentId: string) =>
   categories.filter((category) => category.parentId === parentId);
@@ -82,13 +86,15 @@ export const getCategoryDisplayName = (
   }
 
   if (!current.parentId) {
-    return current.name;
+    return getCategoryLabel(current);
   }
 
   const parent = categories.find(
     (category) => category.id === current.parentId,
   );
-  return parent ? `${parent.name} / ${current.name}` : current.name;
+  return parent
+    ? `${getCategoryLabel(parent)} / ${getCategoryLabel(current)}`
+    : getCategoryLabel(current);
 };
 
 export const getCategoryDescendantIds = (
@@ -152,20 +158,23 @@ export const fetchCategories = async (): Promise<Category[]> => {
 export const createCategory = async (input: {
   id?: string;
   name: string;
+  label: string;
   slug?: string;
   parentId?: string | null;
 }) => {
   const name = input.name.trim();
+  const label = input.label.trim() || name;
   const slug = slugifyCategory(input.slug?.trim() || name);
   const id = input.id?.trim() || slug;
   const parentId = input.parentId?.trim() || null;
 
-  if (!name || !slug || !id) {
-    throw new Error("Nombre y slug son obligatorios.");
+  if (!name || !label || !slug || !id) {
+    throw new Error("Nombre, etiqueta y slug son obligatorios.");
   }
 
   await setDoc(doc(categoriesCollection, id), {
     name,
+    label,
     slug,
     parentId,
     createdAt: Timestamp.now(),
@@ -177,18 +186,25 @@ export const createCategory = async (input: {
 
 export const updateCategory = async (
   id: string,
-  input: { name: string; slug: string; parentId?: string | null },
+  input: {
+    name: string;
+    label: string;
+    slug: string;
+    parentId?: string | null;
+  },
 ) => {
   const name = input.name.trim();
+  const label = input.label.trim() || name;
   const slug = slugifyCategory(input.slug.trim() || input.name);
   const parentId = input.parentId?.trim() || null;
 
-  if (!name || !slug) {
-    throw new Error("Nombre y slug son obligatorios.");
+  if (!name || !label || !slug) {
+    throw new Error("Nombre, etiqueta y slug son obligatorios.");
   }
 
   await updateDoc(doc(categoriesCollection, id), {
     name,
+    label,
     slug,
     parentId,
     updatedAt: serverTimestamp(),

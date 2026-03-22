@@ -21,7 +21,7 @@ import { useProducts } from "@/hooks/use-products";
 import { useFavorites } from "@/hooks/use-favorites";
 import { useStoreSettings } from "@/hooks/use-store-settings";
 import { useCategories } from "@/hooks/use-categories";
-import { getCategoryTree } from "@/lib/categories";
+import { getCategoryLabel, getCategoryTree } from "@/lib/categories";
 import {
   getCollectionById,
   productCollections,
@@ -62,9 +62,9 @@ export function HomePage() {
 
         return {
           id: category.id,
-          name: category.name,
+          name: getCategoryLabel(category),
           imageUrl: firstProduct.images[0].url,
-          imageAlt: firstProduct.images[0].alt || category.name,
+          imageAlt: firstProduct.images[0].alt || getCategoryLabel(category),
         };
       })
       .filter(

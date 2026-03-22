@@ -8,6 +8,7 @@ import { useCategories } from "@/hooks/use-categories";
 import { useProducts } from "@/hooks/use-products";
 import { useFavorites } from "@/hooks/use-favorites";
 import {
+  getCategoryLabel,
   getCategoryChildren,
   getCategoryTree,
   resolveCategoryFilter,
@@ -59,6 +60,13 @@ export function ProductsPage() {
 
     return getCategoryChildren(categories, activeCategory);
   }, [activeCategory, categories]);
+
+  const activeCategoryData = useMemo(
+    () =>
+      categoryTree.find(({ category }) => category.id === activeCategory)
+        ?.category ?? null,
+    [activeCategory, categoryTree],
+  );
 
   const filteredProducts = useMemo(() => {
     return products.filter((product) => {
@@ -213,7 +221,7 @@ export function ProductsPage() {
                     });
                   }}
                 >
-                  {category.name}
+                  {getCategoryLabel(category)}
                 </Button>
               ))}
             </div>
@@ -230,12 +238,9 @@ export function ProductsPage() {
                     updateParams({ nextSubcategory: "all" });
                   }}
                 >
-                  Todas en{" "}
-                  {
-                    categoryTree.find(
-                      ({ category }) => category.id === activeCategory,
-                    )?.category.name
-                  }
+                  Todas en{" "}{activeCategoryData
+                    ? getCategoryLabel(activeCategoryData)
+                    : "esta categoría"}
                 </Button>
                 {visibleSubcategories.map((subcategory) => (
                   <Button
@@ -254,7 +259,7 @@ export function ProductsPage() {
                       });
                     }}
                   >
-                    {subcategory.name}
+                    {getCategoryLabel(subcategory)}
                   </Button>
                 ))}
               </div>

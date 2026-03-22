@@ -1,5 +1,6 @@
 import { type ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
 import {
+  getCategoryLabel,
   getCategoryDisplayName,
   getCategoryTree,
   getVisibleCategories,
@@ -383,17 +384,19 @@ export function ProductManagementSection({
                 ) : null}
                 {categoryTree.map(({ category, subcategories }) =>
                   subcategories.length > 0 ? (
-                    <optgroup key={category.id} label={category.name}>
-                      <option value={category.id}>{category.name}</option>
+                    <optgroup key={category.id} label={getCategoryLabel(category)}>
+                      <option value={category.id}>
+                        {getCategoryLabel(category)}
+                      </option>
                       {subcategories.map((subcategory) => (
                         <option key={subcategory.id} value={subcategory.id}>
-                          {subcategory.name}
+                          {getCategoryLabel(subcategory)}
                         </option>
                       ))}
                     </optgroup>
                   ) : (
                     <option key={category.id} value={category.id}>
-                      {category.name}
+                      {getCategoryLabel(category)}
                     </option>
                   ),
                 )}

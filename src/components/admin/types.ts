@@ -49,6 +49,7 @@ export type ProductFormValues = {
 
 export type CategoryFormValues = {
   name: string;
+  label: string;
   slug: string;
   parentId: string;
 };

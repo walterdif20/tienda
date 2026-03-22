@@ -1,6 +1,7 @@
 export type Category = {
   id: string;
   name: string;
+  label: string;
   slug: string;
   parentId?: string | null;
 };

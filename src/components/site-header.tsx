@@ -10,7 +10,7 @@ import {
 import { useEffect, useRef, useState } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useCategories } from "@/hooks/use-categories";
-import { getCategoryTree } from "@/lib/categories";
+import { getCategoryLabel, getCategoryTree } from "@/lib/categories";
 import { useStoreSettings } from "@/hooks/use-store-settings";
 import { useAuth } from "@/providers/auth-provider";
 import { useCartStore } from "@/store/cartStore";
@@ -129,7 +129,7 @@ export function SiteHeader() {
         <nav className="hidden items-center gap-3 text-sm font-medium text-slate-600 xl:flex">
           {links.map((link) =>
             link.to === "/products" ? (
-              <div key={link.to} className="group relative">
+              <div key={link.to} className="group">
                 <NavLink
                   to={link.to}
                   className={({ isActive }) =>
@@ -142,41 +142,60 @@ export function SiteHeader() {
                   <ChevronDown className="h-4 w-4" />
                 </NavLink>
 
-                <div className="invisible absolute left-0 top-full z-50 min-w-48 pt-2 opacity-0 transition group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100">
-                  <div className="rounded-xl border border-slate-200 bg-white p-2 shadow-md">
-                    <NavLink
-                      to="/products"
-                      className={({ isActive }) =>
-                        isActive
-                          ? "store-primary-text block rounded-md px-3 py-2"
-                          : "block rounded-md px-3 py-2 text-slate-600 transition hover:bg-slate-50 hover:text-slate-900"
-                      }
-                    >
-                      Ver todos
-                    </NavLink>
-                    {productCategories.map(({ category, subcategories }) => (
-                      <div key={category.id} className="rounded-lg px-1 py-1">
+                <div className="invisible absolute inset-x-0 top-full z-50 pt-3 opacity-0 transition duration-200 group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100">
+                  <div className="mx-auto w-full max-w-7xl px-4">
+                    <div className="overflow-hidden rounded-[28px] border border-slate-200 bg-white p-6 text-slate-900 shadow-2xl">
+                      <div className="flex items-center justify-between gap-4 border-b border-slate-200 pb-4">
+                        <div>
+                          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+                            Catálogo
+                          </p>
+                          <p className="mt-1 text-sm text-slate-500">
+                            Explorá categorías y subcategorías desde un solo lugar.
+                          </p>
+                        </div>
                         <NavLink
-                          to={`/products?category=${category.id}`}
-                          className="block rounded-md px-3 py-2 font-medium text-slate-700 transition hover:bg-slate-50 hover:text-slate-900"
+                          to="/products"
+                          className="rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900"
                         >
-                          {category.name}
+                          Ver todos los productos
                         </NavLink>
-                        {subcategories.length > 0 ? (
-                          <div className="ml-3 border-l border-slate-200 pl-3">
-                            {subcategories.map((subcategory) => (
-                              <NavLink
-                                key={subcategory.id}
-                                to={`/products?category=${category.id}&subcategory=${subcategory.id}`}
-                                className="block rounded-md px-3 py-2 text-slate-600 transition hover:bg-slate-50 hover:text-slate-900"
-                              >
-                                {subcategory.name}
-                              </NavLink>
-                            ))}
-                          </div>
-                        ) : null}
                       </div>
-                    ))}
+
+                      <div className="mt-5 grid gap-6 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5">
+                        {productCategories.map(({ category, subcategories }) => (
+                          <div key={category.id} className="space-y-3">
+                            <NavLink
+                              to={`/products?category=${category.id}`}
+                              className="block text-sm font-semibold uppercase tracking-[0.08em] text-slate-900 transition hover:text-slate-600"
+                            >
+                              {getCategoryLabel(category)}
+                            </NavLink>
+
+                            <div className="space-y-2">
+                              {subcategories.length > 0 ? (
+                                subcategories.map((subcategory) => (
+                                  <NavLink
+                                    key={subcategory.id}
+                                    to={`/products?category=${category.id}&subcategory=${subcategory.id}`}
+                                    className="block text-[15px] text-slate-600 transition hover:text-slate-900"
+                                  >
+                                    {getCategoryLabel(subcategory)}
+                                  </NavLink>
+                                ))
+                              ) : (
+                                <NavLink
+                                  to={`/products?category=${category.id}`}
+                                  className="block text-[15px] text-slate-600 transition hover:text-slate-900"
+                                >
+                                  Ver categoría
+                                </NavLink>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -368,7 +387,7 @@ export function SiteHeader() {
                             onClick={closeMobileMenu}
                             className="font-medium text-slate-700 transition hover:text-slate-900"
                           >
-                            {category.name}
+                            {getCategoryLabel(category)}
                           </NavLink>
                           {subcategories.length > 0 ? (
                             <div className="ml-3 flex flex-col gap-2 border-l border-slate-200 pl-3">
@@ -379,7 +398,7 @@ export function SiteHeader() {
                                   onClick={closeMobileMenu}
                                   className="text-slate-500 transition hover:text-slate-900"
                                 >
-                                  {subcategory.name}
+                                  {getCategoryLabel(subcategory)}
                                 </NavLink>
                               ))}
                             </div>

@@ -1,14 +1,14 @@
 import type { Category, Product } from "@/types";
 
 export const defaultCategories: Category[] = [
-  { id: "new", name: "Nuevos", slug: "nuevos" },
-  { id: "featured", name: "Destacados", slug: "destacados" },
-  { id: "bracelets", name: "Pulseras", slug: "pulseras" },
-  { id: "necklaces", name: "Cadenitas", slug: "cadenitas" },
-  { id: "rings", name: "Anillos", slug: "anillos" },
-  { id: "gorros", name: "Gorros", slug: "gorros" },
-  { id: "bufandas", name: "Bufandas", slug: "bufandas" },
-  { id: "carteras", name: "Carteras", slug: "carteras" },
+  { id: "new", name: "Nuevos", label: "Nuevos", slug: "nuevos" },
+  { id: "featured", name: "Destacados", label: "Destacados", slug: "destacados" },
+  { id: "bracelets", name: "Pulseras", label: "Pulseras", slug: "pulseras" },
+  { id: "necklaces", name: "Cadenitas", label: "Cadenitas", slug: "cadenitas" },
+  { id: "rings", name: "Anillos", label: "Anillos", slug: "anillos" },
+  { id: "gorros", name: "Gorros", label: "Gorros", slug: "gorros" },
+  { id: "bufandas", name: "Bufandas", label: "Bufandas", slug: "bufandas" },
+  { id: "carteras", name: "Carteras", label: "Carteras", slug: "carteras" },
 ];
 
 export const categories = defaultCategories;

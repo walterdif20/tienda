@@ -17,7 +17,7 @@ import type {
   SaveCategoryResult,
 } from "@/components/admin/types";
 
-const emptyForm = { name: "", slug: "", parentId: "" };
+const emptyForm = { name: "", label: "", slug: "", parentId: "" };
 
 type CategoryManagementSectionProps = {
   categories: AdminCategory[];
@@ -91,6 +91,7 @@ export function CategoryManagementSection({
     setEditingCategoryId(category.id);
     setForm({
       name: category.name,
+      label: category.label,
       slug: category.slug,
       parentId: category.parentId ?? "",
     });
@@ -110,6 +111,7 @@ export function CategoryManagementSection({
         id: editingCategoryId ?? undefined,
         values: {
           name: form.name.trim(),
+          label: form.label.trim() || form.name.trim(),
           slug: slugifyCategory(form.slug.trim() || form.name),
           parentId: form.parentId,
         },
@@ -133,20 +135,20 @@ export function CategoryManagementSection({
 
     if (linkedProducts > 0) {
       setFeedback(
-        `No podés eliminar ${category.name} porque tiene ${linkedProducts} producto(s) asociados.`,
+        `No podés eliminar ${category.label} porque tiene ${linkedProducts} producto(s) asociados.`,
       );
       return;
     }
 
     if (linkedChildren > 0) {
       setFeedback(
-        `No podés eliminar ${category.name} porque tiene ${linkedChildren} subcategoría(s) asociadas.`,
+        `No podés eliminar ${category.label} porque tiene ${linkedChildren} subcategoría(s) asociadas.`,
       );
       return;
     }
 
     const confirmed = window.confirm(
-      `¿Eliminar la categoría "${category.name}"? Esta acción no se puede deshacer.`,
+      `¿Eliminar la categoría "${category.label}"? Esta acción no se puede deshacer.`,
     );
 
     if (!confirmed) {
@@ -168,7 +170,7 @@ export function CategoryManagementSection({
   };
 
   return (
-    <Card className="mt-6">
+    <Card>
       <CardHeader>
         <CardTitle className="flex items-center justify-between gap-2">
           <span>Gestor de categorías</span>
@@ -189,13 +191,20 @@ export function CategoryManagementSection({
       </CardHeader>
 
       <CardContent className="space-y-6">
-        <div className="grid gap-3 md:grid-cols-[1fr_1fr_1fr_auto]">
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-[1fr_1fr_1fr_1fr_auto]">
           <Input
             value={form.name}
             onChange={(event) =>
               setForm((current) => ({ ...current, name: event.target.value }))
             }
             placeholder="Nombre de la categoría"
+          />
+          <Input
+            value={form.label}
+            onChange={(event) =>
+              setForm((current) => ({ ...current, label: event.target.value }))
+            }
+            placeholder="Etiqueta visible"
           />
           <Input
             value={form.slug}
@@ -219,7 +228,7 @@ export function CategoryManagementSection({
               <option value="">Sin categoría padre</option>
               {availableParents.map((category) => (
                 <option key={category.id} value={category.id}>
-                  {category.name}
+                  {category.label}
                 </option>
               ))}
             </select>
@@ -251,7 +260,10 @@ export function CategoryManagementSection({
                 <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                   <div>
                     <p className="font-medium text-slate-900">
-                      {category.name}
+                      {category.label}
+                    </p>
+                    <p className="text-sm text-slate-500">
+                      Nombre interno: {category.name}
                     </p>
                     <p className="text-sm text-slate-500">
                       ID: {category.id} · slug: {category.slug}
@@ -300,7 +312,7 @@ export function CategoryManagementSection({
                         >
                           <div>
                             <p className="font-medium text-slate-900">
-                              {subcategory.name}
+                              {subcategory.label}
                             </p>
                             <p className="text-sm text-slate-500">
                               {getCategoryDisplayName(
@@ -309,7 +321,10 @@ export function CategoryManagementSection({
                               )}
                             </p>
                             <p className="text-sm text-slate-500">
-                              ID: {subcategory.id} · slug: {subcategory.slug} ·
+                              Nombre interno: {subcategory.name} · ID:{" "}
+                              {subcategory.id} · slug: {subcategory.slug}
+                            </p>
+                            <p className="text-sm text-slate-500">
                               Productos asociados: {linkedSubcategoryProducts}
                             </p>
                           </div>

@@ -70,18 +70,29 @@ export function AdminPage() {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [activeSection, setActiveSection] = useState<
-    "products" | "sales" | "reports" | "settings" | "users"
+    "products" | "categories" | "sales" | "reports" | "settings" | "users"
   >("products");
 
   const adminSections: Array<{
-    id: "products" | "sales" | "reports" | "settings" | "users";
+    id:
+      | "products"
+      | "categories"
+      | "sales"
+      | "reports"
+      | "settings"
+      | "users";
     label: string;
     description: string;
   }> = [
     {
       id: "products",
       label: "Productos",
-      description: "Stock, altas, categorías y edición de catálogo",
+      description: "Stock, altas y edición de catálogo",
+    },
+    {
+      id: "categories",
+      label: "Categorías",
+      description: "Estructura del catálogo y subcategorías",
     },
     {
       id: "sales",
@@ -235,6 +246,10 @@ export function AdminPage() {
       return { ok: false, message: "El nombre es obligatorio." };
     }
 
+    if (!values.label.trim()) {
+      return { ok: false, message: "La etiqueta visible es obligatoria." };
+    }
+
     const normalizedSlug = slugifyCategory(values.slug || values.name);
     const normalizedParentId = values.parentId.trim() || null;
 
@@ -292,6 +307,7 @@ export function AdminPage() {
       if (id) {
         await updateCategory(id, {
           name: values.name,
+          label: values.label,
           slug: normalizedSlug,
           parentId: normalizedParentId,
         });
@@ -302,6 +318,7 @@ export function AdminPage() {
       await createCategory({
         id: normalizedSlug,
         name: values.name,
+        label: values.label,
         slug: normalizedSlug,
         parentId: normalizedParentId,
       });
@@ -565,24 +582,23 @@ export function AdminPage() {
 
           <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
             {activeSection === "products" ? (
-              <>
-                <ProductManagementSection
-                  categories={categories}
-                  products={adminProducts}
-                  loading={loading && adminProducts.length === 0}
-                  onSaveProduct={onSaveProduct}
-                  onDeleteProduct={onDeleteProduct}
-                  onUploadProductImage={onUploadProductImage}
-                />
-                <CategoryManagementSection
-                  categories={categories}
-                  products={adminProducts}
-                  loading={categoriesLoading}
-                  onReload={reloadCategories}
-                  onSaveCategory={onSaveCategory}
-                  onDeleteCategory={onDeleteCategory}
-                />
-              </>
+              <ProductManagementSection
+                categories={categories}
+                products={adminProducts}
+                loading={loading && adminProducts.length === 0}
+                onSaveProduct={onSaveProduct}
+                onDeleteProduct={onDeleteProduct}
+                onUploadProductImage={onUploadProductImage}
+              />
+            ) : activeSection === "categories" ? (
+              <CategoryManagementSection
+                categories={categories}
+                products={adminProducts}
+                loading={categoriesLoading}
+                onReload={reloadCategories}
+                onSaveCategory={onSaveCategory}
+                onDeleteCategory={onDeleteCategory}
+              />
             ) : activeSection === "sales" ? (
               <OrderManagementSection
                 orders={visibleOrders}

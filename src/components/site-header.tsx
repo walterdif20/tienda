@@ -143,7 +143,6 @@ export function SiteHeader() {
                 ref={productsMenuRef}
                 className="static"
                 onMouseEnter={() => setIsProductsMenuOpen(true)}
-                onMouseLeave={() => setIsProductsMenuOpen(false)}
               >
                 <NavLink
                   to={link.to}

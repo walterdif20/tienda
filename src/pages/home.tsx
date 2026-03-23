@@ -191,7 +191,7 @@ export function HomePage() {
                 {products.length}+ productos activos
               </span>
               <span className="rounded-full border border-white/20 bg-white/10 px-3 py-1">
-                {subcategoryCount} subcategorías para explorar
+                {subcategoryCount} categorías para explorar
               </span>
               <span className="rounded-full border border-white/20 bg-white/10 px-3 py-1">
                 10% OFF pagando por transferencia

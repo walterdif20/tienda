@@ -201,18 +201,6 @@ export function ProductDetailPage() {
               </div>
             </div>
 
-            <div className="grid gap-3 md:grid-cols-3">
-              <BenefitCard icon={Truck} title="Entrega simple">
-                Envío gratis a Necochea y Quequén o retiro en tienda.
-              </BenefitCard>
-              <BenefitCard icon={ShieldCheck} title="Compra segura">
-                Confirmación inmediata de orden y seguimiento posterior.
-              </BenefitCard>
-              <BenefitCard icon={Sparkles} title="Ideal para">
-                {collectionLabels[0]?.description ?? "Regalar, combinar o sumar un acento al look."}
-              </BenefitCard>
-            </div>
-
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
               <p>
                 <strong>Tip de compra:</strong>{" "}
@@ -271,6 +259,21 @@ export function ProductDetailPage() {
                 {cartFeedback}
               </p>
             ) : null}
+
+            <div className="border-t border-slate-200 pt-6">
+              <div className="grid gap-3 md:grid-cols-3">
+                <BenefitCard icon={Truck} title="Entrega simple">
+                  Envío gratis a Necochea y Quequén o retiro en tienda.
+                </BenefitCard>
+                <BenefitCard icon={ShieldCheck} title="Compra segura">
+                  Confirmación inmediata de orden y seguimiento posterior.
+                </BenefitCard>
+                <BenefitCard icon={Sparkles} title="Ideal para">
+                  {collectionLabels[0]?.description ??
+                    "Regalar, combinar o sumar un acento al look."}
+                </BenefitCard>
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -314,12 +317,12 @@ function BenefitCard({
   children: string;
 }) {
   return (
-    <div className="rounded-2xl border border-slate-200 p-4 text-sm text-slate-600">
-      <div className="inline-flex rounded-xl bg-slate-100 p-2 text-slate-700">
+    <div className="rounded-2xl border border-slate-200/80 bg-slate-50/60 p-4 text-sm text-slate-500">
+      <div className="inline-flex rounded-xl bg-white p-2 text-slate-500 shadow-sm ring-1 ring-slate-200/80">
         <Icon className="h-4 w-4" />
       </div>
-      <p className="mt-3 font-semibold text-slate-900">{title}</p>
-      <p className="mt-1">{children}</p>
+      <p className="mt-3 text-sm font-medium text-slate-700">{title}</p>
+      <p className="mt-1 text-sm leading-6">{children}</p>
     </div>
   );
 }

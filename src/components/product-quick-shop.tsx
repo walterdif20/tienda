@@ -35,7 +35,7 @@ export function ProductQuickShop({
     <Dialog>
       <DialogTrigger asChild>
         <Button variant="outline" size="sm">
-          Quick shop
+          Vista Rápida
         </Button>
       </DialogTrigger>
       <DialogContent className="max-h-[90vh] overflow-y-auto p-0 sm:p-0">

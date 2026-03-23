@@ -246,9 +246,6 @@ export function ProductDetailPage() {
                   Agregar al carrito
                 </Button>
               )}
-              <Button asChild variant="outline" size="lg">
-                <Link to="/cart">Ir al carrito</Link>
-              </Button>
             </div>
             {cartFeedback ? (
               <p

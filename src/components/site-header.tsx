@@ -174,7 +174,7 @@ export function SiteHeader() {
                             Catálogo
                           </p>
                           <p className="mt-1 text-sm text-slate-500">
-                            Explorá categorías y subcategorías desde un solo lugar.
+                            Explorá todos nuestros productos desde un solo lugar.
                           </p>
                         </div>
                         <NavLink

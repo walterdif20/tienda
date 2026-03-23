@@ -7,11 +7,8 @@ import {
 } from "react";
 import {
   ArrowRight,
-  Clock3,
   CreditCard,
-  Gift,
   ShieldCheck,
-  Sparkles,
   Truck,
 } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -218,19 +215,7 @@ export function HomePage() {
         </div>
       </section>
 
-      <section className="mx-auto grid max-w-9xl gap-4 px-4 md:grid-cols-3">
-        <HighlightCard icon={Gift} title="Comprar por ocasión">
-          Curaduría para regalos, básicos diarios, looks con presencia y últimas
-          unidades.
-        </HighlightCard>
-        <HighlightCard icon={Clock3} title="Checkout más claro">
-          Resumen visible de ahorro, puntos y beneficios antes de confirmar tu
-          compra.
-        </HighlightCard>
-        <HighlightCard icon={Sparkles} title="Postcompra cuidada">
-          Seguimiento visual y club de puntos para que volver tenga sentido.
-        </HighlightCard>
-      </section>
+
 
       <CollectionSection occasionCards={occasionCards} />
 
@@ -293,26 +278,6 @@ function HeroFeature({
       <p className="mt-3 text-sm font-semibold text-white">{title}</p>
       <p className="text-sm text-white/75">{children}</p>
     </li>
-  );
-}
-
-function HighlightCard({
-  icon: Icon,
-  title,
-  children,
-}: {
-  icon: ComponentType<{ className?: string }>;
-  title: string;
-  children: ReactNode;
-}) {
-  return (
-    <article className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm shadow-slate-900/5 transition hover:-translate-y-0.5 hover:shadow-md">
-      <div className="mb-3 inline-flex rounded-xl bg-slate-100 p-2 text-slate-700">
-        <Icon className="h-4 w-4" />
-      </div>
-      <h3 className="text-base font-semibold text-slate-900">{title}</h3>
-      <p className="mt-1 text-sm text-slate-600">{children}</p>
-    </article>
   );
 }
 

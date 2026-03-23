@@ -28,6 +28,7 @@ export function SiteHeader() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMobileProductsOpen, setIsMobileProductsOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [isProductsMenuOpen, setIsProductsMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
   const { settings } = useStoreSettings();
@@ -40,23 +41,30 @@ export function SiteHeader() {
     state.items.reduce((total, item) => total + item.qty, 0),
   );
   const userMenuRef = useRef<HTMLDivElement>(null);
+  const productsMenuRef = useRef<HTMLDivElement>(null);
   const loyaltyProgress = getLoyaltyProgress(loyaltyPoints);
 
   useEffect(() => {
-    if (!isUserMenuOpen) {
+    if (!isUserMenuOpen && !isProductsMenuOpen) {
       return;
     }
 
     const handleClickOutside = (event: MouseEvent) => {
-      if (!userMenuRef.current?.contains(event.target as Node)) {
+      const target = event.target as Node;
+
+      if (!userMenuRef.current?.contains(target)) {
         setIsUserMenuOpen(false);
+      }
+
+      if (!productsMenuRef.current?.contains(target)) {
+        setIsProductsMenuOpen(false);
       }
     };
 
     document.addEventListener("mousedown", handleClickOutside);
 
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [isUserMenuOpen]);
+  }, [isProductsMenuOpen, isUserMenuOpen]);
 
   const links = [
     ...baseLinks,
@@ -76,6 +84,7 @@ export function SiteHeader() {
   const closeMobileMenu = () => {
     setIsMobileMenuOpen(false);
     setIsMobileProductsOpen(false);
+    setIsProductsMenuOpen(false);
   };
 
   const navLinkClassName = ({ isActive }: { isActive: boolean }) =>
@@ -129,9 +138,16 @@ export function SiteHeader() {
         <nav className="hidden items-center gap-3 text-sm font-medium text-slate-600 xl:flex">
           {links.map((link) =>
             link.to === "/products" ? (
-              <div key={link.to} className="group">
+              <div
+                key={link.to}
+                ref={productsMenuRef}
+                className="relative"
+                onMouseEnter={() => setIsProductsMenuOpen(true)}
+                onMouseLeave={() => setIsProductsMenuOpen(false)}
+              >
                 <NavLink
                   to={link.to}
+                  onClick={() => setIsProductsMenuOpen(false)}
                   className={({ isActive }) =>
                     isActive
                       ? "store-primary-text inline-flex items-center gap-1 rounded-full bg-slate-100 px-3 py-1.5"
@@ -139,10 +155,18 @@ export function SiteHeader() {
                   }
                 >
                   {link.label}
-                  <ChevronDown className="h-4 w-4" />
+                  <ChevronDown
+                    className={`h-4 w-4 transition-transform ${isProductsMenuOpen ? "rotate-180" : ""}`}
+                  />
                 </NavLink>
 
-                <div className="invisible absolute left-1/2 top-full z-50 w-screen -translate-x-1/2 opacity-0 transition duration-200 group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100">
+                <div
+                  className={`absolute left-1/2 top-[calc(100%-0.25rem)] z-50 w-screen -translate-x-1/2 pt-3 transition duration-200 ${
+                    isProductsMenuOpen
+                      ? "visible opacity-100"
+                      : "invisible opacity-0"
+                  }`}
+                >
                   <div className="w-screen border-b border-slate-200 bg-white text-slate-900 shadow-lg">
                     <div className="w-full px-6 py-6 lg:px-8 xl:px-10">
                       <div className="flex items-center justify-between gap-4 border-b border-slate-200 pb-4">
@@ -156,6 +180,7 @@ export function SiteHeader() {
                         </div>
                         <NavLink
                           to="/products"
+                          onClick={() => setIsProductsMenuOpen(false)}
                           className="rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900"
                         >
                           Ver todos los productos
@@ -167,6 +192,7 @@ export function SiteHeader() {
                           <div key={category.id} className="space-y-3">
                             <NavLink
                               to={`/products?category=${category.id}`}
+                              onClick={() => setIsProductsMenuOpen(false)}
                               className="block text-sm font-semibold uppercase tracking-[0.08em] text-slate-900 transition hover:text-slate-600"
                             >
                               {getCategoryLabel(category)}
@@ -178,6 +204,7 @@ export function SiteHeader() {
                                   <NavLink
                                     key={subcategory.id}
                                     to={`/products?category=${category.id}&subcategory=${subcategory.id}`}
+                                    onClick={() => setIsProductsMenuOpen(false)}
                                     className="block text-[15px] text-slate-600 transition hover:text-slate-900"
                                   >
                                     {getCategoryLabel(subcategory)}
@@ -186,6 +213,7 @@ export function SiteHeader() {
                               ) : (
                                 <NavLink
                                   to={`/products?category=${category.id}`}
+                                  onClick={() => setIsProductsMenuOpen(false)}
                                   className="block text-[15px] text-slate-600 transition hover:text-slate-900"
                                 >
                                   Ver categoría

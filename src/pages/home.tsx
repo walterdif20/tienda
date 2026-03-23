@@ -41,7 +41,7 @@ export function HomePage() {
 
   const trending = products
     .filter((product) => productMatchesCollection(product, "trending"))
-    .slice(0, 4);
+    .slice(0, 12);
 
   const categoryTiles = useMemo(() => {
     return getCategoryTree(categories)
@@ -78,17 +78,31 @@ export function HomePage() {
       );
   }, [categories, products]);
 
-  const occasionCards = useMemo(
-    () =>
-      productCollections.slice(0, 4).map((collection) => ({
+  const occasionCards = useMemo(() => {
+    const usedProductIds = new Set<string>();
+
+    return productCollections.slice(0, 4).map((collection, index) => {
+      const collectionProducts = products.filter((product) =>
+        productMatchesCollection(product, collection.id),
+      );
+      const uniqueCoverProduct =
+        collectionProducts.find(
+          (product) =>
+            !usedProductIds.has(product.id) && product.images.length > 0,
+        ) ?? collectionProducts.find((product) => product.images.length > 0);
+
+      if (uniqueCoverProduct) {
+        usedProductIds.add(uniqueCoverProduct.id);
+      }
+
+      return {
         ...collection,
         coverImage:
-          products.find((product) =>
-            productMatchesCollection(product, collection.id),
-          )?.images[0]?.url ?? heroFallbackImages[0],
-      })),
-    [products],
-  );
+          uniqueCoverProduct?.images[0]?.url ??
+          heroFallbackImages[index % heroFallbackImages.length],
+      };
+    });
+  }, [products]);
 
   const heroImages = useMemo(() => {
     const configured = settings.heroImages

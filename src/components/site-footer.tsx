@@ -14,6 +14,29 @@ export function SiteFooter() {
   const normalizedEmail = settings.contactEmail.trim();
   const normalizedInstagram = settings.instagramUrl.trim();
   const whatsappLink = `https://wa.me/${normalizePhoneForWhatsAppLink(settings.whatsappNumber)}`;
+  const contactLinks = [
+    {
+      key: "whatsapp",
+      href: whatsappLink,
+      external: true,
+      label: settings.whatsappNumber,
+      icon: MessageCircle,
+    },
+    {
+      key: "instagram",
+      href: normalizedInstagram,
+      external: true,
+      label: "Instagram",
+      icon: Instagram,
+    },
+    {
+      key: "email",
+      href: `mailto:${normalizedEmail}`,
+      external: false,
+      label: normalizedEmail,
+      icon: Mail,
+    },
+  ];
 
   return (
     <footer className="mt-16 border-t border-slate-200 bg-slate-50/70">
@@ -59,64 +82,23 @@ export function SiteFooter() {
 
         <div>
           <h4 className="text-sm font-semibold text-slate-700">Contacto</h4>
-          <a
-            href={whatsappLink}
-            target="_blank"
-            rel="noreferrer"
-            className="mt-2 inline-flex items-center gap-2 text-sm text-slate-500 transition-colors hover:text-slate-700"
-          >
-            <MessageCircle className="h-4 w-4" />
-            <span>{settings.whatsappNumber}</span>
-          </a>
-          <a
-            href={normalizedInstagram}
-            target="_blank"
-            rel="noreferrer"
-            className="mt-2 inline-flex items-center gap-2 text-sm text-slate-500 transition-colors hover:text-slate-700"
-          >
-            <Instagram className="h-4 w-4" />
-            <span>Instagram</span>
-          </a>
-          <a
-            href={`mailto:${normalizedEmail}`}
-            className="mt-2 inline-flex items-center gap-2 text-sm text-slate-500 transition-colors hover:text-slate-700"
-          >
-            <Mail className="h-4 w-4" />
-            <span>{normalizedEmail}</span>
-          </a>
-          {hasContactLinks ? (
-            <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-slate-500">
-              {normalizedInstagram ? (
+          <div className="mt-2 space-y-2">
+            {contactLinks.map((item) => {
+              const Icon = item.icon;
+              return (
                 <a
-                  href={normalizedInstagram}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center gap-1.5 transition-colors hover:text-slate-700"
+                  key={item.key}
+                  href={item.href}
+                  target={item.external ? "_blank" : undefined}
+                  rel={item.external ? "noreferrer" : undefined}
+                  className="flex items-center gap-2 text-sm text-slate-500 transition-colors hover:text-slate-700"
                 >
-                  <Instagram className="h-4 w-4" />
-                  <span>Instagram</span>
+                  <Icon className="h-4 w-4" />
+                  <span>{item.label}</span>
                 </a>
-              ) : null}
-              {normalizedPhone ? (
-                <a
-                  href={`tel:${normalizedPhone}`}
-                  className="inline-flex items-center gap-1.5 transition-colors hover:text-slate-700"
-                >
-                  <Phone className="h-4 w-4" />
-                  <span>{normalizedPhone}</span>
-                </a>
-              ) : null}
-              {normalizedEmail ? (
-                <a
-                  href={`mailto:${normalizedEmail}`}
-                  className="inline-flex items-center gap-1.5 transition-colors hover:text-slate-700"
-                >
-                  <Mail className="h-4 w-4" />
-                  <span>{normalizedEmail}</span>
-                </a>
-              ) : null}
-            </div>
-          ) : null}
+              );
+            })}
+          </div>
         </div>
       </div>
     </footer>

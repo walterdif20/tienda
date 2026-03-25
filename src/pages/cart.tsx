@@ -14,7 +14,7 @@ import { useAuth } from "@/providers/auth-provider";
 import { useCartStore } from "@/store/cartStore";
 
 export function CartPage() {
-  const { loyaltyPoints, user } = useAuth();
+  const { loyaltyPoints, loyaltyPointsYearly, user } = useAuth();
   const { items, appliedPoints, removeItem, setAppliedPoints, updateQty } =
     useCartStore();
   const subtotal = items.reduce((sum, item) => sum + item.price * item.qty, 0);
@@ -22,7 +22,9 @@ export function CartPage() {
   const effectiveAppliedPoints = Math.min(appliedPoints, maxUsablePoints);
   const totalAfterPoints = Math.max(0, subtotal - effectiveAppliedPoints);
   const estimatedPoints = calculateLoyaltyPoints(totalAfterPoints);
-  const loyaltyProgress = getLoyaltyProgress(loyaltyPoints + estimatedPoints);
+  const loyaltyProgress = getLoyaltyProgress(
+    loyaltyPointsYearly + estimatedPoints,
+  );
   const freeShippingTag = (
     <Badge className="gap-2 bg-emerald-100 px-3 py-1 text-sm font-semibold text-emerald-800 ring-1 ring-emerald-200">
       <Truck className="h-4 w-4" />

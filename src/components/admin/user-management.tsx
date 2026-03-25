@@ -42,7 +42,7 @@ export function UserManagementSection({
     const admins = users.filter((user) => user.role === "admin").length;
     const blocked = users.filter((user) => user.isBlocked).length;
     const totalPoints = users.reduce(
-      (sum, user) => sum + user.loyaltyPoints,
+      (sum, user) => sum + user.loyaltyPointsYearly,
       0,
     );
     return { total: users.length, admins, blocked, totalPoints };
@@ -102,7 +102,7 @@ export function UserManagementSection({
         </CardTitle>
         <p className="text-sm text-slate-500">
           Total: {stats.total} · Admins: {stats.admins} · Bloqueados:{" "}
-          {stats.blocked} · Puntos acumulados:{" "}
+          {stats.blocked} · Puntos históricos {new Date().getUTCFullYear()}:{" "}
           {formatLoyaltyPoints(stats.totalPoints)}
         </p>
       </CardHeader>
@@ -114,7 +114,7 @@ export function UserManagementSection({
             const favoriteProducts = user.favoriteProductIds
               .map((favoriteId) => productsById.get(favoriteId))
               .filter((item): item is Product => Boolean(item));
-            const loyaltyTier = getLoyaltyTier(user.loyaltyPoints);
+            const loyaltyTier = getLoyaltyTier(user.loyaltyPointsYearly);
 
             return (
               <div
@@ -131,7 +131,7 @@ export function UserManagementSection({
                       {user.whatsappNumber || "Sin WhatsApp cargado"}
                     </p>
                     <p className="text-sm text-slate-600">
-                      {formatLoyaltyPoints(user.loyaltyPoints)} puntos · Nivel{" "}
+                      {formatLoyaltyPoints(user.loyaltyPoints)} canjeables · Nivel{" "}
                       {loyaltyTier.label}
                     </p>
                     {user.isBlocked ? (
@@ -230,13 +230,21 @@ export function UserManagementSection({
                       <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                         Programa de puntos
                       </p>
-                      <div className="mt-2 grid gap-3 md:grid-cols-3">
+                      <div className="mt-2 grid gap-3 md:grid-cols-4">
                         <div className="rounded-md border border-slate-200 bg-white p-3 text-sm text-slate-700">
                           <p className="text-xs uppercase tracking-wide text-slate-500">
-                            Saldo actual
+                            Canjeables
                           </p>
                           <p className="mt-1 text-lg font-semibold text-slate-900">
                             {formatLoyaltyPoints(user.loyaltyPoints)}
+                          </p>
+                        </div>
+                        <div className="rounded-md border border-slate-200 bg-white p-3 text-sm text-slate-700">
+                          <p className="text-xs uppercase tracking-wide text-slate-500">
+                            Histórico {new Date().getUTCFullYear()}
+                          </p>
+                          <p className="mt-1 text-lg font-semibold text-slate-900">
+                            {formatLoyaltyPoints(user.loyaltyPointsYearly)}
                           </p>
                         </div>
                         <div className="rounded-md border border-slate-200 bg-white p-3 text-sm text-slate-700">

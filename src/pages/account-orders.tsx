@@ -53,7 +53,7 @@ const formatOrderDate = (createdAt: unknown) => {
 };
 
 export function AccountOrdersPage() {
-  const { loyaltyPoints, user, loading } = useAuth();
+  const { loyaltyPoints, loyaltyPointsYearly, user, loading } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoadingOrders, setIsLoadingOrders] = useState(false);
   const [error, setError] = useState("");
@@ -118,7 +118,7 @@ export function AccountOrdersPage() {
   );
 
   const hasPreviousOrders = sortedOrders.length > 3;
-  const loyaltyProgress = getLoyaltyProgress(loyaltyPoints);
+  const loyaltyProgress = getLoyaltyProgress(loyaltyPointsYearly);
 
   return (
     <section className="mx-auto max-w-4xl px-4 py-12">
@@ -164,7 +164,7 @@ export function AccountOrdersPage() {
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Club de fidelización</p>
                 <h2 className="mt-2 text-xl font-semibold text-slate-900">Nivel {loyaltyProgress.currentTier.label}</h2>
                 <p className="mt-2 text-sm text-slate-600">
-                  Tenés {formatLoyaltyPoints(loyaltyPoints)} puntos disponibles.
+                  Tenés {formatLoyaltyPoints(loyaltyPoints)} puntos canjeables y {formatLoyaltyPoints(loyaltyPointsYearly)} puntos históricos en {new Date().getUTCFullYear()}.
                   {loyaltyProgress.nextTier
                     ? ` Te faltan ${formatLoyaltyPoints(loyaltyProgress.missingPoints)} para subir a ${loyaltyProgress.nextTier.label}.`
                     : " Ya alcanzaste el nivel más alto del club."}

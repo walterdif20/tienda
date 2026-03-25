@@ -70,7 +70,7 @@ type CreatedOrderData = {
 
 export function CheckoutPage() {
   const navigate = useNavigate();
-  const { loyaltyPoints, user } = useAuth();
+  const { loyaltyPoints, loyaltyPointsYearly, user } = useAuth();
   const { appliedPoints, clear, items, setAppliedPoints } = useCartStore();
   const [step, setStep] = useState<"buyer" | "payment">("buyer");
   const [loading, setLoading] = useState(false);
@@ -164,7 +164,9 @@ export function CheckoutPage() {
     () => calculateLoyaltyPoints(totalPreview),
     [totalPreview],
   );
-  const loyaltyProgress = getLoyaltyProgress(loyaltyPoints + estimatedPoints);
+  const loyaltyProgress = getLoyaltyProgress(
+    loyaltyPointsYearly + estimatedPoints,
+  );
 
   useEffect(() => {
     if (appliedPoints !== redeemedPoints) {
@@ -517,7 +519,7 @@ export function CheckoutPage() {
                 <div>
                   <p className="font-medium">Club de puntos</p>
                   <p>
-                    Esta compra te deja con <strong>{formatLoyaltyPoints(loyaltyPoints + estimatedPoints)} puntos</strong>. {loyaltyProgress.nextTier
+                    Esta compra te deja con <strong>{formatLoyaltyPoints(loyaltyPointsYearly + estimatedPoints)} puntos históricos {new Date().getUTCFullYear()}</strong>. {loyaltyProgress.nextTier
                       ? `Te faltarían ${formatLoyaltyPoints(loyaltyProgress.missingPoints)} para subir a ${loyaltyProgress.nextTier.label}.`
                       : "Ya estás en el nivel más alto."}
                   </p>

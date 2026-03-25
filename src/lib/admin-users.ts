@@ -34,6 +34,7 @@ export type AdminUser = {
   favoriteProductIds: string[];
   productSlugViews: ProductSlugViewStat[];
   loyaltyPoints: number;
+  loyaltyPointsYearly: number;
   loyaltyHistory: LoyaltyHistoryEntry[];
   role: "admin" | "customer";
   isBlocked: boolean;
@@ -44,6 +45,7 @@ const normalizePhoneForLink = (value: string) => value.replace(/[^\d]/g, "");
 
 const usersCollection = collection(db, "users");
 const ordersCollection = collection(db, "orders");
+const currentYear = new Date().getUTCFullYear();
 
 export const fetchAdminUsers = async () => {
   const [usersSnapshot, ordersSnapshot] = await Promise.all([
@@ -127,6 +129,11 @@ export const fetchAdminUsers = async () => {
         favoriteProductIds,
         productSlugViews,
         loyaltyPoints: Number(data.loyaltyPoints ?? 0),
+        loyaltyPointsYearly: Number(
+          data.loyaltyPointsYearlyYear === currentYear
+            ? data.loyaltyPointsYearly ?? 0
+            : 0,
+        ),
         loyaltyHistory: loyaltyHistoryByUserId.get(docSnap.id) ?? [],
         role,
         isBlocked,

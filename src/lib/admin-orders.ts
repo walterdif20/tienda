@@ -16,6 +16,7 @@ import type { AdminOrder, AdminOrderStatus } from "@/components/admin/types";
 import type { Product } from "@/types";
 
 const orderCollection = collection(db, "orders");
+const getCurrentYear = () => new Date().getUTCFullYear();
 
 const syncOrderLoyaltyAfterStatusChange = async (
   tx: Transaction,
@@ -41,10 +42,21 @@ const syncOrderLoyaltyAfterStatusChange = async (
 
   if (nextStatus === "in_progress") {
     if (userId && pointsEarned > 0 && loyaltyStatus !== "credited") {
+      const userRef = doc(db, "users", userId);
+      const userSnapshot = await tx.get(userRef);
+      const userData = userSnapshot.data() as Record<string, unknown> | undefined;
+      const currentYear = getCurrentYear();
+      const storedYear = Number(userData?.loyaltyPointsYearlyYear ?? currentYear);
+      const shouldResetYearly = storedYear !== currentYear;
+
       tx.set(
-        doc(db, "users", userId),
+        userRef,
         {
           loyaltyPoints: increment(pointsEarned),
+          loyaltyPointsYearly: shouldResetYearly
+            ? pointsEarned
+            : increment(pointsEarned),
+          loyaltyPointsYearlyYear: currentYear,
           updatedAt: serverTimestamp(),
         },
         { merge: true },
@@ -195,10 +207,20 @@ const cancelOrderEffects = async (orderId: string) => {
     }
 
     if (userId && pointsEarned > 0 && loyaltyStatus === "credited") {
+      const userRef = doc(db, "users", userId);
+      const userSnapshot = await tx.get(userRef);
+      const userData = userSnapshot.data() as Record<string, unknown> | undefined;
+      const currentYear = getCurrentYear();
+      const storedYear = Number(userData?.loyaltyPointsYearlyYear ?? currentYear);
+
       tx.set(
-        doc(db, "users", userId),
+        userRef,
         {
           loyaltyPoints: increment(-pointsEarned),
+          ...(storedYear === currentYear
+            ? { loyaltyPointsYearly: increment(-pointsEarned) }
+            : {}),
+          loyaltyPointsYearlyYear: currentYear,
           updatedAt: serverTimestamp(),
         },
         { merge: true },

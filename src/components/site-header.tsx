@@ -33,7 +33,8 @@ export function SiteHeader() {
   const navigate = useNavigate();
   const { settings } = useStoreSettings();
   const { categories } = useCategories();
-  const { isAdmin, loyaltyPoints, user, signOutUser } = useAuth();
+  const { isAdmin, loyaltyPoints, loyaltyPointsYearly, user, signOutUser } =
+    useAuth();
   const displayName =
     user?.displayName?.trim() || user?.email?.split("@")[0] || "Cliente";
   const userInitial = displayName.charAt(0).toUpperCase();
@@ -42,7 +43,7 @@ export function SiteHeader() {
   );
   const userMenuRef = useRef<HTMLDivElement>(null);
   const productsMenuRef = useRef<HTMLDivElement>(null);
-  const loyaltyProgress = getLoyaltyProgress(loyaltyPoints);
+  const loyaltyProgress = getLoyaltyProgress(loyaltyPointsYearly);
 
   useEffect(() => {
     if (!isUserMenuOpen && !isProductsMenuOpen) {
@@ -302,7 +303,7 @@ export function SiteHeader() {
                     <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
                       <p className="text-xs text-slate-400">Club</p>
                       <p className="font-medium text-slate-900">
-                        {formatLoyaltyPoints(loyaltyPoints)} puntos · Nivel{" "}
+                        {formatLoyaltyPoints(loyaltyPoints)} canjeables · Nivel{" "}
                         {loyaltyProgress.currentTier.label}
                       </p>
                       <div className="mt-3 h-2 rounded-full bg-slate-200">
@@ -313,7 +314,7 @@ export function SiteHeader() {
                       </div>
                       <p className="mt-2 text-xs text-slate-500">
                         {loyaltyProgress.nextTier
-                          ? `Te faltan ${formatLoyaltyPoints(loyaltyProgress.missingPoints)} puntos para ${loyaltyProgress.nextTier.label}.`
+                          ? `Histórico ${new Date().getUTCFullYear()}: ${formatLoyaltyPoints(loyaltyPointsYearly)}. Te faltan ${formatLoyaltyPoints(loyaltyProgress.missingPoints)} puntos para ${loyaltyProgress.nextTier.label}.`
                           : "Ya estás en el nivel más alto del club."}
                       </p>
                     </div>

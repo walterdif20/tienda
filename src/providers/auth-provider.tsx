@@ -19,6 +19,7 @@ interface AuthContextValue {
   isBlocked: boolean;
   loading: boolean;
   loyaltyPoints: number;
+  loyaltyPointsYearly: number;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (input: {
     email: string;
@@ -56,6 +57,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isBlocked, setIsBlocked] = useState(false);
   const [loading, setLoading] = useState(true);
   const [loyaltyPoints, setLoyaltyPoints] = useState(0);
+  const [loyaltyPointsYearly, setLoyaltyPointsYearly] = useState(0);
 
   useEffect(() => {
     let unsubscribeUserDoc: (() => void) | undefined;
@@ -75,16 +77,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               setIsAdmin(false);
               setIsBlocked(false);
               setLoyaltyPoints(0);
+              setLoyaltyPointsYearly(0);
               setLoading(false);
               return;
             }
 
             const data = userSnapshot.data() as Record<string, unknown>;
             const nextIsBlocked = data.isBlocked === true;
+            const currentYear = new Date().getUTCFullYear();
+            const yearlyPointsYear = Number(
+              data.loyaltyPointsYearlyYear ?? currentYear,
+            );
 
             setIsAdmin(data.role === "admin" || data.isAdmin === true);
             setIsBlocked(nextIsBlocked);
             setLoyaltyPoints(Number(data.loyaltyPoints ?? 0));
+            setLoyaltyPointsYearly(
+              yearlyPointsYear === currentYear
+                ? Number(data.loyaltyPointsYearly ?? 0)
+                : 0,
+            );
             setLoading(false);
 
             if (nextIsBlocked) {
@@ -97,6 +109,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setIsAdmin(false);
         setIsBlocked(false);
         setLoyaltyPoints(0);
+        setLoyaltyPointsYearly(0);
         setLoading(false);
       }
     });
@@ -114,6 +127,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       isBlocked,
       loading,
       loyaltyPoints,
+      loyaltyPointsYearly,
       signIn: async (email: string, password: string) => {
         await signInWithEmailAndPassword(auth, email, password);
       },
@@ -151,7 +165,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         await signOut(auth);
       },
     }),
-    [user, isAdmin, isBlocked, loading, loyaltyPoints],
+    [user, isAdmin, isBlocked, loading, loyaltyPoints, loyaltyPointsYearly],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

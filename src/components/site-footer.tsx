@@ -1,10 +1,24 @@
 import { Link } from "react-router-dom";
-import { Mail, MessageCircle, ShieldCheck, Truck } from "lucide-react";
+import {
+  Instagram,
+  Mail,
+  MessageCircle,
+  Phone,
+  ShieldCheck,
+  Truck,
+} from "lucide-react";
 import { useStoreSettings } from "@/hooks/use-store-settings";
 import { normalizePhoneForWhatsAppLink } from "@/lib/whatsapp";
 
 export function SiteFooter() {
   const { settings } = useStoreSettings();
+  const normalizedPhone = settings.contactPhone.trim();
+  const normalizedEmail = settings.contactEmail.trim();
+  const normalizedInstagram = settings.instagramUrl.trim();
+  const hasContactLinks =
+    Boolean(normalizedPhone) ||
+    Boolean(normalizedEmail) ||
+    Boolean(normalizedInstagram);
 
   return (
     <footer className="mt-16 border-t border-slate-200 bg-slate-50/70">
@@ -50,9 +64,6 @@ export function SiteFooter() {
 
         <div>
           <h4 className="text-sm font-semibold text-slate-700">Soporte</h4>
-          <p className="mt-2 inline-flex items-center gap-2 text-sm text-slate-500">
-            <Mail className="h-4 w-4" /> hola@tiendaminimal.com
-          </p>
           <p className="inline-flex items-center gap-2 text-sm text-slate-500">
             <MessageCircle className="h-4 w-4" /> {settings.whatsappNumber}
           </p>
@@ -64,6 +75,39 @@ export function SiteFooter() {
           >
             Contactar por WhatsApp
           </a>
+          {hasContactLinks ? (
+            <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-slate-500">
+              {normalizedInstagram ? (
+                <a
+                  href={normalizedInstagram}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1.5 transition-colors hover:text-slate-700"
+                >
+                  <Instagram className="h-4 w-4" />
+                  <span>Instagram</span>
+                </a>
+              ) : null}
+              {normalizedPhone ? (
+                <a
+                  href={`tel:${normalizedPhone}`}
+                  className="inline-flex items-center gap-1.5 transition-colors hover:text-slate-700"
+                >
+                  <Phone className="h-4 w-4" />
+                  <span>{normalizedPhone}</span>
+                </a>
+              ) : null}
+              {normalizedEmail ? (
+                <a
+                  href={`mailto:${normalizedEmail}`}
+                  className="inline-flex items-center gap-1.5 transition-colors hover:text-slate-700"
+                >
+                  <Mail className="h-4 w-4" />
+                  <span>{normalizedEmail}</span>
+                </a>
+              ) : null}
+            </div>
+          ) : null}
         </div>
       </div>
     </footer>

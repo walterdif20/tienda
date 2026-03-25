@@ -327,6 +327,52 @@ export function StoreSettingsManagementSection() {
           </div>
 
           <div className="space-y-2">
+            <Label htmlFor="store-contact-phone">Teléfono de contacto</Label>
+            <Input
+              id="store-contact-phone"
+              value={form.contactPhone}
+              onChange={(event) =>
+                setForm((current) => ({
+                  ...current,
+                  contactPhone: event.target.value,
+                }))
+              }
+              placeholder="Ej: +54 9 11 1234-5678"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="store-contact-email">Email de contacto</Label>
+            <Input
+              id="store-contact-email"
+              type="email"
+              value={form.contactEmail}
+              onChange={(event) =>
+                setForm((current) => ({
+                  ...current,
+                  contactEmail: event.target.value,
+                }))
+              }
+              placeholder="Ej: contacto@mitienda.com"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="store-instagram">Instagram (URL)</Label>
+            <Input
+              id="store-instagram"
+              value={form.instagramUrl}
+              onChange={(event) =>
+                setForm((current) => ({
+                  ...current,
+                  instagramUrl: event.target.value,
+                }))
+              }
+              placeholder="Ej: https://instagram.com/mitienda"
+            />
+          </div>
+
+          <div className="space-y-2">
             <Label htmlFor="store-primary">Color principal</Label>
             <Input
               id="store-primary"

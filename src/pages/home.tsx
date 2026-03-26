@@ -157,7 +157,7 @@ export function HomePage() {
               {settings.title}
             </p>
             <h1 className="max-w-2xl text-4xl font-semibold tracking-tight text-white md:text-6xl">
-              Una tienda que te ayuda a elegir, comprar rápido y volver.
+              Encontrá tus accesorios, y comprá fácil.
             </h1>
             <p className="max-w-xl text-base text-white/80 md:text-lg">
               Colecciones por ocasión, stock actualizado, quick shop y una

@@ -10,7 +10,13 @@ import {
   signOut,
   updateProfile,
 } from "firebase/auth";
-import { doc, onSnapshot, serverTimestamp, setDoc } from "firebase/firestore";
+import {
+  doc,
+  onSnapshot,
+  serverTimestamp,
+  setDoc,
+  updateDoc,
+} from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 
 interface AuthContextValue {
@@ -29,6 +35,10 @@ interface AuthContextValue {
   }) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
   signOutUser: () => Promise<void>;
+  updateAccountProfile: (input: {
+    displayName: string;
+    whatsappNumber: string;
+  }) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -163,6 +173,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       },
       signOutUser: async () => {
         await signOut(auth);
+      },
+      updateAccountProfile: async ({
+        displayName,
+        whatsappNumber,
+      }: {
+        displayName: string;
+        whatsappNumber: string;
+      }) => {
+        const currentUser = auth.currentUser;
+
+        if (!currentUser) {
+          throw new Error("Tenés que iniciar sesión para actualizar tus datos.");
+        }
+
+        const normalizedDisplayName = displayName.trim();
+        const normalizedWhatsapp = whatsappNumber.trim();
+
+        if (normalizedDisplayName && normalizedDisplayName !== currentUser.displayName) {
+          await updateProfile(currentUser, { displayName: normalizedDisplayName });
+        }
+
+        await updateDoc(doc(db, "users", currentUser.uid), {
+          displayName: normalizedDisplayName || currentUser.email || "Cliente",
+          whatsappNumber: normalizedWhatsapp,
+          updatedAt: serverTimestamp(),
+        });
       },
     }),
     [user, isAdmin, isBlocked, loading, loyaltyPoints, loyaltyPointsYearly],

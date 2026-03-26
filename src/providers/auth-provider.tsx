@@ -36,8 +36,10 @@ interface AuthContextValue {
   signInWithGoogle: () => Promise<void>;
   signOutUser: () => Promise<void>;
   updateAccountProfile: (input: {
-    displayName: string;
-    whatsappNumber: string;
+    firstName: string;
+    lastName: string;
+    phone: string;
+    address: string;
   }) => Promise<void>;
 }
 
@@ -47,13 +49,22 @@ const upsertUserProfile = async (
   user: User,
   extras?: { displayName?: string; whatsappNumber?: string },
 ) => {
+  const fallbackDisplayName =
+    extras?.displayName ?? user.displayName ?? user.email ?? "Cliente";
+  const normalizedPhone = extras?.whatsappNumber ?? user.phoneNumber ?? "";
+  const [firstName, ...lastNameParts] = fallbackDisplayName.trim().split(/\s+/);
+  const lastName = lastNameParts.join(" ");
+
   await setDoc(
     doc(db, "users", user.uid),
     {
       email: user.email ?? "",
-      displayName:
-        extras?.displayName ?? user.displayName ?? user.email ?? "Cliente",
-      whatsappNumber: extras?.whatsappNumber ?? user.phoneNumber ?? "",
+      displayName: fallbackDisplayName,
+      firstName: firstName || fallbackDisplayName,
+      lastName,
+      phone: normalizedPhone,
+      whatsappNumber: normalizedPhone,
+      address: "",
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     },
@@ -175,11 +186,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         await signOut(auth);
       },
       updateAccountProfile: async ({
-        displayName,
-        whatsappNumber,
+        firstName,
+        lastName,
+        phone,
+        address,
       }: {
-        displayName: string;
-        whatsappNumber: string;
+        firstName: string;
+        lastName: string;
+        phone: string;
+        address: string;
       }) => {
         const currentUser = auth.currentUser;
 
@@ -187,16 +202,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           throw new Error("Tenés que iniciar sesión para actualizar tus datos.");
         }
 
-        const normalizedDisplayName = displayName.trim();
-        const normalizedWhatsapp = whatsappNumber.trim();
+        const normalizedFirstName = firstName.trim();
+        const normalizedLastName = lastName.trim();
+        const normalizedPhone = phone.trim();
+        const normalizedAddress = address.trim();
+        const normalizedDisplayName =
+          `${normalizedFirstName} ${normalizedLastName}`.trim() ||
+          currentUser.email ||
+          "Cliente";
 
         if (normalizedDisplayName && normalizedDisplayName !== currentUser.displayName) {
           await updateProfile(currentUser, { displayName: normalizedDisplayName });
         }
 
         await updateDoc(doc(db, "users", currentUser.uid), {
-          displayName: normalizedDisplayName || currentUser.email || "Cliente",
-          whatsappNumber: normalizedWhatsapp,
+          displayName: normalizedDisplayName,
+          firstName: normalizedFirstName,
+          lastName: normalizedLastName,
+          phone: normalizedPhone,
+          whatsappNumber: normalizedPhone,
+          address: normalizedAddress,
           updatedAt: serverTimestamp(),
         });
       },

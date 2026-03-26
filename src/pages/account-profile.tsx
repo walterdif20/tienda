@@ -18,24 +18,32 @@ const getErrorMessage = (error: unknown) => {
 
 export function AccountProfilePage() {
   const { user, loading, updateAccountProfile } = useAuth();
-  const [displayName, setDisplayName] = useState("");
-  const [whatsappNumber, setWhatsappNumber] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [address, setAddress] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
 
   useEffect(() => {
     if (!user) {
-      setDisplayName("");
-      setWhatsappNumber("");
+      setFirstName("");
+      setLastName("");
+      setPhone("");
+      setAddress("");
       return;
     }
 
     const fallbackName = user.displayName?.trim() || user.email?.split("@")[0] || "";
-    const fallbackWhatsapp = user.phoneNumber ?? "";
+    const [fallbackFirstName, ...fallbackLastNameParts] = fallbackName.split(/\s+/);
+    const fallbackLastName = fallbackLastNameParts.join(" ");
+    const fallbackPhone = user.phoneNumber ?? "";
 
-    setDisplayName(fallbackName);
-    setWhatsappNumber(fallbackWhatsapp);
+    setFirstName(fallbackFirstName || fallbackName);
+    setLastName(fallbackLastName);
+    setPhone(fallbackPhone);
+    setAddress("");
 
     const loadUserProfile = async () => {
       try {
@@ -47,12 +55,17 @@ export function AccountProfilePage() {
         }
 
         const data = userSnapshot.data() as {
-          displayName?: string;
+          firstName?: string;
+          lastName?: string;
+          phone?: string;
           whatsappNumber?: string;
+          address?: string;
         };
 
-        setDisplayName(data.displayName?.trim() || fallbackName);
-        setWhatsappNumber(data.whatsappNumber?.trim() || fallbackWhatsapp);
+        setFirstName(data.firstName?.trim() || fallbackFirstName || fallbackName);
+        setLastName(data.lastName?.trim() || fallbackLastName);
+        setPhone(data.phone?.trim() || data.whatsappNumber?.trim() || fallbackPhone);
+        setAddress(data.address?.trim() || "");
       } catch (nextError) {
         console.warn("No se pudo cargar el perfil de usuario", nextError);
       }
@@ -70,8 +83,10 @@ export function AccountProfilePage() {
 
     try {
       await updateAccountProfile({
-        displayName,
-        whatsappNumber,
+        firstName,
+        lastName,
+        phone,
+        address,
       });
       setNotice("Tus datos fueron actualizados correctamente.");
     } catch (nextError) {
@@ -88,7 +103,7 @@ export function AccountProfilePage() {
           Mi cuenta
         </h1>
         <p className="text-sm text-slate-500">
-          Actualizá tu nombre y WhatsApp para agilizar futuras compras.
+          Actualizá tus datos para agilizar futuras compras.
         </p>
       </div>
 
@@ -122,12 +137,23 @@ export function AccountProfilePage() {
           <CardContent>
             <form className="space-y-4" onSubmit={onSubmit}>
               <div className="space-y-2">
-                <Label htmlFor="account-display-name">Nombre</Label>
+                <Label htmlFor="account-first-name">Nombre</Label>
                 <Input
-                  id="account-display-name"
-                  value={displayName}
-                  onChange={(event) => setDisplayName(event.target.value)}
-                  placeholder="Tu nombre completo"
+                  id="account-first-name"
+                  value={firstName}
+                  onChange={(event) => setFirstName(event.target.value)}
+                  placeholder="Tu nombre"
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="account-last-name">Apellido</Label>
+                <Input
+                  id="account-last-name"
+                  value={lastName}
+                  onChange={(event) => setLastName(event.target.value)}
+                  placeholder="Tu apellido"
                   required
                 />
               </div>
@@ -146,12 +172,23 @@ export function AccountProfilePage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="account-whatsapp">WhatsApp</Label>
+                <Label htmlFor="account-phone">Teléfono</Label>
                 <Input
-                  id="account-whatsapp"
-                  value={whatsappNumber}
-                  onChange={(event) => setWhatsappNumber(event.target.value)}
+                  id="account-phone"
+                  value={phone}
+                  onChange={(event) => setPhone(event.target.value)}
                   placeholder="+54 9 ..."
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="account-address">Dirección</Label>
+                <Input
+                  id="account-address"
+                  value={address}
+                  onChange={(event) => setAddress(event.target.value)}
+                  placeholder="Calle 123, Ciudad"
                 />
               </div>
 

@@ -58,15 +58,14 @@ export function SiteFooter() {
             {settings.title}
           </h3>
           <p className="mt-2 text-sm text-slate-500">
-            Ecommerce minimalista, rápido y funcional sobre React, Firebase y
-            Firestore.
+           Accesorios que potencian tus outfits.
           </p>
           <div className="mt-4 flex flex-wrap gap-2 text-xs text-slate-600">
             <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-2 py-1">
-              <Truck className="h-3.5 w-3.5" /> Envíos a todo el país
+              <Truck className="h-3.5 w-3.5" /> Envíos gratis a Necochea y Quequén
             </span>
             <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-2 py-1">
-              <ShieldCheck className="h-3.5 w-3.5" /> Compra segura
+              <ShieldCheck className="h-3.5 w-3.5" /> Protegemos tu compra y tus datos
             </span>
           </div>
         </div>

@@ -342,7 +342,6 @@ export function CheckoutPage() {
                     <SelectItem value="shipping">
                       Envío a domicilio (gratis en Necochea y Quequén)
                     </SelectItem>
-                    <SelectItem value="pickup">Retiro en tienda</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

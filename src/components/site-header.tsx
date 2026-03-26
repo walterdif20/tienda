@@ -321,9 +321,19 @@ export function SiteHeader() {
                   </div>
                   <br />
                   <hr />
+                  <Button asChild variant="outline" className="mt-4 w-full justify-center">
+                    <Link
+                      to="/mi-cuenta"
+                      onClick={() => {
+                        setIsUserMenuOpen(false);
+                      }}
+                    >
+                      Editar datos
+                    </Link>
+                  </Button>
                   <Button
                     variant="ghost"
-                    className="mt-4 w-full justify-center"
+                    className="mt-2 w-full justify-center"
                     onClick={() => {
                       setIsUserMenuOpen(false);
                       void signOutUser();

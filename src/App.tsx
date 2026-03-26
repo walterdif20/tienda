@@ -9,6 +9,7 @@ import { CheckoutPage } from "@/pages/checkout";
 import { SuccessPage } from "@/pages/success";
 import { TrackPage } from "@/pages/track";
 import { AccountOrdersPage } from "@/pages/account-orders";
+import { AccountProfilePage } from "@/pages/account-profile";
 import { AdminPage } from "@/pages/admin";
 import { RegisterPage } from "@/pages/register";
 
@@ -25,6 +26,7 @@ export default function App() {
         <Route path="/success" element={<SuccessPage />} />
         <Route path="/track" element={<TrackPage />} />
         <Route path="/mis-compras" element={<AccountOrdersPage />} />
+        <Route path="/mi-cuenta" element={<AccountProfilePage />} />
         <Route path="/account/orders" element={<Navigate to="/mis-compras" replace />} />
         <Route path="/registro" element={<RegisterPage />} />
         <Route path="/login" element={<RegisterPage />} />

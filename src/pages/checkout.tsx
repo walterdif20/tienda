@@ -102,13 +102,26 @@ export function CheckoutPage() {
         (user.email ? resolveNameFromEmail(user.email) : "");
       const fallbackEmail = user.email ?? "";
       const fallbackPhone = user.phoneNumber ?? "";
+      const fallbackAddress = "";
 
       let profilePhone = "";
+      let profileAddress = "";
+      let profileName = "";
       try {
         const userDoc = await getDoc(doc(db, "users", user.uid));
         if (userDoc.exists()) {
-          const data = userDoc.data() as { whatsappNumber?: string };
-          profilePhone = data.whatsappNumber?.trim() ?? "";
+          const data = userDoc.data() as {
+            firstName?: string;
+            lastName?: string;
+            phone?: string;
+            whatsappNumber?: string;
+            address?: string;
+          };
+          const firstName = data.firstName?.trim() ?? "";
+          const lastName = data.lastName?.trim() ?? "";
+          profileName = `${firstName} ${lastName}`.trim();
+          profilePhone = data.phone?.trim() || data.whatsappNumber?.trim() || "";
+          profileAddress = data.address?.trim() ?? "";
         }
       } catch (error) {
         console.error(
@@ -120,9 +133,11 @@ export function CheckoutPage() {
       const currentName = form.getValues("name")?.trim();
       const currentEmail = form.getValues("email")?.trim();
       const currentPhone = form.getValues("phone")?.trim();
+      const currentAddress = form.getValues("address")?.trim();
 
-      if (!currentName && fallbackName) {
-        form.setValue("name", fallbackName, {
+      const nextName = profileName || fallbackName;
+      if (!currentName && nextName) {
+        form.setValue("name", nextName, {
           shouldDirty: false,
           shouldValidate: false,
         });
@@ -138,6 +153,14 @@ export function CheckoutPage() {
       const nextPhone = profilePhone || fallbackPhone;
       if (!currentPhone && nextPhone) {
         form.setValue("phone", nextPhone, {
+          shouldDirty: false,
+          shouldValidate: false,
+        });
+      }
+
+      const nextAddress = profileAddress || fallbackAddress;
+      if (!currentAddress && nextAddress) {
+        form.setValue("address", nextAddress, {
           shouldDirty: false,
           shouldValidate: false,
         });

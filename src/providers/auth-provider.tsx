@@ -10,7 +10,13 @@ import {
   signOut,
   updateProfile,
 } from "firebase/auth";
-import { doc, onSnapshot, serverTimestamp, setDoc } from "firebase/firestore";
+import {
+  doc,
+  onSnapshot,
+  serverTimestamp,
+  setDoc,
+  updateDoc,
+} from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 
 interface AuthContextValue {
@@ -29,6 +35,12 @@ interface AuthContextValue {
   }) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
   signOutUser: () => Promise<void>;
+  updateAccountProfile: (input: {
+    firstName: string;
+    lastName: string;
+    phone: string;
+    address: string;
+  }) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -37,13 +49,22 @@ const upsertUserProfile = async (
   user: User,
   extras?: { displayName?: string; whatsappNumber?: string },
 ) => {
+  const fallbackDisplayName =
+    extras?.displayName ?? user.displayName ?? user.email ?? "Cliente";
+  const normalizedPhone = extras?.whatsappNumber ?? user.phoneNumber ?? "";
+  const [firstName, ...lastNameParts] = fallbackDisplayName.trim().split(/\s+/);
+  const lastName = lastNameParts.join(" ");
+
   await setDoc(
     doc(db, "users", user.uid),
     {
       email: user.email ?? "",
-      displayName:
-        extras?.displayName ?? user.displayName ?? user.email ?? "Cliente",
-      whatsappNumber: extras?.whatsappNumber ?? user.phoneNumber ?? "",
+      displayName: fallbackDisplayName,
+      firstName: firstName || fallbackDisplayName,
+      lastName,
+      phone: normalizedPhone,
+      whatsappNumber: normalizedPhone,
+      address: "",
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     },
@@ -163,6 +184,46 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       },
       signOutUser: async () => {
         await signOut(auth);
+      },
+      updateAccountProfile: async ({
+        firstName,
+        lastName,
+        phone,
+        address,
+      }: {
+        firstName: string;
+        lastName: string;
+        phone: string;
+        address: string;
+      }) => {
+        const currentUser = auth.currentUser;
+
+        if (!currentUser) {
+          throw new Error("Tenés que iniciar sesión para actualizar tus datos.");
+        }
+
+        const normalizedFirstName = firstName.trim();
+        const normalizedLastName = lastName.trim();
+        const normalizedPhone = phone.trim();
+        const normalizedAddress = address.trim();
+        const normalizedDisplayName =
+          `${normalizedFirstName} ${normalizedLastName}`.trim() ||
+          currentUser.email ||
+          "Cliente";
+
+        if (normalizedDisplayName && normalizedDisplayName !== currentUser.displayName) {
+          await updateProfile(currentUser, { displayName: normalizedDisplayName });
+        }
+
+        await updateDoc(doc(db, "users", currentUser.uid), {
+          displayName: normalizedDisplayName,
+          firstName: normalizedFirstName,
+          lastName: normalizedLastName,
+          phone: normalizedPhone,
+          whatsappNumber: normalizedPhone,
+          address: normalizedAddress,
+          updatedAt: serverTimestamp(),
+        });
       },
     }),
     [user, isAdmin, isBlocked, loading, loyaltyPoints, loyaltyPointsYearly],

@@ -106,7 +106,7 @@ export function SiteHeader() {
 
   return (
     <header className="relative sticky top-0 z-40 border-b border-slate-200 bg-white/90 backdrop-blur">
-      <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4">
+      <div className="mx-auto flex max-w-7xl items-center justify-between gap-2 px-4 py-3 sm:gap-4 sm:py-4">
         <Link
           to="/"
           className="flex items-center gap-2 text-lg font-semibold tracking-tight text-slate-900"
@@ -235,7 +235,7 @@ export function SiteHeader() {
           )}
         </nav>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2">
           <Button
             variant="ghost"
             size="sm"
@@ -348,7 +348,8 @@ export function SiteHeader() {
 
           <Link
             to="/favoritos"
-            className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:text-slate-900"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:text-slate-900 sm:h-auto sm:w-auto sm:gap-2 sm:px-3 sm:py-1.5"
+            onClick={closeMobileMenu}
           >
             <Heart className="h-4 w-4" />
             <span className="hidden sm:inline">Favoritos</span>
@@ -356,12 +357,13 @@ export function SiteHeader() {
 
           <Link
             to="/cart"
-            className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:text-slate-900"
+            className="relative inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:text-slate-900 sm:h-auto sm:w-auto sm:gap-2 sm:px-3 sm:py-1.5"
+            onClick={closeMobileMenu}
           >
             <ShoppingBag className="h-4 w-4" />
             <span className="hidden sm:inline">Carrito</span>
             {count > 0 && (
-              <span className="store-primary-bg rounded-full px-2 py-0.5 text-xs text-white">
+              <span className="store-primary-bg absolute -right-1.5 -top-1.5 rounded-full px-1.5 py-0.5 text-[10px] leading-none text-white sm:static sm:px-2 sm:py-0.5 sm:text-xs">
                 {count}
               </span>
             )}
@@ -461,6 +463,41 @@ export function SiteHeader() {
                 </NavLink>
               ),
             )}
+
+            <div className="mt-2 border-t border-slate-200 pt-3">
+              {!user ? (
+                <Link
+                  to="/registro"
+                  onClick={closeMobileMenu}
+                  className="inline-flex w-full items-center justify-center rounded-full bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800"
+                >
+                  Login / Registro
+                </Link>
+              ) : (
+                <div className="space-y-2">
+                  <Link
+                    to="/mi-cuenta"
+                    onClick={() => {
+                      setIsUserMenuOpen(false);
+                      closeMobileMenu();
+                    }}
+                    className="inline-flex w-full items-center justify-center rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:text-slate-900"
+                  >
+                    Mi cuenta
+                  </Link>
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-center"
+                    onClick={() => {
+                      closeMobileMenu();
+                      void signOutUser();
+                    }}
+                  >
+                    Salir
+                  </Button>
+                </div>
+              )}
+            </div>
           </div>
         </nav>
       ) : null}

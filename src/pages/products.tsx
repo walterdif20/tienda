@@ -12,6 +12,7 @@ import {
   getCategoryChildren,
   getCategoryTree,
   resolveCategoryFilter,
+  getCategoryDescendantIds,
 } from "@/lib/categories";
 import {
   productCollections,
@@ -68,6 +69,22 @@ export function ProductsPage() {
   );
 
   const filteredProducts = useMemo(() => {
+    const normalizedQuery = query.trim().toLowerCase();
+    const matchingCategoryIds =
+      normalizedQuery.length === 0
+        ? new Set<string>()
+        : categories.reduce((ids, category) => {
+            const searchableCategory = `${category.name} ${category.label} ${category.slug} ${category.id}`.toLowerCase();
+
+            if (searchableCategory.includes(normalizedQuery)) {
+              getCategoryDescendantIds(categories, category.id).forEach((id) =>
+                ids.add(id),
+              );
+            }
+
+            return ids;
+          }, new Set<string>());
+
     return products.filter((product) => {
       const matchCategory =
         activeCategory === "all"
@@ -82,16 +99,18 @@ export function ProductsPage() {
         activeCollection === "all" ||
         productMatchesCollection(product, activeCollection);
       const matchQuery =
-        query.trim().length === 0 ||
+        normalizedQuery.length === 0 ||
         `${product.name} ${product.description}`
           .toLowerCase()
-          .includes(query.toLowerCase());
+          .includes(normalizedQuery) ||
+        matchingCategoryIds.has(product.categoryId);
       return matchCategory && matchCollection && matchQuery;
     });
   }, [
     activeCategory,
     activeCollection,
     activeSubcategory,
+    categories,
     products,
     query,
     visibleSubcategories,

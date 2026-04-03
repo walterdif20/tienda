@@ -6,6 +6,28 @@ import "./index.css";
 import { AuthProvider } from "@/providers/auth-provider";
 import { StoreSettingsProvider } from "@/providers/store-settings-provider";
 
+const REDIRECT_QUERY_PARAM = "p";
+
+function restoreGithubPagesPath() {
+  const url = new URL(window.location.href);
+  const encodedPath = url.searchParams.get(REDIRECT_QUERY_PARAM);
+
+  if (!encodedPath) {
+    return;
+  }
+
+  const restoredPath = decodeURIComponent(encodedPath);
+  url.searchParams.delete(REDIRECT_QUERY_PARAM);
+
+  const remainingSearch = url.searchParams.toString();
+  const cleanedSearch = remainingSearch ? `?${remainingSearch}` : "";
+  const finalUrl = `${restoredPath}${cleanedSearch}`;
+
+  window.history.replaceState(null, "", finalUrl);
+}
+
+restoreGithubPagesPath();
+
 const APP_LOADER_ID = "app-loader";
 const APP_LOADER_HIDDEN_CLASS = "app-loader--hidden";
 const APP_LOADER_MIN_VISIBLE_MS = 700;

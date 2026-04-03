@@ -147,6 +147,11 @@ const discountOrderInventory = async (orderId: string) => {
       return;
     }
 
+    const inventoryDiscounts: Array<{
+      ref: ReturnType<typeof doc>;
+      stock: number;
+    }> = [];
+
     for (const itemDoc of itemsSnapshot.docs) {
       const item = itemDoc.data() as { productId: string; qty: number };
       const inventoryRef = doc(db, "inventory", item.productId);
@@ -157,8 +162,15 @@ const discountOrderInventory = async (orderId: string) => {
         throw new Error("No hay stock suficiente para avanzar la orden.");
       }
 
-      tx.update(inventoryRef, {
+      inventoryDiscounts.push({
+        ref: inventoryRef,
         stock: currentStock - item.qty,
+      });
+    }
+
+    for (const discount of inventoryDiscounts) {
+      tx.update(discount.ref, {
+        stock: discount.stock,
         updatedAt: serverTimestamp(),
       });
     }

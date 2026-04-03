@@ -352,6 +352,19 @@ export function OrderManagementSection({
                   Acciones principales
                 </p>
                 <div className="mt-3 flex flex-wrap gap-2">
+                  {(order.paymentMethod === "bank_transfer" &&
+                    (order.status === "pending" ||
+                      order.status === "payment_in_review")) ||
+                  (order.paymentMethod === "mercado_pago_link" &&
+                    order.status === "payment_in_review") ? (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleStatusChange(order.id, "paid")}
+                    >
+                      Marcar pago acreditado
+                    </Button>
+                  ) : null}
                   {order.paymentMethod === "mercado_pago_link" &&
                   order.status === "link_pending" ? (
                     <Button
@@ -381,7 +394,8 @@ export function OrderManagementSection({
                       Comenzar preparación
                     </Button>
                   ) : null}
-                  {order.paymentMethod === "manual" && order.status !== "paid" ? (
+                  {order.paymentMethod === "manual" &&
+                  order.status !== "paid" ? (
                     <Button
                       size="sm"
                       variant="outline"

@@ -14,6 +14,7 @@ import { useProduct } from "@/hooks/use-product";
 import { useProducts } from "@/hooks/use-products";
 import { useStoreSettings } from "@/hooks/use-store-settings";
 import { useFavorites } from "@/hooks/use-favorites";
+import { useCategories } from "@/hooks/use-categories";
 import { incrementUserProductSlugView } from "@/lib/product-views";
 import { useAuth } from "@/providers/auth-provider";
 
@@ -28,6 +29,7 @@ export function ProductDetailPage() {
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [cartFeedback, setCartFeedback] = useState("");
   const { discounts } = useDiscounts();
+  const { categories } = useCategories();
 
   const images = useMemo(() => product?.images ?? [], [product?.images]);
 
@@ -83,7 +85,7 @@ export function ProductDetailPage() {
       return collection ? [collection] : [];
     })
     .slice(0, 3);
-  const pricing = product ? getProductPricing(product, discounts) : null;
+  const pricing = product ? getProductPricing(product, discounts, categories) : null;
 
   const relatedProducts = products
     .filter(
@@ -183,7 +185,7 @@ export function ProductDetailPage() {
             <div className="space-y-3">
               <div className="flex flex-wrap items-center gap-2">
                 {product.badge ? <Badge>{product.badge}</Badge> : null}
-                {pricing?.appliedDiscount ? <Badge className="bg-rose-600 text-white">{pricing.appliedDiscount.label}</Badge> : null}
+                {pricing?.appliedDiscount ? <Badge className="bg-rose-600 px-3 py-1 text-sm font-semibold tracking-wide text-white shadow-sm">{pricing.appliedDiscount.label}</Badge> : null}
                 {collectionLabels.map((collection) => (
                   <Badge key={collection.id} className="bg-slate-100 text-slate-700">
                     {collection.shortLabel}

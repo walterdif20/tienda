@@ -15,6 +15,7 @@ import { useDiscounts } from "@/hooks/use-discounts";
 import { getProductPricing } from "@/lib/pricing";
 import { getCollectionById, getProductCollectionIds } from "@/lib/collections";
 import { useCartStore } from "@/store/cartStore";
+import { useCategories } from "@/hooks/use-categories";
 import type { Product } from "@/types";
 
 export function ProductQuickShop({
@@ -33,7 +34,8 @@ export function ProductQuickShop({
     .filter(Boolean);
   const heroImage = product.images[0];
   const { discounts } = useDiscounts();
-  const pricing = getProductPricing(product, discounts);
+  const { categories } = useCategories();
+  const pricing = getProductPricing(product, discounts, categories);
 
   return (
     <Dialog>

@@ -1,17 +1,25 @@
 import type { DiscountRule } from "@/lib/discounts";
-import type { Product } from "@/types";
+import { getCategoryDescendantIds } from "@/lib/categories";
+import type { Category, Product } from "@/types";
 
 export type AppliedDiscount = {
   label: string;
   amount: number;
 };
 
-export const getProductPricing = (product: Product, discounts: DiscountRule[]) => {
-  const matching = discounts.filter((discount) =>
-    discount.targetType === "product"
-      ? discount.targetId === product.id
-      : discount.targetId === product.categoryId,
-  );
+export const getProductPricing = (
+  product: Product,
+  discounts: DiscountRule[],
+  categories: Category[],
+) => {
+  const matching = discounts.filter((discount) => {
+    if (discount.targetType === "product") {
+      return discount.targetId === product.id;
+    }
+
+    const affectedCategoryIds = getCategoryDescendantIds(categories, discount.targetId);
+    return affectedCategoryIds.includes(product.categoryId);
+  });
 
   if (matching.length === 0) {
     return { originalPrice: product.price, finalPrice: product.price, appliedDiscount: null as AppliedDiscount | null };

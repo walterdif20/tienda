@@ -11,6 +11,7 @@ import { getProductPricing } from "@/lib/pricing";
 import { buildProductAvailabilityWhatsAppLink } from "@/lib/whatsapp";
 import { getCollectionById, getProductCollectionIds } from "@/lib/collections";
 import { useStoreSettings } from "@/hooks/use-store-settings";
+import { useCategories } from "@/hooks/use-categories";
 import { useCartStore } from "@/store/cartStore";
 import type { Product } from "@/types";
 
@@ -37,7 +38,8 @@ export function ProductCard({
   const { settings } = useStoreSettings();
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const { discounts } = useDiscounts();
-  const pricing = getProductPricing(product, discounts);
+  const { categories } = useCategories();
+  const pricing = getProductPricing(product, discounts, categories);
 
   const images = useMemo(() => product.images ?? [], [product.images]);
   const activeImage = images[activeImageIndex] ?? images[0];
@@ -101,7 +103,7 @@ export function ProductCard({
           {product.badge && (
             <Badge className="bg-white text-slate-800">{product.badge}</Badge>
           )}
-          {pricing.appliedDiscount ? <Badge className="bg-rose-600 text-white">{pricing.appliedDiscount.label}</Badge> : null}
+          {pricing.appliedDiscount ? <Badge className="bg-rose-600 px-3 py-1 text-sm font-semibold tracking-wide text-white shadow-sm">{pricing.appliedDiscount.label}</Badge> : null}
           <Badge className="bg-slate-950/80 text-white">{urgencyLabel}</Badge>
         </div>
         <Button

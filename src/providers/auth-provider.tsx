@@ -12,6 +12,7 @@ import {
 } from "firebase/auth";
 import {
   doc,
+  getDoc,
   onSnapshot,
   serverTimestamp,
   setDoc,
@@ -49,14 +50,29 @@ const upsertUserProfile = async (
   user: User,
   extras?: { displayName?: string; whatsappNumber?: string },
 ) => {
+  const userRef = doc(db, "users", user.uid);
+  const existingUserSnapshot = await getDoc(userRef);
+  const existingUserData = existingUserSnapshot.exists()
+    ? (existingUserSnapshot.data() as {
+        phone?: string;
+        whatsappNumber?: string;
+        address?: string;
+      })
+    : null;
   const fallbackDisplayName =
     extras?.displayName ?? user.displayName ?? user.email ?? "Cliente";
-  const normalizedPhone = extras?.whatsappNumber ?? user.phoneNumber ?? "";
+  const normalizedPhone =
+    extras?.whatsappNumber?.trim() ||
+    existingUserData?.phone?.trim() ||
+    existingUserData?.whatsappNumber?.trim() ||
+    user.phoneNumber?.trim() ||
+    "";
   const [firstName, ...lastNameParts] = fallbackDisplayName.trim().split(/\s+/);
   const lastName = lastNameParts.join(" ");
+  const normalizedAddress = existingUserData?.address?.trim() || "";
 
   await setDoc(
-    doc(db, "users", user.uid),
+    userRef,
     {
       email: user.email ?? "",
       displayName: fallbackDisplayName,
@@ -64,7 +80,7 @@ const upsertUserProfile = async (
       lastName,
       phone: normalizedPhone,
       whatsappNumber: normalizedPhone,
-      address: "",
+      address: normalizedAddress,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     },

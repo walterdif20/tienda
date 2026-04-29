@@ -147,6 +147,11 @@ const discountOrderInventory = async (orderId: string) => {
       return;
     }
 
+    const inventoryDiscounts: Array<{
+      ref: ReturnType<typeof doc>;
+      stock: number;
+    }> = [];
+
     for (const itemDoc of itemsSnapshot.docs) {
       const item = itemDoc.data() as { productId: string; qty: number };
       const inventoryRef = doc(db, "inventory", item.productId);
@@ -157,8 +162,15 @@ const discountOrderInventory = async (orderId: string) => {
         throw new Error("No hay stock suficiente para avanzar la orden.");
       }
 
-      tx.update(inventoryRef, {
+      inventoryDiscounts.push({
+        ref: inventoryRef,
         stock: currentStock - item.qty,
+      });
+    }
+
+    for (const discount of inventoryDiscounts) {
+      tx.update(discount.ref, {
+        stock: discount.stock,
         updatedAt: serverTimestamp(),
       });
     }
@@ -187,6 +199,16 @@ const cancelOrderEffects = async (orderId: string) => {
     const loyalty = (orderData.loyalty ?? {}) as Record<string, unknown>;
     const pointsEarned = Number(loyalty.pointsEarned ?? 0);
     const loyaltyStatus = String(loyalty.status ?? "pending");
+    const inventoryRestocks: Array<{
+      ref: ReturnType<typeof doc>;
+      stock: number;
+    }> = [];
+    let loyaltyCompensation:
+      | {
+          ref: ReturnType<typeof doc>;
+          update: Record<string, unknown>;
+        }
+      | undefined;
 
     if (stockDiscounted) {
       for (const itemDoc of itemsSnapshot.docs) {
@@ -195,14 +217,10 @@ const cancelOrderEffects = async (orderId: string) => {
         const inventorySnapshot = await tx.get(inventoryRef);
         const currentStock = Number(inventorySnapshot.data()?.stock ?? 0);
 
-        tx.set(
-          inventoryRef,
-          {
-            stock: currentStock + item.qty,
-            updatedAt: serverTimestamp(),
-          },
-          { merge: true },
-        );
+        inventoryRestocks.push({
+          ref: inventoryRef,
+          stock: currentStock + item.qty,
+        });
       }
     }
 
@@ -213,9 +231,9 @@ const cancelOrderEffects = async (orderId: string) => {
       const currentYear = getCurrentYear();
       const storedYear = Number(userData?.loyaltyPointsYearlyYear ?? currentYear);
 
-      tx.set(
-        userRef,
-        {
+      loyaltyCompensation = {
+        ref: userRef,
+        update: {
           loyaltyPoints: increment(-pointsEarned),
           ...(storedYear === currentYear
             ? { loyaltyPointsYearly: increment(-pointsEarned) }
@@ -223,8 +241,24 @@ const cancelOrderEffects = async (orderId: string) => {
           loyaltyPointsYearlyYear: currentYear,
           updatedAt: serverTimestamp(),
         },
+      };
+    }
+
+    for (const restock of inventoryRestocks) {
+      tx.set(
+        restock.ref,
+        {
+          stock: restock.stock,
+          updatedAt: serverTimestamp(),
+        },
         { merge: true },
       );
+    }
+
+    if (loyaltyCompensation) {
+      tx.set(loyaltyCompensation.ref, loyaltyCompensation.update, {
+        merge: true,
+      });
     }
 
     tx.update(orderRef, {

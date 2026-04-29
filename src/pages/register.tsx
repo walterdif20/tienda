@@ -1,5 +1,5 @@
 import { FormEvent, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -15,9 +15,21 @@ const getErrorMessage = (error: unknown) => {
   return "Ocurrió un error inesperado";
 };
 
+
+const sanitizeRedirect = (value: string | null) => {
+  if (!value || !value.startsWith("/") || value.startsWith("//")) {
+    return "/";
+  }
+
+  return value;
+};
+
 export function RegisterPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { signIn, signUp, signInWithGoogle, loading } = useAuth();
+
+  const redirectTo = sanitizeRedirect(searchParams.get("redirect"));
 
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
@@ -37,7 +49,7 @@ export function RegisterPage() {
 
     try {
       await signIn(loginEmail, loginPassword);
-      navigate("/");
+      navigate(redirectTo);
     } catch (nextError) {
       setError(getErrorMessage(nextError));
     } finally {
@@ -57,7 +69,7 @@ export function RegisterPage() {
         displayName: name,
         whatsappNumber: phone,
       });
-      navigate("/");
+      navigate(redirectTo);
     } catch (nextError) {
       setError(getErrorMessage(nextError));
     } finally {
@@ -71,7 +83,7 @@ export function RegisterPage() {
 
     try {
       await signInWithGoogle();
-      navigate("/");
+      navigate(redirectTo);
     } catch (nextError) {
       setError(getErrorMessage(nextError));
     } finally {

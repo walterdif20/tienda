@@ -39,7 +39,7 @@ export type CreateOrderResponse = {
 };
 
 const TRANSFER_ALIAS =
-  import.meta.env.VITE_TRANSFER_ALIAS ?? "tienda.demo.alias";
+  import.meta.env.VITE_TRANSFER_ALIAS ?? "fernandezlourdes2.mp";
 
 const randomOrderNumber = () =>
   Math.floor(100000 + Math.random() * 900000).toString();

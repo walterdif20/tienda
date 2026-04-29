@@ -85,27 +85,29 @@ export function ProductsPage() {
             return ids;
           }, new Set<string>());
 
-    return products.filter((product) => {
-      const matchCategory =
-        activeCategory === "all"
-          ? true
-          : activeSubcategory !== "all"
-            ? product.categoryId === activeSubcategory
-            : product.categoryId === activeCategory ||
-              visibleSubcategories.some(
-                (subcategory) => subcategory.id === product.categoryId,
-              );
-      const matchCollection =
-        activeCollection === "all" ||
-        productMatchesCollection(product, activeCollection);
-      const matchQuery =
-        normalizedQuery.length === 0 ||
-        `${product.name} ${product.description}`
-          .toLowerCase()
-          .includes(normalizedQuery) ||
-        matchingCategoryIds.has(product.categoryId);
-      return matchCategory && matchCollection && matchQuery;
-    });
+    return products
+      .filter((product) => {
+        const matchCategory =
+          activeCategory === "all"
+            ? true
+            : activeSubcategory !== "all"
+              ? product.categoryId === activeSubcategory
+              : product.categoryId === activeCategory ||
+                visibleSubcategories.some(
+                  (subcategory) => subcategory.id === product.categoryId,
+                );
+        const matchCollection =
+          activeCollection === "all" ||
+          productMatchesCollection(product, activeCollection);
+        const matchQuery =
+          normalizedQuery.length === 0 ||
+          `${product.name} ${product.description}`
+            .toLowerCase()
+            .includes(normalizedQuery) ||
+          matchingCategoryIds.has(product.categoryId);
+        return matchCategory && matchCollection && matchQuery;
+      })
+      .sort((a, b) => Number(a.stock === 0) - Number(b.stock === 0));
   }, [
     activeCategory,
     activeCollection,

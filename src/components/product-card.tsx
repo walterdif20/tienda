@@ -28,6 +28,7 @@ export function ProductCard({
   isFavorite,
   onToggleFavorite,
 }: ProductCardProps) {
+  const isOutOfStock = product.stock === 0;
   const addItem = useCartStore((state) => state.addItem);
   const removeItem = useCartStore((state) => state.removeItem);
   const updateQty = useCartStore((state) => state.updateQty);
@@ -73,7 +74,13 @@ export function ProductCard({
   }, [images.length]);
 
   return (
-    <Card className="group overflow-hidden rounded-2xl border-slate-200 shadow-sm shadow-slate-900/5 transition duration-300 hover:-translate-y-1 hover:border-slate-300 hover:shadow-lg hover:shadow-slate-900/10">
+    <Card
+      className={`group overflow-hidden rounded-2xl border-slate-200 shadow-sm shadow-slate-900/5 transition duration-300 ${
+        isOutOfStock
+          ? "opacity-70 saturate-50"
+          : "hover:-translate-y-1 hover:border-slate-300 hover:shadow-lg hover:shadow-slate-900/10"
+      }`}
+    >
       <div className="relative overflow-hidden">
         <Link
           to={`/products/${product.slug}`}
@@ -157,7 +164,7 @@ export function ProductCard({
             {pricing.appliedDiscount ? <p className="text-xs text-slate-400 line-through">{formatPrice(pricing.originalPrice)}</p> : null}
             <span className="text-lg font-semibold text-slate-900">{formatPrice(pricing.finalPrice)}</span>
           </div>
-          {product.stock === 0 ? (
+          {isOutOfStock ? (
             <Button asChild variant="outline" size="sm">
               <a
                 href={buildProductAvailabilityWhatsAppLink(

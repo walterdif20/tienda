@@ -4,6 +4,7 @@ import { CategoryManagementSection } from "@/components/admin/category-managemen
 import { OrderManagementSection } from "@/components/admin/order-management";
 import { ProductManagementSection } from "@/components/admin/product-management";
 import { ReportsManagementSection } from "@/components/admin/reports-management";
+import { DiscountManagementSection } from "@/components/admin/discount-management";
 import { StoreSettingsManagementSection } from "@/components/admin/store-settings-management";
 import { UserManagementSection } from "@/components/admin/user-management";
 import type {
@@ -47,6 +48,13 @@ import {
   updateProduct,
   uploadProductImageFile,
 } from "@/lib/products";
+import {
+  createDiscountRule,
+  deleteDiscountRule,
+  fetchDiscountRules,
+  updateDiscountRule,
+  type DiscountRule,
+} from "@/lib/discounts";
 import { useAuth } from "@/providers/auth-provider";
 
 const slugify = (value: string) =>
@@ -70,13 +78,15 @@ export function AdminPage() {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [activeSection, setActiveSection] = useState<
-    "products" | "categories" | "sales" | "reports" | "settings" | "users"
+    "products" | "categories" | "discounts" | "sales" | "reports" | "settings" | "users"
   >("products");
+  const [discounts, setDiscounts] = useState<DiscountRule[]>([]);
 
   const adminSections: Array<{
     id:
       | "products"
       | "categories"
+      | "discounts"
       | "sales"
       | "reports"
       | "settings"
@@ -93,6 +103,11 @@ export function AdminPage() {
       id: "categories",
       label: "Categorías",
       description: "Estructura del catálogo y subcategorías",
+    },
+    {
+      id: "discounts",
+      label: "Descuentos",
+      description: "Promociones por producto o categoría",
     },
     {
       id: "sales",
@@ -116,6 +131,11 @@ export function AdminPage() {
     },
   ];
 
+  const reloadDiscounts = async () => {
+    const rules = await fetchDiscountRules();
+    setDiscounts(rules);
+  };
+
   const reloadOrders = async () => {
     const remoteOrders = await fetchAdminOrders();
     setOrders(remoteOrders);
@@ -137,6 +157,10 @@ export function AdminPage() {
     }
 
     void reloadOrders().catch((error) => {
+      console.error(error);
+    });
+
+    void reloadDiscounts().catch((error) => {
       console.error(error);
     });
 
@@ -485,6 +509,45 @@ export function AdminPage() {
     await reloadUsers();
   };
 
+  const onCreateDiscount = async (input: Omit<DiscountRule, "id">) => {
+    if (!input.name.trim() || !input.targetId.trim()) {
+      return { ok: false, message: "Completá nombre y objetivo." };
+    }
+    if (!Number.isFinite(input.value) || input.value <= 0) {
+      return { ok: false, message: "El valor del descuento es inválido." };
+    }
+    try {
+      await createDiscountRule(input);
+      await reloadDiscounts();
+      return { ok: true, message: "Descuento creado." };
+    } catch (error) {
+      console.error(error);
+      return { ok: false, message: "No se pudo crear el descuento." };
+    }
+  };
+
+  const onToggleDiscount = async (id: string, isActive: boolean) => {
+    try {
+      await updateDiscountRule(id, { isActive });
+      await reloadDiscounts();
+      return { ok: true };
+    } catch (error) {
+      console.error(error);
+      return { ok: false, message: "No se pudo actualizar el descuento." };
+    }
+  };
+
+  const onDeleteDiscount = async (id: string) => {
+    try {
+      await deleteDiscountRule(id);
+      await reloadDiscounts();
+      return { ok: true };
+    } catch (error) {
+      console.error(error);
+      return { ok: false, message: "No se pudo eliminar el descuento." };
+    }
+  };
+
   const activeSectionInfo =
     adminSections.find((section) => section.id === activeSection) ??
     adminSections[0];
@@ -598,6 +661,16 @@ export function AdminPage() {
                 onReload={reloadCategories}
                 onSaveCategory={onSaveCategory}
                 onDeleteCategory={onDeleteCategory}
+              />
+            ) : activeSection === "discounts" ? (
+              <DiscountManagementSection
+                discounts={discounts}
+                products={adminProducts}
+                categories={categories}
+                loading={loading || categoriesLoading}
+                onCreate={onCreateDiscount}
+                onToggle={onToggleDiscount}
+                onDelete={onDeleteDiscount}
               />
             ) : activeSection === "sales" ? (
               <OrderManagementSection

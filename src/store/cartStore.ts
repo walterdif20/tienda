@@ -5,7 +5,7 @@ import type { CartItem, Product } from "@/types";
 interface CartState {
   items: CartItem[];
   appliedPoints: number;
-  addItem: (product: Product, qty?: number) => void;
+  addItem: (product: Product, qty?: number, unitPrice?: number) => void;
   removeItem: (productId: string) => void;
   updateQty: (productId: string, qty: number) => void;
   setAppliedPoints: (points: number) => void;
@@ -22,7 +22,7 @@ export const useCartStore = create<CartState>()(
     (set, get) => ({
       items: [],
       appliedPoints: 0,
-      addItem: (product, qty = 1) => {
+      addItem: (product, qty = 1, unitPrice) => {
         const items = get().items;
         const existing = items.find((item) => item.productId === product.id);
         if (existing) {
@@ -40,7 +40,7 @@ export const useCartStore = create<CartState>()(
             {
               productId: product.id,
               name: product.name,
-              price: product.price,
+              price: unitPrice ?? product.price,
               qty: clampQty(qty, product.stock),
               imageUrl: product.images[0]?.url,
               slug: product.slug,

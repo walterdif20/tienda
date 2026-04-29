@@ -11,8 +11,11 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { formatPrice } from "@/lib/format";
+import { useDiscounts } from "@/hooks/use-discounts";
+import { getProductPricing } from "@/lib/pricing";
 import { getCollectionById, getProductCollectionIds } from "@/lib/collections";
 import { useCartStore } from "@/store/cartStore";
+import { useCategories } from "@/hooks/use-categories";
 import type { Product } from "@/types";
 
 export function ProductQuickShop({
@@ -30,6 +33,9 @@ export function ProductQuickShop({
     .map((collectionId) => getCollectionById(collectionId)?.shortLabel)
     .filter(Boolean);
   const heroImage = product.images[0];
+  const { discounts } = useDiscounts();
+  const { categories } = useCategories();
+  const pricing = getProductPricing(product, discounts, categories);
 
   return (
     <Dialog>
@@ -67,9 +73,10 @@ export function ProductQuickShop({
             </DialogHeader>
 
             <div className="space-y-2 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
-              <p className="text-3xl font-semibold text-slate-950">
-                {formatPrice(product.price)}
-              </p>
+              <div>
+                {pricing.appliedDiscount ? <p className="text-xs text-slate-400 line-through">{formatPrice(pricing.originalPrice)}</p> : null}
+                <p className="text-3xl font-semibold text-slate-950">{formatPrice(pricing.finalPrice)}</p>
+              </div>
               <p>
                 <strong>Stock:</strong> {product.stock > 0 ? `${product.stock} disponibles` : "Sin stock"}
               </p>
@@ -83,7 +90,7 @@ export function ProductQuickShop({
               <Button
                 size="lg"
                 className="flex-1"
-                onClick={() => addItem(product, 1)}
+                onClick={() => addItem(product, 1, pricing.finalPrice)}
                 disabled={product.stock === 0}
               >
                 <ShoppingBag className="mr-2 h-4 w-4" />

@@ -6,9 +6,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ProductQuickShop } from "@/components/product-quick-shop";
 import { formatPrice } from "@/lib/format";
+import { useDiscounts } from "@/hooks/use-discounts";
+import { getProductPricing } from "@/lib/pricing";
 import { buildProductAvailabilityWhatsAppLink } from "@/lib/whatsapp";
 import { getCollectionById, getProductCollectionIds } from "@/lib/collections";
 import { useStoreSettings } from "@/hooks/use-store-settings";
+import { useCategories } from "@/hooks/use-categories";
 import { useCartStore } from "@/store/cartStore";
 import type { Product } from "@/types";
 
@@ -34,6 +37,9 @@ export function ProductCard({
   );
   const { settings } = useStoreSettings();
   const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const { discounts } = useDiscounts();
+  const { categories } = useCategories();
+  const pricing = getProductPricing(product, discounts, categories);
 
   const images = useMemo(() => product.images ?? [], [product.images]);
   const activeImage = images[activeImageIndex] ?? images[0];
@@ -97,6 +103,7 @@ export function ProductCard({
           {product.badge && (
             <Badge className="bg-white text-slate-800">{product.badge}</Badge>
           )}
+          {pricing.appliedDiscount ? <Badge className="bg-rose-600 px-3 py-1 text-sm font-semibold tracking-wide text-white shadow-sm">{pricing.appliedDiscount.label}</Badge> : null}
           <Badge className="bg-slate-950/80 text-white">{urgencyLabel}</Badge>
         </div>
         <Button
@@ -146,9 +153,10 @@ export function ProductCard({
         </div>
 
         <div className="flex items-center justify-between gap-3">
-          <span className="text-lg font-semibold text-slate-900">
-            {formatPrice(product.price)}
-          </span>
+          <div className="text-right">
+            {pricing.appliedDiscount ? <p className="text-xs text-slate-400 line-through">{formatPrice(pricing.originalPrice)}</p> : null}
+            <span className="text-lg font-semibold text-slate-900">{formatPrice(pricing.finalPrice)}</span>
+          </div>
           {product.stock === 0 ? (
             <Button asChild variant="outline" size="sm">
               <a
@@ -185,7 +193,7 @@ export function ProductCard({
                 variant="secondary"
                 size="sm"
                 className="h-8 w-8"
-                onClick={() => addItem(product, 1)}
+                onClick={() => addItem(product, 1, pricing.finalPrice)}
                 disabled={quantityInCart >= product.stock}
               >
                 +
@@ -195,7 +203,7 @@ export function ProductCard({
             <Button
               variant="secondary"
               size="sm"
-              onClick={() => addItem(product, 1)}
+              onClick={() => addItem(product, 1, pricing.finalPrice)}
             >
               {quantityInCart > 0 ? `Agregar (${quantityInCart})` : "Agregar"}
             </Button>

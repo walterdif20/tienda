@@ -5,6 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ProductCard } from "@/components/product-card";
 import { formatPrice } from "@/lib/format";
+import { useDiscounts } from "@/hooks/use-discounts";
+import { getProductPricing } from "@/lib/pricing";
 import { buildProductAvailabilityWhatsAppLink } from "@/lib/whatsapp";
 import { getCollectionById, getProductCollectionIds } from "@/lib/collections";
 import { useCartStore } from "@/store/cartStore";
@@ -25,6 +27,7 @@ export function ProductDetailPage() {
   const { isFavorite, toggleFavorite } = useFavorites();
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [cartFeedback, setCartFeedback] = useState("");
+  const { discounts } = useDiscounts();
 
   const images = useMemo(() => product?.images ?? [], [product?.images]);
 
@@ -80,6 +83,8 @@ export function ProductDetailPage() {
       return collection ? [collection] : [];
     })
     .slice(0, 3);
+  const pricing = product ? getProductPricing(product, discounts) : null;
+
   const relatedProducts = products
     .filter(
       (item) =>
@@ -106,7 +111,7 @@ export function ProductDetailPage() {
   };
 
   const handleAddToCart = () => {
-    addItem(product, 1);
+    addItem(product, 1, pricing?.finalPrice);
     setCartFeedback("Producto agregado al carrito.");
   };
 
@@ -178,6 +183,7 @@ export function ProductDetailPage() {
             <div className="space-y-3">
               <div className="flex flex-wrap items-center gap-2">
                 {product.badge ? <Badge>{product.badge}</Badge> : null}
+                {pricing?.appliedDiscount ? <Badge className="bg-rose-600 text-white">{pricing.appliedDiscount.label}</Badge> : null}
                 {collectionLabels.map((collection) => (
                   <Badge key={collection.id} className="bg-slate-100 text-slate-700">
                     {collection.shortLabel}
@@ -193,7 +199,10 @@ export function ProductDetailPage() {
             </div>
 
             <div className="flex flex-wrap items-end justify-between gap-4">
-              <p className="text-3xl font-semibold">{formatPrice(product.price)}</p>
+              <div className="text-right">
+                {pricing?.appliedDiscount ? <p className="text-sm text-slate-400 line-through">{formatPrice(pricing.originalPrice)}</p> : null}
+                <p className="text-3xl font-semibold">{formatPrice(pricing?.finalPrice ?? product.price)}</p>
+              </div>
               <div className="rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-800">
                 {product.stock <= 5
                   ? `Últimas ${product.stock} unidades`
